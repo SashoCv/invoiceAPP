@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'app_name' => 'InvoiceApp',
+    'welcome' => 'Добредојдовте',
+    'save' => 'Зачувај',
+    'cancel' => 'Откажи',
+    'delete' => 'Избриши',
+    'edit' => 'Измени',
+    'create' => 'Креирај',
+    'search' => 'Пребарај',
+    'filter' => 'Филтрирај',
+    'export' => 'Извези',
+    'print' => 'Печати',
+    'download' => 'Преземи',
+    'upload' => 'Прикачи',
+    'back' => 'Назад',
+    'next' => 'Следно',
+    'previous' => 'Претходно',
+    'yes' => 'Да',
+    'no' => 'Не',
+    'confirm' => 'Потврди',
+    'actions' => 'Акции',
+    'details' => 'Детали',
+    'total' => 'Вкупно',
+    'subtotal' => 'Подвкупно',
+    'tax' => 'ДДВ',
+    'date' => 'Датум',
+    'from' => 'Од',
+    'to' => 'До',
+
+    // Languages
+    'macedonian' => 'Македонски',
+    'english' => 'English',
+];
