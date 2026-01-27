@@ -232,7 +232,7 @@
                             <h3 class="text-lg font-semibold text-gray-900">{{ __('dashboard.recent_invoices') }}</h3>
                             <p class="text-sm text-gray-500 mt-1">{{ __('dashboard.recent_invoices_subtitle') }}</p>
                         </div>
-                        <a href="#" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        <a href="{{ route('invoices.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                             {{ __('dashboard.view_all') }}
                             <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
