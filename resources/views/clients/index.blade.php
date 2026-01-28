@@ -101,8 +101,14 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                                     {{ __('clients.tax_number') }}
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                                     {{ __('clients.invoices_count') }}
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    {{ __('clients.proformas_count') }}
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    {{ __('clients.contracts_count') }}
                                 </th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     {{ __('clients.actions') }}
@@ -138,9 +144,19 @@
                                     <td class="px-6 py-4 hidden lg:table-cell">
                                         <span class="text-sm text-gray-600">{{ $client->tax_number ?: '-' }}</span>
                                     </td>
-                                    <td class="px-6 py-4 hidden lg:table-cell">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $client->invoices()->count() > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600' }}">
-                                            {{ $client->invoices()->count() }}
+                                    <td class="px-6 py-4 hidden lg:table-cell text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $client->invoices_count > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600' }}">
+                                            {{ $client->invoices_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 hidden lg:table-cell text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $client->proforma_invoices_count > 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600' }}">
+                                            {{ $client->proforma_invoices_count }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 hidden lg:table-cell text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $client->contracts_count > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                            {{ $client->contracts_count }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right">

@@ -73,8 +73,12 @@ return [
 
     // Templates
     'templates' => 'Templates',
-    'templates_title' => 'Invoice Templates',
-    'templates_desc' => 'Choose a template for your invoices.',
+    'templates_title' => 'Document Templates',
+    'templates_desc' => 'Choose templates for your documents.',
+    'invoice_templates' => 'Invoices',
+    'invoice_templates_desc' => 'This template will be used for invoices and proforma invoices.',
+    'offer_templates' => 'Offers',
+    'offer_templates_desc' => 'This template will be used for offers.',
     'template_classic' => 'Classic',
     'template_classic_desc' => 'Clean and professional',
     'template_modern' => 'Modern',

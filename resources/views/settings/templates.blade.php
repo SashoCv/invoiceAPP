@@ -5,141 +5,103 @@
             <p class="mt-1 text-sm text-gray-500">{{ __('settings.templates_desc') }}</p>
         </div>
 
-        <form method="POST" action="{{ route('settings.templates.update') }}">
-            @csrf
-            @method('PUT')
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                @foreach($templates as $key => $template)
-                    <label class="relative cursor-pointer group">
-                        <input type="radio" name="template" value="{{ $key }}" class="sr-only peer"
-                               {{ $currentTemplate === $key ? 'checked' : '' }}>
-
-                        <div class="border-2 rounded-xl p-4 transition-all
-                                    peer-checked:border-blue-500 peer-checked:bg-blue-50
-                                    hover:border-gray-300 border-gray-200">
-
-                            <!-- Template Preview -->
-                            <div class="aspect-[3/4] bg-white border border-gray-200 rounded-lg mb-3 overflow-hidden shadow-sm">
-                                @if($key === 'classic')
-                                    <div class="p-3 h-full flex flex-col">
-                                        <div class="flex justify-between items-start mb-4">
-                                            <div class="w-8 h-8 bg-gray-800 rounded"></div>
-                                            <div class="text-right">
-                                                <div class="w-12 h-2 bg-gray-800 rounded mb-1"></div>
-                                                <div class="w-8 h-1.5 bg-gray-300 rounded"></div>
-                                            </div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="w-16 h-1.5 bg-gray-300 rounded mb-2"></div>
-                                            <div class="w-12 h-1 bg-gray-200 rounded mb-1"></div>
-                                            <div class="w-14 h-1 bg-gray-200 rounded mb-4"></div>
-                                            <div class="border-t border-gray-200 pt-2">
-                                                <div class="flex justify-between mb-1">
-                                                    <div class="w-16 h-1 bg-gray-300 rounded"></div>
-                                                    <div class="w-8 h-1 bg-gray-300 rounded"></div>
-                                                </div>
-                                                <div class="flex justify-between mb-1">
-                                                    <div class="w-12 h-1 bg-gray-200 rounded"></div>
-                                                    <div class="w-6 h-1 bg-gray-200 rounded"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="border-t border-gray-300 pt-2 mt-auto">
-                                            <div class="flex justify-between">
-                                                <div class="w-10 h-1.5 bg-gray-800 rounded"></div>
-                                                <div class="w-12 h-1.5 bg-gray-800 rounded"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @elseif($key === 'modern')
-                                    <div class="h-full flex flex-col">
-                                        <div class="bg-blue-600 p-3">
-                                            <div class="flex justify-between items-center">
-                                                <div class="w-8 h-8 bg-white/20 rounded"></div>
-                                                <div class="w-12 h-2 bg-white rounded"></div>
-                                            </div>
-                                        </div>
-                                        <div class="p-3 flex-1 flex flex-col">
-                                            <div class="w-16 h-1.5 bg-gray-300 rounded mb-2"></div>
-                                            <div class="w-12 h-1 bg-gray-200 rounded mb-4"></div>
-                                            <div class="bg-gray-50 rounded p-2 mb-2">
-                                                <div class="flex justify-between mb-1">
-                                                    <div class="w-14 h-1 bg-gray-300 rounded"></div>
-                                                    <div class="w-6 h-1 bg-blue-400 rounded"></div>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <div class="w-10 h-1 bg-gray-200 rounded"></div>
-                                                    <div class="w-5 h-1 bg-blue-300 rounded"></div>
-                                                </div>
-                                            </div>
-                                            <div class="mt-auto pt-2 border-t">
-                                                <div class="flex justify-end">
-                                                    <div class="w-14 h-2 bg-blue-600 rounded"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @elseif($key === 'minimal')
-                                    <div class="p-3 h-full flex flex-col">
-                                        <div class="text-center mb-4 pt-2">
-                                            <div class="w-6 h-6 bg-gray-200 rounded-full mx-auto mb-2"></div>
-                                            <div class="w-14 h-1.5 bg-gray-300 rounded mx-auto"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="w-10 h-1 bg-gray-200 rounded mb-3"></div>
-                                            <div class="space-y-1 mb-4">
-                                                <div class="flex justify-between">
-                                                    <div class="w-20 h-1 bg-gray-200 rounded"></div>
-                                                    <div class="w-6 h-1 bg-gray-300 rounded"></div>
-                                                </div>
-                                                <div class="flex justify-between">
-                                                    <div class="w-16 h-1 bg-gray-100 rounded"></div>
-                                                    <div class="w-5 h-1 bg-gray-200 rounded"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="text-center pt-2 border-t border-gray-100">
-                                            <div class="w-12 h-1.5 bg-gray-400 rounded mx-auto"></div>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <!-- Template Info -->
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="font-medium text-gray-900">{{ __('settings.template_' . $key) }}</p>
-                                    <p class="text-xs text-gray-500">{{ __('settings.template_' . $key . '_desc') }}</p>
-                                </div>
-                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center
-                                            peer-checked:border-blue-500 peer-checked:bg-blue-500
-                                            border-gray-300">
-                                    <svg class="w-3 h-3 text-white hidden peer-checked:block" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Selected indicator -->
-                            @if($currentTemplate === $key)
-                                <div class="absolute top-2 right-2">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                                        {{ __('settings.current') }}
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-                    </label>
-                @endforeach
-            </div>
-
-            <div class="mt-6 flex justify-end">
-                <button type="submit"
-                        class="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-                    {{ __('settings.save') }}
+        <!-- Tab Navigation -->
+        <div x-data="{ activeTab: 'invoices' }" class="mb-6">
+            <div class="flex gap-2 border-b border-gray-200">
+                <button @click="activeTab = 'invoices'"
+                        :class="activeTab === 'invoices' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+                    </svg>
+                    {{ __('settings.invoice_templates') }}
+                </button>
+                <button @click="activeTab = 'offers'"
+                        :class="activeTab === 'offers' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+                    </svg>
+                    {{ __('settings.offer_templates') }}
                 </button>
             </div>
-        </form>
+
+            <form method="POST" action="{{ route('settings.templates.update') }}" class="mt-6">
+                @csrf
+                @method('PUT')
+
+                <!-- Invoice Templates Tab -->
+                <div x-show="activeTab === 'invoices'" x-transition>
+                    <p class="text-sm text-gray-500 mb-4">{{ __('settings.invoice_templates_desc') }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        @foreach($templates as $key => $template)
+                            <label class="relative cursor-pointer group">
+                                <input type="radio" name="invoice_template" value="{{ $key }}" class="sr-only peer"
+                                       {{ $currentInvoiceTemplate === $key ? 'checked' : '' }}>
+                                <div class="border-2 rounded-xl p-4 transition-all
+                                            peer-checked:border-blue-500 peer-checked:bg-blue-50
+                                            hover:border-gray-300 border-gray-200">
+                                    @include('settings._template_preview', ['key' => $key])
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">{{ __('settings.template_' . $key) }}</p>
+                                            <p class="text-xs text-gray-500">{{ __('settings.template_' . $key . '_desc') }}</p>
+                                        </div>
+                                    </div>
+                                    @if($currentInvoiceTemplate === $key)
+                                        <div class="absolute top-2 right-2">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                                {{ __('settings.current') }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Offer Templates Tab -->
+                <div x-show="activeTab === 'offers'" x-transition>
+                    <p class="text-sm text-gray-500 mb-4">{{ __('settings.offer_templates_desc') }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        @foreach($templates as $key => $template)
+                            <label class="relative cursor-pointer group">
+                                <input type="radio" name="offer_template" value="{{ $key }}" class="sr-only peer"
+                                       {{ $currentOfferTemplate === $key ? 'checked' : '' }}>
+                                <div class="border-2 rounded-xl p-4 transition-all
+                                            peer-checked:border-green-500 peer-checked:bg-green-50
+                                            hover:border-gray-300 border-gray-200">
+                                    @include('settings._template_preview', ['key' => $key])
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-gray-900">{{ __('settings.template_' . $key) }}</p>
+                                            <p class="text-xs text-gray-500">{{ __('settings.template_' . $key . '_desc') }}</p>
+                                        </div>
+                                    </div>
+                                    @if($currentOfferTemplate === $key)
+                                        <div class="absolute top-2 right-2">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                {{ __('settings.current') }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Hidden field for proforma (uses same as invoice) -->
+                <input type="hidden" name="proforma_template" value="{{ $currentInvoiceTemplate }}">
+
+                <div class="mt-6 flex justify-end">
+                    <button type="submit"
+                            class="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                        {{ __('settings.save') }}
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </x-settings-layout>

@@ -22,4 +22,28 @@ return [
     'invoice_deleted' => 'Invoice deleted',
     'invoice_restored' => 'Invoice restored',
     'invoice_permanently_deleted' => 'Invoice permanently deleted',
+
+    // Proforma
+    'proforma_created' => 'Proforma invoice created successfully',
+    'proforma_updated' => 'Proforma invoice updated successfully',
+    'proforma_deleted' => 'Proforma invoice deleted',
+    'proforma_restored' => 'Proforma invoice restored',
+    'proforma_permanently_deleted' => 'Proforma invoice permanently deleted',
+    'proforma_converted' => 'Proforma invoice converted to invoice',
+    'proforma_already_converted' => 'This proforma has already been converted',
+
+    // Offers
+    'offer_created' => 'Offer created successfully',
+    'offer_updated' => 'Offer updated successfully',
+    'offer_deleted' => 'Offer deleted',
+    'offer_restored' => 'Offer restored',
+    'offer_permanently_deleted' => 'Offer permanently deleted',
+    'offer_accepted' => 'Offer accepted',
+    'offer_rejected' => 'Offer rejected',
+    'offer_converted' => 'Offer converted to invoice',
+    'offer_already_converted' => 'This offer has already been converted',
+
+    // Contracts
+    'contract_uploaded' => 'Contract uploaded successfully',
+    'contract_deleted' => 'Contract deleted',
 ];

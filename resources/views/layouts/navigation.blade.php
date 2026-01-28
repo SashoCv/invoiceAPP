@@ -16,25 +16,54 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-1 sm:-my-px sm:ms-8 sm:flex">
+                <div class="hidden space-x-1 sm:-my-px sm:ms-8 sm:flex items-center">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="flex items-center space-x-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
                         <span>{{ __('navigation.dashboard') }}</span>
                     </x-nav-link>
-                    <a href="#" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        {{ __('navigation.invoices') }}
-                    </a>
-                    <a href="#" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                    <!-- Documents Dropdown -->
+                    <x-dropdown align="left" width="48">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center px-3 py-2 text-sm font-medium {{ request()->routeIs('invoices.*') || request()->routeIs('proforma-invoices.*') || request()->routeIs('offers.*') ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50' }} rounded-lg transition-colors">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                {{ __('navigation.documents') }}
+                                <svg class="ms-1 fill-current h-4 w-4" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </x-slot>
+
+                        <x-slot name="content">
+                            <x-dropdown-link :href="route('invoices.index')" class="{{ request()->routeIs('invoices.*') ? 'bg-gray-50 font-semibold' : '' }}">
+                                {{ __('navigation.invoices') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('proforma-invoices.index')" class="{{ request()->routeIs('proforma-invoices.*') ? 'bg-gray-50 font-semibold' : '' }}">
+                                {{ __('navigation.proforma_invoices') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link :href="route('offers.index')" class="{{ request()->routeIs('offers.*') ? 'bg-gray-50 font-semibold' : '' }}">
+                                {{ __('navigation.offers') }}
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+
+                    <x-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')" class="flex items-center space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                         </svg>
-                        {{ __('navigation.clients') }}
-                    </a>
+                        <span>{{ __('navigation.clients') }}</span>
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('articles.index')" :active="request()->routeIs('articles.*')" class="flex items-center space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        <span>{{ __('navigation.articles') }}</span>
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -65,7 +94,7 @@
                 </x-dropdown>
 
                 <!-- New Invoice Button -->
-                <a href="#" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm">
+                <a href="{{ route('invoices.create') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -122,12 +151,27 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('navigation.dashboard') }}
             </x-responsive-nav-link>
-            <a href="#" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg">
-                {{ __('navigation.invoices') }}
-            </a>
-            <a href="#" class="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg">
+
+            <!-- Documents Section -->
+            <div class="py-2">
+                <p class="px-3 text-xs font-semibold text-gray-500 uppercase">{{ __('navigation.documents') }}</p>
+                <x-responsive-nav-link :href="route('invoices.index')" :active="request()->routeIs('invoices.*')" class="pl-6">
+                    {{ __('navigation.invoices') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('proforma-invoices.index')" :active="request()->routeIs('proforma-invoices.*')" class="pl-6">
+                    {{ __('navigation.proforma_invoices') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('offers.index')" :active="request()->routeIs('offers.*')" class="pl-6">
+                    {{ __('navigation.offers') }}
+                </x-responsive-nav-link>
+            </div>
+
+            <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')">
                 {{ __('navigation.clients') }}
-            </a>
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('articles.index')" :active="request()->routeIs('articles.*')">
+                {{ __('navigation.articles') }}
+            </x-responsive-nav-link>
         </div>
 
         <!-- Language Switcher Mobile -->

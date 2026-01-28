@@ -3,7 +3,10 @@
 return [
     'menu' => 'Мени',
     'dashboard' => 'Контролна табла',
+    'documents' => 'Документи',
     'invoices' => 'Фактури',
+    'proforma_invoices' => 'Профактури',
+    'offers' => 'Понуди',
     'clients' => 'Клиенти',
     'articles' => 'Артикли',
     'bank_accounts' => 'Банкарски сметки',

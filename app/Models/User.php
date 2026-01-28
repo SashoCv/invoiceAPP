@@ -39,6 +39,21 @@ class User extends Authenticatable
         return $this->hasMany(Invoice::class);
     }
 
+    public function proformaInvoices(): HasMany
+    {
+        return $this->hasMany(ProformaInvoice::class);
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class);
+    }
+
+    public function clientContracts(): HasMany
+    {
+        return $this->hasMany(ClientContract::class);
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -52,6 +67,8 @@ class User extends Authenticatable
         'phone',
         'avatar',
         'invoice_template',
+        'proforma_template',
+        'offer_template',
         'password',
     ];
 

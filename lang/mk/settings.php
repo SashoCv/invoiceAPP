@@ -73,8 +73,12 @@ return [
 
     // Templates
     'templates' => 'Темплејти',
-    'templates_title' => 'Темплејти за фактури',
-    'templates_desc' => 'Изберете темплејт за вашите фактури.',
+    'templates_title' => 'Темплејти за документи',
+    'templates_desc' => 'Изберете темплејти за вашите документи.',
+    'invoice_templates' => 'Фактури',
+    'invoice_templates_desc' => 'Овој темплејт ќе се користи за фактури и профактури.',
+    'offer_templates' => 'Понуди',
+    'offer_templates_desc' => 'Овој темплејт ќе се користи за понуди.',
     'template_classic' => 'Класичен',
     'template_classic_desc' => 'Чист и професионален',
     'template_modern' => 'Модерен',

@@ -13,13 +13,15 @@ return [
     'client' => 'Client',
     'contact' => 'Contact',
     'invoices_count' => 'Invoices',
+    'proformas_count' => 'Proformas',
+    'contracts_count' => 'Contracts',
     'actions' => 'Actions',
 
     // Form
     'company' => 'Company Name',
     'company_placeholder' => 'Leave empty for individuals',
     'contact_person' => 'Contact Person',
-    'tax_number' => 'Tax Number (EDB)',
+    'tax_number' => 'Tax No.',
     'tax_number_placeholder' => 'MK1234567890123',
     'registration_number' => 'Registration Number (EMBS)',
     'email' => 'Email',

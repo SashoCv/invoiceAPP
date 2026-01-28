@@ -22,4 +22,28 @@ return [
     'invoice_deleted' => 'Фактурата е избришана',
     'invoice_restored' => 'Фактурата е вратена',
     'invoice_permanently_deleted' => 'Фактурата е трајно избришана',
+
+    // Proforma
+    'proforma_created' => 'Профактурата е успешно креирана',
+    'proforma_updated' => 'Профактурата е успешно ажурирана',
+    'proforma_deleted' => 'Профактурата е избришана',
+    'proforma_restored' => 'Профактурата е вратена',
+    'proforma_permanently_deleted' => 'Профактурата е трајно избришана',
+    'proforma_converted' => 'Профактурата е конвертирана во фактура',
+    'proforma_already_converted' => 'Оваа профактура е веќе конвертирана',
+
+    // Offers
+    'offer_created' => 'Понудата е успешно креирана',
+    'offer_updated' => 'Понудата е успешно ажурирана',
+    'offer_deleted' => 'Понудата е избришана',
+    'offer_restored' => 'Понудата е вратена',
+    'offer_permanently_deleted' => 'Понудата е трајно избришана',
+    'offer_accepted' => 'Понудата е прифатена',
+    'offer_rejected' => 'Понудата е одбиена',
+    'offer_converted' => 'Понудата е конвертирана во фактура',
+    'offer_already_converted' => 'Оваа понуда е веќе конвертирана',
+
+    // Contracts
+    'contract_uploaded' => 'Договорот е успешно прикачен',
+    'contract_deleted' => 'Договорот е избришан',
 ];

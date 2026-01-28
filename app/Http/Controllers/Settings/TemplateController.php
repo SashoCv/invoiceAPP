@@ -28,19 +28,21 @@ class TemplateController extends Controller
     {
         return view('settings.templates', [
             'templates' => self::$templates,
-            'currentTemplate' => $request->user()->invoice_template,
+            'currentInvoiceTemplate' => $request->user()->invoice_template ?? 'classic',
+            'currentProformaTemplate' => $request->user()->proforma_template ?? 'classic',
+            'currentOfferTemplate' => $request->user()->offer_template ?? 'classic',
         ]);
     }
 
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'template' => ['required', 'in:' . implode(',', array_keys(self::$templates))],
+            'invoice_template' => ['required', 'in:' . implode(',', array_keys(self::$templates))],
+            'proforma_template' => ['required', 'in:' . implode(',', array_keys(self::$templates))],
+            'offer_template' => ['required', 'in:' . implode(',', array_keys(self::$templates))],
         ]);
 
-        $request->user()->update([
-            'invoice_template' => $validated['template'],
-        ]);
+        $request->user()->update($validated);
 
         return back()->with('success', __('toast.template_updated'));
     }

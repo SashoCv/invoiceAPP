@@ -34,6 +34,21 @@ class Client extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function proformaInvoices(): HasMany
+    {
+        return $this->hasMany(ProformaInvoice::class);
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(ClientContract::class);
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return $this->company ?: $this->name;

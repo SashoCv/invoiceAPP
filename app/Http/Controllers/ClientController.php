@@ -15,7 +15,8 @@ class ClientController extends Controller
 
     public function index(Request $request): View
     {
-        $query = $request->user()->clients();
+        $query = $request->user()->clients()
+            ->withCount(['invoices', 'proformaInvoices', 'contracts']);
 
         // Search by name, company, email, or tax number
         if ($request->filled('search')) {
@@ -110,7 +111,12 @@ class ClientController extends Controller
     {
         $this->authorize('update', $client);
 
-        return view('clients.edit', compact('client'));
+        $contracts = $client->contracts()
+            ->where('user_id', auth()->id())
+            ->orderBy('uploaded_at', 'desc')
+            ->get();
+
+        return view('clients.edit', compact('client', 'contracts'));
     }
 
     public function update(Request $request, Client $client): RedirectResponse

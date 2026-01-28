@@ -3,7 +3,10 @@
 return [
     'menu' => 'Menu',
     'dashboard' => 'Dashboard',
+    'documents' => 'Documents',
     'invoices' => 'Invoices',
+    'proforma_invoices' => 'Proforma Invoices',
+    'offers' => 'Offers',
     'clients' => 'Clients',
     'articles' => 'Articles',
     'bank_accounts' => 'Bank Accounts',

@@ -13,13 +13,15 @@ return [
     'client' => 'Клиент',
     'contact' => 'Контакт',
     'invoices_count' => 'Фактури',
+    'proformas_count' => 'Профактури',
+    'contracts_count' => 'Договори',
     'actions' => 'Акции',
 
     // Form
     'company' => 'Име на компанија',
     'company_placeholder' => 'Оставете празно за физички лица',
     'contact_person' => 'Контакт лице',
-    'tax_number' => 'ЕДБ (Единствен даночен број)',
+    'tax_number' => 'ЕДБ',
     'tax_number_placeholder' => 'MK1234567890123',
     'registration_number' => 'ЕМБС (Матичен број)',
     'email' => 'Е-пошта',

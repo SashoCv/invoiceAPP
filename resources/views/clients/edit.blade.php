@@ -40,6 +40,11 @@
             </form>
         </div>
 
+        <!-- Contracts Section -->
+        <div class="mt-6">
+            @include('clients._contracts', ['client' => $client, 'contracts' => $contracts])
+        </div>
+
         <!-- Archive Modal -->
         <div x-show="deleteModal" x-cloak
              class="fixed inset-0 z-[100] overflow-y-auto">
