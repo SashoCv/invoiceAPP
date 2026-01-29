@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\AgencyController;
 use App\Http\Controllers\Settings\BankAccountController;
 use App\Http\Controllers\Settings\TemplateController;
+use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -69,12 +70,16 @@ Route::middleware('auth')->group(function () {
 
     // Invoices
     Route::get('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
+    Route::get('invoices/{invoice}/pdf', [PdfController::class, 'invoice'])->name('invoices.pdf');
+    Route::get('invoices/{invoice}/pdf/preview', [PdfController::class, 'invoicePreview'])->name('invoices.pdf.preview');
     Route::post('invoices/{id}/restore', [InvoiceController::class, 'restore'])->name('invoices.restore');
     Route::delete('invoices/{id}/force-delete', [InvoiceController::class, 'forceDelete'])->name('invoices.force-delete');
     Route::resource('invoices', InvoiceController::class);
 
     // Proforma Invoices
     Route::get('proforma-invoices/{proformaInvoice}/duplicate', [ProformaInvoiceController::class, 'duplicate'])->name('proforma-invoices.duplicate');
+    Route::get('proforma-invoices/{proformaInvoice}/pdf', [PdfController::class, 'proforma'])->name('proforma-invoices.pdf');
+    Route::get('proforma-invoices/{proformaInvoice}/pdf/preview', [PdfController::class, 'proformaPreview'])->name('proforma-invoices.pdf.preview');
     Route::post('proforma-invoices/{proformaInvoice}/convert', [ProformaInvoiceController::class, 'convertToInvoice'])->name('proforma-invoices.convert');
     Route::post('proforma-invoices/{id}/restore', [ProformaInvoiceController::class, 'restore'])->name('proforma-invoices.restore');
     Route::delete('proforma-invoices/{id}/force-delete', [ProformaInvoiceController::class, 'forceDelete'])->name('proforma-invoices.force-delete');
@@ -82,6 +87,8 @@ Route::middleware('auth')->group(function () {
 
     // Offers
     Route::get('offers/{offer}/duplicate', [OfferController::class, 'duplicate'])->name('offers.duplicate');
+    Route::get('offers/{offer}/pdf', [PdfController::class, 'offer'])->name('offers.pdf');
+    Route::get('offers/{offer}/pdf/preview', [PdfController::class, 'offerPreview'])->name('offers.pdf.preview');
     Route::post('offers/{offer}/accept', [OfferController::class, 'accept'])->name('offers.accept');
     Route::post('offers/{offer}/reject', [OfferController::class, 'reject'])->name('offers.reject');
     Route::post('offers/{offer}/convert', [OfferController::class, 'convertToInvoice'])->name('offers.convert');

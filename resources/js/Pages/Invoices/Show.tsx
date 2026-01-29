@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
@@ -12,13 +13,26 @@ import {
     TableRow,
     TableFooter,
 } from '@/Components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { ArrowLeft, Pencil, Copy, FileText, Printer } from 'lucide-react';
-import type { Invoice } from '@/types';
+import { ArrowLeft, Pencil, Copy, FileText, Printer, Eye, Download } from 'lucide-react';
+import InvoicePreview from '@/Components/InvoicePreview';
+import type { Invoice, Agency, BankAccount } from '@/types';
 
 interface ShowInvoiceProps {
-    invoice: Invoice;
+    invoice: Invoice & {
+        user?: {
+            agency?: Agency;
+            bank_accounts?: BankAccount[];
+            invoice_template?: 'classic' | 'modern' | 'minimal';
+        };
+    };
 }
 
 const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive' | 'warning'> = {
@@ -32,6 +46,16 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 
 export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
     const { t } = useTranslation();
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    const agency = invoice.user?.agency;
+    const bankAccount = invoice.user?.bank_accounts?.find(
+        (acc) => acc.currency === invoice.currency && acc.is_default
+    ) || invoice.user?.bank_accounts?.find(
+        (acc) => acc.currency === invoice.currency
+    ) || invoice.user?.bank_accounts?.find(
+        (acc) => acc.is_default
+    );
 
     return (
         <AppLayout>
@@ -80,13 +104,36 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                             {t('invoices.duplicate')}
                         </Link>
                     </Button>
+                    <Button variant="outline" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        {t('invoices.preview')}
+                    </Button>
                     <Button variant="outline" asChild>
-                        <a href={`/invoices/${invoice.id}/pdf`} target="_blank" className="flex items-center gap-2">
+                        <a href={`/invoices/${invoice.id}/pdf`} className="flex items-center gap-2">
+                            <Download className="w-4 h-4" />
+                            {t('invoices.download_pdf')}
+                        </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={`/invoices/${invoice.id}/pdf/preview`} target="_blank" className="flex items-center gap-2">
                             <Printer className="w-4 h-4" />
                             {t('invoices.print_pdf')}
                         </a>
                     </Button>
                 </div>
+
+                {/* Preview Dialog */}
+                <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+                        <InvoicePreview
+                            document={invoice}
+                            type="invoice"
+                            agency={agency}
+                            bankAccount={bankAccount}
+                            template={invoice.user?.invoice_template || 'classic'}
+                        />
+                    </DialogContent>
+                </Dialog>
 
                 {/* Invoice Details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

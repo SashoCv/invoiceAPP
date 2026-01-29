@@ -70,6 +70,8 @@ return [
     'delete_offer' => 'Delete Offer',
     'delete_confirm' => 'Are you sure you want to delete this offer?',
     'print' => 'Print',
+    'preview' => 'Preview',
+    'download_pdf' => 'Download PDF',
     'accept' => 'Accept',
     'reject' => 'Reject',
     'convert_to_invoice' => 'Convert to Invoice',
@@ -97,9 +99,12 @@ return [
     'tax_number' => 'Tax No.',
     'tax_rate' => 'Tax Rate',
     'back_to_list' => 'Back to list',
+    'back_to_offer' => 'Back to offer',
     'print_pdf' => 'Print PDF',
     'converted_to' => 'Converted to',
     'edit' => 'Edit',
+    'edit_title' => 'Edit Offer',
+    'update_offer' => 'Update Offer',
 
     // Numbering
     'prefix_placeholder' => 'OFF',

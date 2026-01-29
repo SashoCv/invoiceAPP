@@ -104,7 +104,9 @@ return [
     'invoice_number' => 'Фактура бр.',
     'payment_due' => 'Рок за плаќање',
     'tax_number' => 'Даночен број',
-    'print_pdf' => 'Печати / PDF',
+    'print_pdf' => 'Печати PDF',
+    'preview' => 'Преглед',
+    'download_pdf' => 'Преземи PDF',
 
     // Invoice Numbering
     'prefix_placeholder' => 'ФА',

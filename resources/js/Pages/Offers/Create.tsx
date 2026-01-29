@@ -7,6 +7,7 @@ import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Checkbox } from '@/Components/ui/checkbox';
+import { RichTextEditor } from '@/Components/ui/rich-text-editor';
 import {
     Select,
     SelectContent,
@@ -259,11 +260,10 @@ export default function CreateOffer({ clients, articles, currentYear, nextSequen
                             <CardTitle>{t('offers.content')}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Textarea
+                            <RichTextEditor
                                 value={data.content}
-                                onChange={(e) => setData('content', e.target.value)}
+                                onChange={(value) => setData('content', value)}
                                 placeholder={t('offers.content_placeholder')}
-                                rows={6}
                             />
                         </CardContent>
                     </Card>

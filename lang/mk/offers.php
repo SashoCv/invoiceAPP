@@ -70,6 +70,8 @@ return [
     'delete_offer' => 'Избриши понуда',
     'delete_confirm' => 'Дали сте сигурни дека сакате да ја избришете оваа понуда?',
     'print' => 'Печати',
+    'preview' => 'Преглед',
+    'download_pdf' => 'Преземи PDF',
     'accept' => 'Прифати',
     'reject' => 'Одбиј',
     'convert_to_invoice' => 'Конвертирај во фактура',
@@ -97,9 +99,12 @@ return [
     'tax_number' => 'ЕДБ',
     'tax_rate' => 'Данок',
     'back_to_list' => 'Назад кон листа',
+    'back_to_offer' => 'Назад кон понуда',
     'print_pdf' => 'Печати PDF',
     'converted_to' => 'Конвертирана во',
     'edit' => 'Измени',
+    'edit_title' => 'Измени понуда',
+    'update_offer' => 'Ажурирај понуда',
 
     // Numbering
     'prefix_placeholder' => 'ПОН',

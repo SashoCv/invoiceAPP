@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
@@ -12,13 +13,24 @@ import {
     TableRow,
     TableFooter,
 } from '@/Components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+} from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { ArrowLeft, Pencil, Copy, FileText, Printer, Check, X, ArrowRightLeft } from 'lucide-react';
-import type { Offer } from '@/types';
+import { ArrowLeft, Pencil, Copy, FileText, Printer, Check, X, ArrowRightLeft, Eye, Download } from 'lucide-react';
+import InvoicePreview from '@/Components/InvoicePreview';
+import type { Offer, Agency, BankAccount } from '@/types';
 
 interface ShowOfferProps {
-    offer: Offer;
+    offer: Offer & {
+        user?: {
+            agency?: Agency;
+            bank_accounts?: BankAccount[];
+            offer_template?: 'classic' | 'modern' | 'minimal';
+        };
+    };
 }
 
 const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive' | 'warning'> = {
@@ -30,6 +42,16 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 
 export default function ShowOffer({ offer }: ShowOfferProps) {
     const { t } = useTranslation();
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    const agency = offer.user?.agency;
+    const bankAccount = offer.user?.bank_accounts?.find(
+        (acc) => acc.currency === offer.currency && acc.is_default
+    ) || offer.user?.bank_accounts?.find(
+        (acc) => acc.currency === offer.currency
+    ) || offer.user?.bank_accounts?.find(
+        (acc) => acc.is_default
+    );
 
     const handleAccept = () => {
         router.post(`/offers/${offer.id}/accept`);
@@ -90,8 +112,18 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                             {t('offers.duplicate')}
                         </Link>
                     </Button>
+                    <Button variant="outline" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        {t('offers.preview')}
+                    </Button>
                     <Button variant="outline" asChild>
-                        <a href={`/offers/${offer.id}/pdf`} target="_blank" className="flex items-center gap-2">
+                        <a href={`/offers/${offer.id}/pdf`} className="flex items-center gap-2">
+                            <Download className="w-4 h-4" />
+                            {t('offers.download_pdf')}
+                        </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={`/offers/${offer.id}/pdf/preview`} target="_blank" className="flex items-center gap-2">
                             <Printer className="w-4 h-4" />
                             {t('offers.print_pdf')}
                         </a>
@@ -115,6 +147,19 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                         </Button>
                     )}
                 </div>
+
+                {/* Preview Dialog */}
+                <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+                        <InvoicePreview
+                            document={offer}
+                            type="offer"
+                            agency={agency}
+                            bankAccount={bankAccount}
+                            template={offer.user?.offer_template || 'classic'}
+                        />
+                    </DialogContent>
+                </Dialog>
 
                 {/* Converted Invoice Link */}
                 {offer.convertedInvoice && (
@@ -206,7 +251,10 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                             <CardTitle className="text-base">{t('offers.content')}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-gray-600 whitespace-pre-wrap">{offer.content}</p>
+                            <div
+                                className="text-sm text-gray-600 prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: offer.content }}
+                            />
                         </CardContent>
                     </Card>
                 )}

@@ -59,6 +59,9 @@ return [
     'delete_proforma' => 'Избриши профактура',
     'delete_confirm' => 'Дали сте сигурни дека сакате да ја избришете оваа профактура?',
     'print' => 'Печати',
+    'print_pdf' => 'Печати PDF',
+    'preview' => 'Преглед',
+    'download_pdf' => 'Преземи PDF',
     'convert_to_invoice' => 'Конвертирај во фактура',
 
     // Filters
@@ -77,9 +80,13 @@ return [
 
     // Show
     'proforma_details' => 'Детали за профактура',
+    'client_details' => 'Детали за клиент',
     'from' => 'Од',
     'to' => 'До',
     'proforma_number' => 'Профактура бр.',
+    'tax_number' => 'ЕДБ',
+    'back_to_list' => 'Назад кон листа',
+    'converted_to' => 'Конвертирана во',
 
     // Numbering
     'prefix_placeholder' => 'ПФ',

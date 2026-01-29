@@ -157,7 +157,7 @@ class ProformaInvoiceController extends Controller
     {
         $this->authorize('view', $proformaInvoice);
 
-        $proformaInvoice->load(['client', 'items', 'user.agency', 'convertedInvoice']);
+        $proformaInvoice->load(['client', 'items', 'user.agency', 'user.bankAccounts', 'convertedInvoice']);
 
         return Inertia::render('ProformaInvoices/Show', [
             'proforma' => $proformaInvoice,

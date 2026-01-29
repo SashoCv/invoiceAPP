@@ -171,7 +171,7 @@ class OfferController extends Controller
     {
         $this->authorize('view', $offer);
 
-        $offer->load(['client', 'items', 'user.agency', 'convertedInvoice']);
+        $offer->load(['client', 'items', 'user.agency', 'user.bankAccounts', 'convertedInvoice']);
 
         return Inertia::render('Offers/Show', [
             'offer' => $offer,

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
@@ -12,13 +13,25 @@ import {
     TableRow,
     TableFooter,
 } from '@/Components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+} from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { ArrowLeft, Pencil, Copy, FileText, Printer, ArrowRightLeft } from 'lucide-react';
-import type { ProformaInvoice } from '@/types';
+import { ArrowLeft, Pencil, Copy, FileText, Printer, ArrowRightLeft, Eye, Download } from 'lucide-react';
+import InvoicePreview from '@/Components/InvoicePreview';
+import type { ProformaInvoice, Agency, BankAccount } from '@/types';
 
 interface ShowProformaProps {
-    proforma: ProformaInvoice;
+    proforma: ProformaInvoice & {
+        user?: {
+            agency?: Agency;
+            bank_accounts?: BankAccount[];
+            invoice_template?: 'classic' | 'modern' | 'minimal';
+            proforma_template?: 'classic' | 'modern' | 'minimal';
+        };
+    };
 }
 
 const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive' | 'warning'> = {
@@ -29,6 +42,16 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 
 export default function ShowProforma({ proforma }: ShowProformaProps) {
     const { t } = useTranslation();
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    const agency = proforma.user?.agency;
+    const bankAccount = proforma.user?.bank_accounts?.find(
+        (acc) => acc.currency === proforma.currency && acc.is_default
+    ) || proforma.user?.bank_accounts?.find(
+        (acc) => acc.currency === proforma.currency
+    ) || proforma.user?.bank_accounts?.find(
+        (acc) => acc.is_default
+    );
 
     const handleConvertToInvoice = () => {
         router.post(`/proforma-invoices/${proforma.id}/convert`);
@@ -81,8 +104,18 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                             {t('proforma.duplicate')}
                         </Link>
                     </Button>
+                    <Button variant="outline" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        {t('proforma.preview')}
+                    </Button>
                     <Button variant="outline" asChild>
-                        <a href={`/proforma-invoices/${proforma.id}/pdf`} target="_blank" className="flex items-center gap-2">
+                        <a href={`/proforma-invoices/${proforma.id}/pdf`} className="flex items-center gap-2">
+                            <Download className="w-4 h-4" />
+                            {t('proforma.download_pdf')}
+                        </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={`/proforma-invoices/${proforma.id}/pdf/preview`} target="_blank" className="flex items-center gap-2">
                             <Printer className="w-4 h-4" />
                             {t('proforma.print_pdf')}
                         </a>
@@ -94,6 +127,19 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                         </Button>
                     )}
                 </div>
+
+                {/* Preview Dialog */}
+                <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+                        <InvoicePreview
+                            document={proforma}
+                            type="proforma"
+                            agency={agency}
+                            bankAccount={bankAccount}
+                            template={proforma.user?.proforma_template || proforma.user?.invoice_template || 'classic'}
+                        />
+                    </DialogContent>
+                </Dialog>
 
                 {/* Converted Invoice Link */}
                 {proforma.convertedInvoice && (

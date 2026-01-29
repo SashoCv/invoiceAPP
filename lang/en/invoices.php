@@ -104,7 +104,9 @@ return [
     'invoice_number' => 'Invoice #',
     'payment_due' => 'Payment Due',
     'tax_number' => 'Tax Number',
-    'print_pdf' => 'Print / PDF',
+    'print_pdf' => 'Print PDF',
+    'preview' => 'Preview',
+    'download_pdf' => 'Download PDF',
 
     // Invoice Numbering
     'prefix_placeholder' => 'INV',

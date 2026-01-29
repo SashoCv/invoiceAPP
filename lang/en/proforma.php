@@ -59,6 +59,9 @@ return [
     'delete_proforma' => 'Delete Proforma',
     'delete_confirm' => 'Are you sure you want to delete this proforma?',
     'print' => 'Print',
+    'print_pdf' => 'Print PDF',
+    'preview' => 'Preview',
+    'download_pdf' => 'Download PDF',
     'convert_to_invoice' => 'Convert to Invoice',
 
     // Filters
@@ -77,9 +80,13 @@ return [
 
     // Show
     'proforma_details' => 'Proforma Details',
+    'client_details' => 'Client Details',
     'from' => 'From',
     'to' => 'To',
     'proforma_number' => 'Proforma No.',
+    'tax_number' => 'Tax No.',
+    'back_to_list' => 'Back to list',
+    'converted_to' => 'Converted to',
 
     // Numbering
     'prefix_placeholder' => 'PRO',

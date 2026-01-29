@@ -32,6 +32,7 @@ class TemplateController extends Controller
             'currentInvoiceTemplate' => $request->user()->invoice_template ?? 'classic',
             'currentProformaTemplate' => $request->user()->proforma_template ?? 'classic',
             'currentOfferTemplate' => $request->user()->offer_template ?? 'classic',
+            'agency' => $request->user()->agency,
         ]);
     }
 
