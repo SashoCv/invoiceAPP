@@ -19,6 +19,8 @@ return [
     'actions' => 'Акции',
 
     // Form
+    'client_info' => 'Информации за клиент',
+    'client_info_description' => 'Внесете ги податоците за клиентот',
     'company' => 'Име на компанија',
     'company_placeholder' => 'Оставете празно за физички лица',
     'contact_person' => 'Контакт лице',

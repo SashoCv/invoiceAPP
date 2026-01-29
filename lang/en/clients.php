@@ -19,6 +19,8 @@ return [
     'actions' => 'Actions',
 
     // Form
+    'client_info' => 'Client Information',
+    'client_info_description' => 'Enter the client details',
     'company' => 'Company Name',
     'company_placeholder' => 'Leave empty for individuals',
     'contact_person' => 'Contact Person',
