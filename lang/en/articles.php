@@ -27,6 +27,10 @@ return [
     'is_active' => 'Active',
 
     // Actions
+    'back_to_list' => 'Back to list',
+    'create_title' => 'New Article',
+    'create_subtitle' => 'Add a new product or service',
+    'article_info' => 'Article Information',
     'save' => 'Save Article',
     'cancel' => 'Cancel',
     'edit' => 'Edit',

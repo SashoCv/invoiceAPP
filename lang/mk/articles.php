@@ -27,6 +27,10 @@ return [
     'is_active' => 'Активен',
 
     // Actions
+    'back_to_list' => 'Назад кон листа',
+    'create_title' => 'Нов артикл',
+    'create_subtitle' => 'Додадете нов производ или услуга',
+    'article_info' => 'Информации за артикл',
     'save' => 'Зачувај артикл',
     'cancel' => 'Откажи',
     'edit' => 'Измени',
