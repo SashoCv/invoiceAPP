@@ -33,6 +33,8 @@ return [
     'country' => 'Country',
 
     // Actions
+    'back_to_list' => 'Back to list',
+    'edit_title' => 'Edit Client',
     'save' => 'Save Client',
     'cancel' => 'Cancel',
     'edit' => 'Edit',

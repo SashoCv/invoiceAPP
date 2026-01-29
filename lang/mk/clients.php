@@ -33,6 +33,8 @@ return [
     'country' => 'Држава',
 
     // Actions
+    'back_to_list' => 'Назад кон листа',
+    'edit_title' => 'Измени клиент',
     'save' => 'Зачувај клиент',
     'cancel' => 'Откажи',
     'edit' => 'Измени',
