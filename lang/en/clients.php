@@ -35,6 +35,7 @@ return [
     // Actions
     'save' => 'Save Client',
     'cancel' => 'Cancel',
+    'edit' => 'Edit',
     'delete' => 'Delete',
     'archive' => 'Archive',
     'restore' => 'Restore',

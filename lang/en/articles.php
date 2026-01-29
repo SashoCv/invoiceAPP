@@ -29,6 +29,7 @@ return [
     // Actions
     'save' => 'Save Article',
     'cancel' => 'Cancel',
+    'edit' => 'Edit',
     'delete' => 'Delete',
     'delete_article' => 'Delete Article',
     'delete_confirm' => 'Are you sure you want to delete this article?',

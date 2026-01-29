@@ -35,6 +35,7 @@ return [
     // Actions
     'save' => 'Зачувај клиент',
     'cancel' => 'Откажи',
+    'edit' => 'Измени',
     'delete' => 'Избриши',
     'archive' => 'Архивирај',
     'restore' => 'Врати',

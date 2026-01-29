@@ -8,6 +8,7 @@ return [
     'profile_updated' => 'Profile updated successfully',
     'agency_updated' => 'Agency information saved',
     'bank_account_created' => 'Bank account added',
+    'bank_account_updated' => 'Bank account updated',
     'bank_account_deleted' => 'Bank account deleted',
     'password_updated' => 'Password changed successfully',
     'no_agency' => 'Create an agency first',

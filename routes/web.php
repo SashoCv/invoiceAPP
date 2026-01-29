@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
         // Bank Accounts
         Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts');
         Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
+        Route::put('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
         Route::delete('/bank-accounts/{bankAccount}', [BankAccountController::class, 'destroy'])->name('bank-accounts.destroy');
 
         // Templates

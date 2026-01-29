@@ -69,6 +69,38 @@ class BankAccountController extends Controller
         return back()->with('success', __('toast.bank_account_created'));
     }
 
+    public function update(Request $request, BankAccount $bankAccount): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bank_name' => ['required', 'string', 'max:255'],
+            'account_number' => ['required', 'string', 'max:50'],
+            'iban' => ['nullable', 'string', 'max:50'],
+            'swift' => ['nullable', 'string', 'max:20'],
+            'currency' => ['required', 'in:MKD,EUR,USD,GBP,CHF'],
+            'type' => ['required', 'in:denar,foreign'],
+            'is_default' => ['nullable', 'boolean'],
+        ]);
+
+        $user = $request->user();
+
+        // If this is set as default, unset other defaults for same owner
+        if (!empty($validated['is_default'])) {
+            if ($bankAccount->user_id) {
+                BankAccount::where('user_id', $bankAccount->user_id)
+                    ->where('id', '!=', $bankAccount->id)
+                    ->update(['is_default' => false]);
+            } elseif ($bankAccount->agency_id) {
+                BankAccount::where('agency_id', $bankAccount->agency_id)
+                    ->where('id', '!=', $bankAccount->id)
+                    ->update(['is_default' => false]);
+            }
+        }
+
+        $bankAccount->update($validated);
+
+        return back()->with('success', __('toast.bank_account_updated'));
+    }
+
     public function destroy(BankAccount $bankAccount): RedirectResponse
     {
         $bankAccount->delete();
