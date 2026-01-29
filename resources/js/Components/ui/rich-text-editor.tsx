@@ -69,10 +69,15 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         ],
         content: value,
         onUpdate: ({ editor }) => {
-            // Preserve empty paragraphs by adding <br> tags
-            // This ensures empty lines are rendered in the output
             let html = editor.getHTML();
+            // Preserve empty paragraphs
             html = html.replace(/<p><\/p>/g, '<p><br></p>');
+            // Preserve leading spaces in paragraphs by converting to &nbsp;
+            html = html.replace(/<p>(\s+)/g, (match, spaces) => {
+                return '<p>' + spaces.replace(/ /g, '&nbsp;');
+            });
+            // Preserve multiple consecutive spaces
+            html = html.replace(/  /g, ' &nbsp;');
             onChange(html);
         },
         editorProps: {
