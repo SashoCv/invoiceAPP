@@ -49,6 +49,7 @@ return [
 
     // Actions
     'view' => 'Преглед',
+    'edit' => 'Измени',
     'duplicate' => 'Копирај',
     'duplicate_proforma' => 'Копирај профактура',
     'duplicate_from' => 'Копија од',

@@ -49,6 +49,7 @@ return [
 
     // Actions
     'view' => 'View',
+    'edit' => 'Edit',
     'duplicate' => 'Duplicate',
     'duplicate_proforma' => 'Duplicate Proforma',
     'duplicate_from' => 'Copy from',
