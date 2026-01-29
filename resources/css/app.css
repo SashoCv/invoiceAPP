@@ -57,3 +57,14 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Ensure empty paragraphs in prose content render with proper height */
+.prose p:empty,
+.prose p:has(br:only-child) {
+    min-height: 1.5em;
+}
+
+.prose p br {
+    display: block;
+    content: "";
+}

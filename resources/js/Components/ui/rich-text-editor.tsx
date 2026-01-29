@@ -69,7 +69,11 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
         ],
         content: value,
         onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+            // Preserve empty paragraphs by adding <br> tags
+            // This ensures empty lines are rendered in the output
+            let html = editor.getHTML();
+            html = html.replace(/<p><\/p>/g, '<p><br></p>');
+            onChange(html);
         },
         editorProps: {
             attributes: {
@@ -216,6 +220,11 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
                 }
                 .tiptap p {
                     margin-bottom: 0.5rem;
+                    min-height: 1.5em;
+                }
+                .tiptap p:empty::before {
+                    content: '';
+                    display: inline-block;
                 }
                 .tiptap ul, .tiptap ol {
                     padding-left: 1.5rem;

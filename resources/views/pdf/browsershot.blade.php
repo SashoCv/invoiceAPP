@@ -23,6 +23,18 @@
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
+
+        /* Preserve empty paragraphs in rich text content */
+        .prose p {
+            min-height: 1.5em;
+        }
+        .prose p:empty::before {
+            content: '\00a0';
+        }
+        .prose p br {
+            display: block;
+            content: "";
+        }
     </style>
 </head>
 <body class="bg-white">
