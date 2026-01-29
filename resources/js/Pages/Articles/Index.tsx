@@ -25,6 +25,7 @@ import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber } from '@/lib/utils';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
+import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
 import type { Article, PaginatedData } from '@/types';
@@ -197,21 +198,21 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" asChild title={t('articles.edit')}>
-                                                        <Link href={`/articles/${article.id}/edit`}>
-                                                            <Pencil className="w-4 h-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setDeleteArticle(article)}
-                                                        title={t('articles.delete')}
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                                    </Button>
-                                                </div>
+                                                <ActionDropdown
+                                                    actions={[
+                                                        {
+                                                            label: t('articles.edit'),
+                                                            icon: Pencil,
+                                                            href: `/articles/${article.id}/edit`,
+                                                        },
+                                                        {
+                                                            label: t('articles.delete'),
+                                                            icon: Trash2,
+                                                            onClick: () => setDeleteArticle(article),
+                                                            variant: 'destructive',
+                                                        },
+                                                    ]}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))}

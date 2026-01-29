@@ -24,6 +24,7 @@ import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { Plus, Archive, Pencil, Trash2, Users } from 'lucide-react';
+import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
 import type { Client, PaginatedData } from '@/types';
@@ -216,20 +217,21 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" asChild>
-                                                        <Link href={`/clients/${client.id}/edit`}>
-                                                            <Pencil className="w-4 h-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setDeleteClient(client)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                                    </Button>
-                                                </div>
+                                                <ActionDropdown
+                                                    actions={[
+                                                        {
+                                                            label: t('clients.edit'),
+                                                            icon: Pencil,
+                                                            href: `/clients/${client.id}/edit`,
+                                                        },
+                                                        {
+                                                            label: t('clients.archive'),
+                                                            icon: Trash2,
+                                                            onClick: () => setDeleteClient(client),
+                                                            variant: 'destructive',
+                                                        },
+                                                    ]}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     ))}

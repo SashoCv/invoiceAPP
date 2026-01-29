@@ -23,6 +23,7 @@ import {
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { CreditCard, Plus, Trash2, Building2, UserIcon } from 'lucide-react';
+import ActionDropdown from '@/Components/ActionDropdown';
 import type { BankAccount } from '@/types';
 
 interface BankAccountsPageProps {
@@ -232,13 +233,16 @@ export default function BankAccountsPage({ bankAccounts, hasAgency }: BankAccoun
                                                 )}
                                             </div>
                                         </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(account.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4 text-destructive" />
-                                        </Button>
+                                        <ActionDropdown
+                                            actions={[
+                                                {
+                                                    label: t('settings.delete_bank_account'),
+                                                    icon: Trash2,
+                                                    onClick: () => handleDelete(account.id),
+                                                    variant: 'destructive',
+                                                },
+                                            ]}
+                                        />
                                     </div>
                                 ))}
                             </div>
