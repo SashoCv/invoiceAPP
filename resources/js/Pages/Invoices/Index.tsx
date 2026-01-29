@@ -286,33 +286,31 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                         </Button>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" asChild title={t('invoices.view')}>
-                                                            <Link href={`/invoices/${invoice.id}`}>
-                                                                <Eye className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" asChild title={t('invoices.edit_invoice')}>
-                                                            <Link href={`/invoices/${invoice.id}/edit`}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <ActionDropdown
-                                                            actions={[
-                                                                {
-                                                                    label: t('invoices.duplicate'),
-                                                                    icon: Copy,
-                                                                    href: `/invoices/${invoice.id}/duplicate`,
-                                                                },
-                                                                {
-                                                                    label: t('invoices.delete'),
-                                                                    icon: Trash2,
-                                                                    onClick: () => setDeleteInvoice(invoice),
-                                                                    variant: 'destructive',
-                                                                },
-                                                            ]}
-                                                        />
-                                                    </div>
+                                                    <ActionDropdown
+                                                        actions={[
+                                                            {
+                                                                label: t('invoices.view'),
+                                                                icon: Eye,
+                                                                href: `/invoices/${invoice.id}`,
+                                                            },
+                                                            {
+                                                                label: t('invoices.edit_invoice'),
+                                                                icon: Pencil,
+                                                                href: `/invoices/${invoice.id}/edit`,
+                                                            },
+                                                            {
+                                                                label: t('invoices.duplicate'),
+                                                                icon: Copy,
+                                                                href: `/invoices/${invoice.id}/duplicate`,
+                                                            },
+                                                            {
+                                                                label: t('invoices.delete'),
+                                                                icon: Trash2,
+                                                                onClick: () => setDeleteInvoice(invoice),
+                                                                variant: 'destructive',
+                                                            },
+                                                        ]}
+                                                    />
                                                 )}
                                             </TableCell>
                                         </TableRow>

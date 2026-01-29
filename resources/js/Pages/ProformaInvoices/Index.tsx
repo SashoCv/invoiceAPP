@@ -284,39 +284,37 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                                         </Button>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" asChild title={t('proforma.view')}>
-                                                            <Link href={`/proforma-invoices/${proforma.id}`}>
-                                                                <Eye className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" asChild title={t('proforma.edit')}>
-                                                            <Link href={`/proforma-invoices/${proforma.id}/edit`}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <ActionDropdown
-                                                            actions={[
-                                                                {
-                                                                    label: t('proforma.convert_to_invoice'),
-                                                                    icon: ArrowRightLeft,
-                                                                    onClick: () => handleConvertToInvoice(proforma.id),
-                                                                    hidden: proforma.status === 'converted_to_invoice',
-                                                                },
-                                                                {
-                                                                    label: t('proforma.duplicate'),
-                                                                    icon: Copy,
-                                                                    href: `/proforma-invoices/${proforma.id}/duplicate`,
-                                                                },
-                                                                {
-                                                                    label: t('proforma.delete'),
-                                                                    icon: Trash2,
-                                                                    onClick: () => setDeleteProforma(proforma),
-                                                                    variant: 'destructive',
-                                                                },
-                                                            ]}
-                                                        />
-                                                    </div>
+                                                    <ActionDropdown
+                                                        actions={[
+                                                            {
+                                                                label: t('proforma.view'),
+                                                                icon: Eye,
+                                                                href: `/proforma-invoices/${proforma.id}`,
+                                                            },
+                                                            {
+                                                                label: t('proforma.edit'),
+                                                                icon: Pencil,
+                                                                href: `/proforma-invoices/${proforma.id}/edit`,
+                                                            },
+                                                            {
+                                                                label: t('proforma.convert_to_invoice'),
+                                                                icon: ArrowRightLeft,
+                                                                onClick: () => handleConvertToInvoice(proforma.id),
+                                                                hidden: proforma.status === 'converted_to_invoice',
+                                                            },
+                                                            {
+                                                                label: t('proforma.duplicate'),
+                                                                icon: Copy,
+                                                                href: `/proforma-invoices/${proforma.id}/duplicate`,
+                                                            },
+                                                            {
+                                                                label: t('proforma.delete'),
+                                                                icon: Trash2,
+                                                                onClick: () => setDeleteProforma(proforma),
+                                                                variant: 'destructive',
+                                                            },
+                                                        ]}
+                                                    />
                                                 )}
                                             </TableCell>
                                         </TableRow>

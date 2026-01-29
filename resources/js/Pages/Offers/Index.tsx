@@ -302,51 +302,49 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                         </Button>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" asChild title={t('offers.view')}>
-                                                            <Link href={`/offers/${offer.id}`}>
-                                                                <Eye className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" asChild title={t('offers.edit')}>
-                                                            <Link href={`/offers/${offer.id}/edit`}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <ActionDropdown
-                                                            actions={[
-                                                                {
-                                                                    label: t('offers.accept'),
-                                                                    icon: Check,
-                                                                    onClick: () => handleAccept(offer.id),
-                                                                    hidden: offer.status !== 'sent',
-                                                                },
-                                                                {
-                                                                    label: t('offers.reject'),
-                                                                    icon: X,
-                                                                    onClick: () => handleReject(offer.id),
-                                                                    hidden: offer.status !== 'sent',
-                                                                },
-                                                                {
-                                                                    label: t('offers.convert_to_invoice'),
-                                                                    icon: ArrowRightLeft,
-                                                                    onClick: () => handleConvertToInvoice(offer.id),
-                                                                    hidden: !(offer.status === 'accepted' && !offer.converted_invoice_id && offer.has_items),
-                                                                },
-                                                                {
-                                                                    label: t('offers.duplicate'),
-                                                                    icon: Copy,
-                                                                    href: `/offers/${offer.id}/duplicate`,
-                                                                },
-                                                                {
-                                                                    label: t('offers.delete'),
-                                                                    icon: Trash2,
-                                                                    onClick: () => setDeleteOffer(offer),
-                                                                    variant: 'destructive',
-                                                                },
-                                                            ]}
-                                                        />
-                                                    </div>
+                                                    <ActionDropdown
+                                                        actions={[
+                                                            {
+                                                                label: t('offers.view'),
+                                                                icon: Eye,
+                                                                href: `/offers/${offer.id}`,
+                                                            },
+                                                            {
+                                                                label: t('offers.edit'),
+                                                                icon: Pencil,
+                                                                href: `/offers/${offer.id}/edit`,
+                                                            },
+                                                            {
+                                                                label: t('offers.accept'),
+                                                                icon: Check,
+                                                                onClick: () => handleAccept(offer.id),
+                                                                hidden: offer.status !== 'sent',
+                                                            },
+                                                            {
+                                                                label: t('offers.reject'),
+                                                                icon: X,
+                                                                onClick: () => handleReject(offer.id),
+                                                                hidden: offer.status !== 'sent',
+                                                            },
+                                                            {
+                                                                label: t('offers.convert_to_invoice'),
+                                                                icon: ArrowRightLeft,
+                                                                onClick: () => handleConvertToInvoice(offer.id),
+                                                                hidden: !(offer.status === 'accepted' && !offer.converted_invoice_id && offer.has_items),
+                                                            },
+                                                            {
+                                                                label: t('offers.duplicate'),
+                                                                icon: Copy,
+                                                                href: `/offers/${offer.id}/duplicate`,
+                                                            },
+                                                            {
+                                                                label: t('offers.delete'),
+                                                                icon: Trash2,
+                                                                onClick: () => setDeleteOffer(offer),
+                                                                variant: 'destructive',
+                                                            },
+                                                        ]}
+                                                    />
                                                 )}
                                             </TableCell>
                                         </TableRow>
