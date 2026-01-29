@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Invoice;
 use Carbon\Carbon;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
         $totalInvoices = Invoice::count();
         $paidInvoices = Invoice::where('status', 'paid')->count();
@@ -50,18 +51,18 @@ class DashboardController extends Controller
             'overdue' => $overdueInvoices,
         ];
 
-        return view('dashboard', compact(
-            'totalInvoices',
-            'paidInvoices',
-            'pendingInvoices',
-            'overdueInvoices',
-            'totalRevenue',
-            'pendingAmount',
-            'overdueAmount',
-            'totalClients',
-            'monthlyRevenue',
-            'recentInvoices',
-            'statusDistribution'
-        ));
+        return Inertia::render('Dashboard', [
+            'totalInvoices' => $totalInvoices,
+            'paidInvoices' => $paidInvoices,
+            'pendingInvoices' => $pendingInvoices,
+            'overdueInvoices' => $overdueInvoices,
+            'totalRevenue' => $totalRevenue,
+            'pendingAmount' => $pendingAmount,
+            'overdueAmount' => $overdueAmount,
+            'totalClients' => $totalClients,
+            'monthlyRevenue' => $monthlyRevenue,
+            'recentInvoices' => $recentInvoices,
+            'statusDistribution' => $statusDistribution,
+        ]);
     }
 }

@@ -8,6 +8,8 @@ return [
     'edit_article' => 'Edit Article',
     'no_articles' => 'No articles yet',
     'add_first_article' => 'Add your first article',
+    'create_first_description' => 'Add your first article to get started',
+    'new_article' => 'New Article',
 
     // Table
     'article' => 'Article',

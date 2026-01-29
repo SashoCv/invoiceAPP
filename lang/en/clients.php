@@ -8,6 +8,7 @@ return [
     'edit_client' => 'Edit Client',
     'no_clients' => 'No clients yet',
     'add_first_client' => 'Add your first client',
+    'add_first_client_description' => 'Add your first client to get started',
 
     // Table
     'client' => 'Client',

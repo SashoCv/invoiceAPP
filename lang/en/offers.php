@@ -6,6 +6,7 @@ return [
     'new_offer' => 'New Offer',
     'no_offers' => 'No offers found',
     'create_first' => 'Create your first offer',
+    'create_first_description' => 'Create your first offer to get started',
 
     // Table
     'offer' => 'Offer',
@@ -24,8 +25,17 @@ return [
     'status_rejected' => 'Rejected',
 
     // Form
+    'create_title' => 'New Offer',
+    'create_subtitle' => 'Create a new offer for your clients',
+    'duplicate_title' => 'Duplicate Offer',
+    'basic_info' => 'Basic Information',
     'create_offer' => 'Create Offer',
     'edit_offer' => 'Edit Offer',
+    'prefix' => 'Prefix',
+    'number' => 'Number',
+    'year' => 'Year',
+    'save_offer' => 'Save Offer',
+    'article' => 'Article',
     'select_client' => 'Select client',
     'issue_date' => 'Issue Date',
     'valid_until' => 'Valid Until',
@@ -80,9 +90,16 @@ return [
 
     // Show
     'offer_details' => 'Offer Details',
+    'client_details' => 'Client Details',
     'from' => 'From',
     'to' => 'To',
     'offer_number' => 'Offer No.',
+    'tax_number' => 'Tax No.',
+    'tax_rate' => 'Tax Rate',
+    'back_to_list' => 'Back to list',
+    'print_pdf' => 'Print PDF',
+    'converted_to' => 'Converted to',
+    'edit' => 'Edit',
 
     // Numbering
     'prefix_placeholder' => 'OFF',

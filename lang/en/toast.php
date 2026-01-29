@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // Generic
+    'success' => 'Success',
+    'error' => 'Error',
+
     'profile_updated' => 'Profile updated successfully',
     'agency_updated' => 'Agency information saved',
     'bank_account_created' => 'Bank account added',

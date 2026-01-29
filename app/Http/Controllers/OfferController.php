@@ -7,13 +7,14 @@ use App\Models\Offer;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class OfferController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $query = $request->user()->offers()->with('client');
 
@@ -68,10 +69,15 @@ class OfferController extends Controller
 
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
 
-        return view('offers.index', compact('offers', 'clients', 'showDeleted'));
+        return Inertia::render('Offers/Index', [
+            'offers' => $offers,
+            'clients' => $clients,
+            'showDeleted' => $showDeleted,
+            'filters' => $request->only(['offer', 'client', 'status', 'date_from', 'date_to', 'per_page', 'sort', 'dir']),
+        ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
@@ -79,7 +85,12 @@ class OfferController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = Offer::getNextSequence($request->user()->id, $currentYear);
 
-        return view('offers.create', compact('clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('Offers/Create', [
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -123,7 +134,7 @@ class OfferController extends Controller
         }
 
         $offer = $request->user()->offers()->create([
-            'offer_number' => uniqid('OFF'),
+            'offer_number' => Offer::formatOfferNumber($validated['offer_prefix'] ?? null, $offerYear, $validated['offer_sequence']),
             'offer_prefix' => $validated['offer_prefix'],
             'offer_sequence' => $validated['offer_sequence'],
             'offer_year' => $offerYear,
@@ -156,16 +167,18 @@ class OfferController extends Controller
         return redirect()->route('offers.show', $offer)->with('success', __('toast.offer_created'));
     }
 
-    public function show(Offer $offer): View
+    public function show(Offer $offer): Response
     {
         $this->authorize('view', $offer);
 
         $offer->load(['client', 'items', 'user.agency', 'convertedInvoice']);
 
-        return view('offers.show', compact('offer'));
+        return Inertia::render('Offers/Show', [
+            'offer' => $offer,
+        ]);
     }
 
-    public function edit(Offer $offer, Request $request): View
+    public function edit(Offer $offer, Request $request): Response
     {
         $this->authorize('update', $offer);
 
@@ -173,7 +186,11 @@ class OfferController extends Controller
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $offer->load('items');
 
-        return view('offers.edit', compact('offer', 'clients', 'articles'));
+        return Inertia::render('Offers/Edit', [
+            'offer' => $offer,
+            'clients' => $clients,
+            'articles' => $articles,
+        ]);
     }
 
     public function update(Request $request, Offer $offer): RedirectResponse
@@ -221,6 +238,7 @@ class OfferController extends Controller
         }
 
         $offer->update([
+            'offer_number' => Offer::formatOfferNumber($validated['offer_prefix'] ?? null, $offerYear, $validated['offer_sequence']),
             'client_id' => $validated['client_id'],
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
@@ -264,7 +282,7 @@ class OfferController extends Controller
         return redirect()->route('offers.index')->with('success', __('toast.offer_deleted'));
     }
 
-    public function duplicate(Offer $offer, Request $request): View
+    public function duplicate(Offer $offer, Request $request): Response
     {
         $this->authorize('view', $offer);
 
@@ -275,7 +293,14 @@ class OfferController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = Offer::getNextSequence($request->user()->id, $currentYear);
 
-        return view('offers.duplicate', compact('offer', 'clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('Offers/Create', [
+            'offer' => $offer,
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+            'isDuplicate' => true,
+        ]);
     }
 
     public function restore(int $id, Request $request): RedirectResponse
@@ -337,7 +362,7 @@ class OfferController extends Controller
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
 
         $invoice = $request->user()->invoices()->create([
-            'invoice_number' => Invoice::generateInvoiceNumber(),
+            'invoice_number' => Invoice::formatInvoiceNumber($offer->offer_prefix, $currentYear, $nextSequence),
             'invoice_prefix' => $offer->offer_prefix,
             'invoice_sequence' => $nextSequence,
             'invoice_year' => $currentYear,

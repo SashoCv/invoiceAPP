@@ -6,13 +6,14 @@ use App\Models\Article;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ArticleController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $query = $request->user()->articles();
 
@@ -43,12 +44,15 @@ class ArticleController extends Controller
         $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $articles = $query->paginate($perPage)->withQueryString();
 
-        return view('articles.index', compact('articles'));
+        return Inertia::render('Articles/Index', [
+            'articles' => $articles,
+            'filters' => $request->only(['search', 'status', 'per_page', 'sort', 'dir']),
+        ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('articles.create');
+        return Inertia::render('Articles/Create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -66,11 +70,13 @@ class ArticleController extends Controller
         return redirect()->route('articles.index')->with('success', __('toast.article_created'));
     }
 
-    public function edit(Article $article): View
+    public function edit(Article $article): Response
     {
         $this->authorize('update', $article);
 
-        return view('articles.edit', compact('article'));
+        return Inertia::render('Articles/Edit', [
+            'article' => $article,
+        ]);
     }
 
     public function update(Request $request, Article $article): RedirectResponse

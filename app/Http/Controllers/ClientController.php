@@ -7,13 +7,14 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ClientController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $query = $request->user()->clients()
             ->withCount(['invoices', 'proformaInvoices', 'contracts']);
@@ -55,22 +56,29 @@ class ClientController extends Controller
         // Get unique cities for filter dropdown
         $cities = $request->user()->clients()->whereNotNull('city')->distinct()->pluck('city')->sort();
 
-        return view('clients.index', compact('clients', 'archivedCount', 'cities'));
+        return Inertia::render('Clients/Index', [
+            'clients' => $clients,
+            'archivedCount' => $archivedCount,
+            'cities' => $cities->values()->all(),
+            'filters' => $request->only(['search', 'city', 'per_page', 'sort', 'dir']),
+        ]);
     }
 
-    public function archived(Request $request): View
+    public function archived(Request $request): Response
     {
         $clients = $request->user()->clients()
             ->onlyTrashed()
             ->orderBy('deleted_at', 'desc')
             ->get();
 
-        return view('clients.archived', compact('clients'));
+        return Inertia::render('Clients/Archived', [
+            'clients' => $clients,
+        ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('clients.create');
+        return Inertia::render('Clients/Create');
     }
 
     public function store(Request $request): RedirectResponse
@@ -100,14 +108,16 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', __('toast.client_created'));
     }
 
-    public function show(Client $client): View
+    public function show(Client $client): Response
     {
         $this->authorize('view', $client);
 
-        return view('clients.show', compact('client'));
+        return Inertia::render('Clients/Show', [
+            'client' => $client,
+        ]);
     }
 
-    public function edit(Client $client): View
+    public function edit(Client $client): Response
     {
         $this->authorize('update', $client);
 
@@ -116,7 +126,10 @@ class ClientController extends Controller
             ->orderBy('uploaded_at', 'desc')
             ->get();
 
-        return view('clients.edit', compact('client', 'contracts'));
+        return Inertia::render('Clients/Edit', [
+            'client' => $client,
+            'contracts' => $contracts,
+        ]);
     }
 
     public function update(Request $request, Client $client): RedirectResponse

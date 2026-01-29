@@ -6,6 +6,7 @@ return [
     'new_proforma' => 'New Proforma',
     'no_proformas' => 'No proforma invoices found',
     'create_first' => 'Create your first proforma invoice',
+    'create_first_description' => 'Create your first proforma invoice to get started',
 
     // Table
     'proforma' => 'Proforma',

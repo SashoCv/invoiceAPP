@@ -6,6 +6,7 @@ return [
     'new_invoice' => 'New Invoice',
     'no_invoices' => 'No invoices yet',
     'create_first' => 'Create your first invoice',
+    'create_first_description' => 'Create your first invoice to get started',
 
     // Table
     'invoice' => 'Invoice',
@@ -25,6 +26,18 @@ return [
     'status_cancelled' => 'Cancelled',
 
     // Form
+    'create_title' => 'New Invoice',
+    'create_subtitle' => 'Create a new invoice',
+    'duplicate_title' => 'Duplicate Invoice',
+    'edit_title' => 'Edit Invoice',
+    'back_to_list' => 'Back to invoices',
+    'back_to_invoice' => 'Back to invoice',
+    'basic_info' => 'Basic Information',
+    'prefix' => 'Prefix',
+    'number' => 'Number',
+    'year' => 'Year',
+    'save_invoice' => 'Save Invoice',
+    'update_invoice' => 'Update Invoice',
     'create_invoice' => 'Create Invoice',
     'edit_invoice' => 'Edit Invoice',
     'select_client' => 'Select client',
@@ -37,9 +50,14 @@ return [
     // Items
     'items' => 'Items',
     'add_item' => 'Add Item',
-    'select_article' => 'Select article or type manually',
-    'description' => 'Description',
-    'quantity' => 'Qty',
+    'article' => 'Article',
+    'select_article' => 'Select article',
+    'manual_entry' => 'Manual entry',
+    'or_manual' => 'or enter manually',
+    'description' => 'Service/Product description',
+    'item_description' => 'Enter description...',
+    'quantity' => 'Quantity',
+    'unit' => 'Unit',
     'unit_price' => 'Price',
     'item_total' => 'Total',
     'remove_item' => 'Remove',
@@ -80,10 +98,13 @@ return [
 
     // Show
     'invoice_details' => 'Invoice Details',
+    'client_details' => 'Client Details',
     'from' => 'From',
     'to' => 'To',
     'invoice_number' => 'Invoice #',
     'payment_due' => 'Payment Due',
+    'tax_number' => 'Tax Number',
+    'print_pdf' => 'Print / PDF',
 
     // Invoice Numbering
     'prefix_placeholder' => 'INV',

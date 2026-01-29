@@ -8,6 +8,7 @@ return [
     'edit_client' => 'Измени клиент',
     'no_clients' => 'Немате клиенти',
     'add_first_client' => 'Додадете го вашиот прв клиент',
+    'add_first_client_description' => 'Додадете го вашиот прв клиент за да започнете со работа',
 
     // Table
     'client' => 'Клиент',

@@ -2,6 +2,7 @@
 
 return [
     'title' => 'Подесувања',
+    'subtitle' => 'Управувајте со вашиот профил и подесувања',
 
     // Navigation tabs
     'profile' => 'Профил',
@@ -9,6 +10,7 @@ return [
     'bank_accounts' => 'Банкарски сметки',
 
     // Profile
+    'profile_title' => 'Профил',
     'profile_info' => 'Информации за профил',
     'profile_info_desc' => 'Ажурирајте ги информациите за вашиот профил и е-пошта.',
     'name' => 'Корисничко име',
@@ -17,24 +19,31 @@ return [
     'email' => 'Е-пошта',
     'phone' => 'Телефон',
     'avatar' => 'Профилна слика',
+    'avatar_hint' => 'PNG, JPG до 2MB',
     'change_avatar' => 'Промени слика',
     'remove_avatar' => 'Отстрани',
     'save' => 'Зачувај',
+    'save_profile' => 'Зачувај профил',
     'saved' => 'Зачувано',
     'cancel' => 'Откажи',
 
     // Password
     'password' => 'Лозинка',
     'password_desc' => 'Осигурајте се дека вашата сметка користи долга, случајна лозинка.',
+    'change_password' => 'Промени лозинка',
+    'change_password_desc' => 'Осигурајте се дека вашата сметка користи долга, случајна лозинка за да остане безбедна.',
     'current_password' => 'Сегашна лозинка',
     'new_password' => 'Нова лозинка',
     'confirm_password' => 'Потврди лозинка',
     'update_password' => 'Ажурирај лозинка',
 
     // Agency
+    'agency_title' => 'Агенција',
     'agency_info' => 'Информации за агенција',
     'agency_info_desc' => 'Податоци за вашата компанија/агенција кои ќе се прикажуваат на фактурите.',
     'agency_name' => 'Име на агенција',
+    'company_name' => 'Име на компанија',
+    'company_email' => 'Е-пошта на компанија',
     'address' => 'Адреса',
     'city' => 'Град',
     'postal_code' => 'Поштенски број',
@@ -47,11 +56,14 @@ return [
     'upload_logo' => 'Прикачи лого',
     'remove_logo' => 'Отстрани лого',
     'logo_hint' => 'PNG, JPG до 2MB. Ќе се прикажува на фактури.',
+    'save_agency' => 'Зачувај агенција',
 
     // Bank accounts
     'bank_accounts_title' => 'Банкарски сметки',
     'bank_accounts_desc' => 'Додадете ги вашите банкарски сметки за прием на плаќања.',
     'add_account' => 'Додади сметка',
+    'add_bank_account' => 'Додади банкарска сметка',
+    'save_bank_account' => 'Зачувај сметка',
     'bank_name' => 'Име на банка',
     'account_number' => 'Број на сметка',
     'iban' => 'IBAN',
@@ -61,13 +73,19 @@ return [
     'type_denar' => 'Денарска',
     'type_foreign' => 'Девизна',
     'is_default' => 'Основна сметка',
+    'set_as_default' => 'Постави како основна',
+    'default' => 'Основна',
     'no_accounts' => 'Немате додадено банкарски сметки.',
+    'no_bank_accounts' => 'Немате додадено банкарски сметки.',
     'delete_account' => 'Избриши',
     'edit_account' => 'Измени',
     'delete' => 'Избриши',
     'delete_bank_account' => 'Избриши банкарска сметка',
-    'delete_bank_account_confirm' => 'Дали сте сигурни дека сакате да ја избришете',
+    'delete_bank_account_confirm' => 'Дали сте сигурни дека сакате да ја избришете оваа банкарска сметка?',
+    'owner' => 'Сопственик',
     'owner_type' => 'Припаѓа на',
+    'owner_user' => 'Лична',
+    'owner_agency' => 'Агенција',
     'personal' => 'Лична',
     'create_agency_first' => 'Прво креирајте агенција за да додадете сметка на агенција',
 
@@ -75,6 +93,10 @@ return [
     'templates' => 'Темплејти',
     'templates_title' => 'Темплејти за документи',
     'templates_desc' => 'Изберете темплејти за вашите документи.',
+    'invoice_template' => 'Темплејт за фактури',
+    'proforma_template' => 'Темплејт за профактури',
+    'offer_template' => 'Темплејт за понуди',
+    'save_templates' => 'Зачувај темплејти',
     'invoice_templates' => 'Фактури',
     'invoice_templates_desc' => 'Овој темплејт ќе се користи за фактури и профактури.',
     'offer_templates' => 'Понуди',

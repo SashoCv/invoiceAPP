@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class TemplateController extends Controller
 {
@@ -24,9 +25,9 @@ class TemplateController extends Controller
         ],
     ];
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
-        return view('settings.templates', [
+        return Inertia::render('Settings/Templates', [
             'templates' => self::$templates,
             'currentInvoiceTemplate' => $request->user()->invoice_template ?? 'classic',
             'currentProformaTemplate' => $request->user()->proforma_template ?? 'classic',

@@ -6,6 +6,7 @@ return [
     'new_invoice' => 'Нова фактура',
     'no_invoices' => 'Немате фактури',
     'create_first' => 'Креирајте ја вашата прва фактура',
+    'create_first_description' => 'Креирајте ја вашата прва фактура за да започнете со работа',
 
     // Table
     'invoice' => 'Фактура',
@@ -25,6 +26,18 @@ return [
     'status_cancelled' => 'Откажана',
 
     // Form
+    'create_title' => 'Нова фактура',
+    'create_subtitle' => 'Креирајте нова фактура',
+    'duplicate_title' => 'Копирај фактура',
+    'edit_title' => 'Измени фактура',
+    'back_to_list' => 'Назад кон фактури',
+    'back_to_invoice' => 'Назад кон фактура',
+    'basic_info' => 'Основни информации',
+    'prefix' => 'Префикс',
+    'number' => 'Број',
+    'year' => 'Година',
+    'save_invoice' => 'Зачувај фактура',
+    'update_invoice' => 'Ажурирај фактура',
     'create_invoice' => 'Креирај фактура',
     'edit_invoice' => 'Измени фактура',
     'select_client' => 'Изберете клиент',
@@ -37,9 +50,14 @@ return [
     // Items
     'items' => 'Ставки',
     'add_item' => 'Додади ставка',
-    'select_article' => 'Изберете артикл или внесете рачно',
-    'description' => 'Опис',
-    'quantity' => 'Кол.',
+    'article' => 'Артикл',
+    'select_article' => 'Изберете артикл',
+    'manual_entry' => 'Рачен внос',
+    'or_manual' => 'или внесете рачно',
+    'description' => 'Опис на услугата/производот',
+    'item_description' => 'Внесете опис...',
+    'quantity' => 'Количина',
+    'unit' => 'Единица',
     'unit_price' => 'Цена',
     'item_total' => 'Вкупно',
     'remove_item' => 'Отстрани',
@@ -80,10 +98,13 @@ return [
 
     // Show
     'invoice_details' => 'Детали за фактура',
+    'client_details' => 'Детали за клиент',
     'from' => 'Од',
     'to' => 'До',
     'invoice_number' => 'Фактура бр.',
     'payment_due' => 'Рок за плаќање',
+    'tax_number' => 'Даночен број',
+    'print_pdf' => 'Печати / PDF',
 
     // Invoice Numbering
     'prefix_placeholder' => 'ФА',

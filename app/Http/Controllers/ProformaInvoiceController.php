@@ -7,13 +7,14 @@ use App\Models\ProformaInvoice;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ProformaInvoiceController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $query = $request->user()->proformaInvoices()->with('client');
 
@@ -67,10 +68,15 @@ class ProformaInvoiceController extends Controller
 
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
 
-        return view('proforma-invoices.index', compact('proformas', 'clients', 'showDeleted'));
+        return Inertia::render('ProformaInvoices/Index', [
+            'proformas' => $proformas,
+            'clients' => $clients,
+            'showDeleted' => $showDeleted,
+            'filters' => $request->only(['proforma', 'client', 'status', 'date_from', 'date_to', 'per_page', 'sort', 'dir']),
+        ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
@@ -78,7 +84,12 @@ class ProformaInvoiceController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = ProformaInvoice::getNextSequence($request->user()->id, $currentYear);
 
-        return view('proforma-invoices.create', compact('clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('ProformaInvoices/Create', [
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -113,7 +124,7 @@ class ProformaInvoiceController extends Controller
         }
 
         $proforma = $request->user()->proformaInvoices()->create([
-            'proforma_number' => uniqid('PRO'),
+            'proforma_number' => ProformaInvoice::formatProformaNumber($validated['proforma_prefix'] ?? null, $proformaYear, $validated['proforma_sequence']),
             'proforma_prefix' => $validated['proforma_prefix'],
             'proforma_sequence' => $validated['proforma_sequence'],
             'proforma_year' => $proformaYear,
@@ -142,16 +153,18 @@ class ProformaInvoiceController extends Controller
         return redirect()->route('proforma-invoices.show', $proforma)->with('success', __('toast.proforma_created'));
     }
 
-    public function show(ProformaInvoice $proformaInvoice): View
+    public function show(ProformaInvoice $proformaInvoice): Response
     {
         $this->authorize('view', $proformaInvoice);
 
         $proformaInvoice->load(['client', 'items', 'user.agency', 'convertedInvoice']);
 
-        return view('proforma-invoices.show', compact('proformaInvoice'));
+        return Inertia::render('ProformaInvoices/Show', [
+            'proforma' => $proformaInvoice,
+        ]);
     }
 
-    public function edit(ProformaInvoice $proformaInvoice, Request $request): View
+    public function edit(ProformaInvoice $proformaInvoice, Request $request): Response
     {
         $this->authorize('update', $proformaInvoice);
 
@@ -159,7 +172,11 @@ class ProformaInvoiceController extends Controller
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $proformaInvoice->load('items');
 
-        return view('proforma-invoices.edit', compact('proformaInvoice', 'clients', 'articles'));
+        return Inertia::render('ProformaInvoices/Edit', [
+            'proforma' => $proformaInvoice,
+            'clients' => $clients,
+            'articles' => $articles,
+        ]);
     }
 
     public function update(Request $request, ProformaInvoice $proformaInvoice): RedirectResponse
@@ -198,6 +215,7 @@ class ProformaInvoiceController extends Controller
         }
 
         $proformaInvoice->update([
+            'proforma_number' => ProformaInvoice::formatProformaNumber($validated['proforma_prefix'] ?? null, $proformaYear, $validated['proforma_sequence']),
             'client_id' => $validated['client_id'],
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
@@ -235,7 +253,7 @@ class ProformaInvoiceController extends Controller
         return redirect()->route('proforma-invoices.index')->with('success', __('toast.proforma_deleted'));
     }
 
-    public function duplicate(ProformaInvoice $proformaInvoice, Request $request): View
+    public function duplicate(ProformaInvoice $proformaInvoice, Request $request): Response
     {
         $this->authorize('view', $proformaInvoice);
 
@@ -246,7 +264,14 @@ class ProformaInvoiceController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = ProformaInvoice::getNextSequence($request->user()->id, $currentYear);
 
-        return view('proforma-invoices.duplicate', compact('proformaInvoice', 'clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('ProformaInvoices/Create', [
+            'proforma' => $proformaInvoice,
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+            'isDuplicate' => true,
+        ]);
     }
 
     public function restore(int $id, Request $request): RedirectResponse
@@ -284,7 +309,7 @@ class ProformaInvoiceController extends Controller
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
 
         $invoice = $request->user()->invoices()->create([
-            'invoice_number' => Invoice::generateInvoiceNumber(),
+            'invoice_number' => Invoice::formatInvoiceNumber($proformaInvoice->proforma_prefix, $currentYear, $nextSequence),
             'invoice_prefix' => $proformaInvoice->proforma_prefix,
             'invoice_sequence' => $nextSequence,
             'invoice_year' => $currentYear,

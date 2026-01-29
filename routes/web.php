@@ -33,7 +33,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('settings')->name('settings.')->group(function () {
         // Profile
         Route::get('/profile', function () {
-            return view('settings.profile', ['user' => auth()->user()]);
+            return \Inertia\Inertia::render('Settings/Profile', [
+                'user' => auth()->user(),
+            ]);
         })->name('profile');
 
         // Agency

@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // Generic
+    'success' => 'Успешно',
+    'error' => 'Грешка',
+
     'profile_updated' => 'Профилот е успешно ажуриран',
     'agency_updated' => 'Податоците за агенцијата се зачувани',
     'bank_account_created' => 'Банкарската сметка е додадена',

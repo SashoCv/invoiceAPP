@@ -101,6 +101,18 @@ class Invoice extends Model
     }
 
     /**
+     * Format invoice number from prefix, year and sequence.
+     */
+    public static function formatInvoiceNumber(?string $prefix, int $year, int $sequence): string
+    {
+        $number = $year . '-' . $sequence;
+        if ($prefix) {
+            return trim($prefix) . ' ' . $number;
+        }
+        return $number;
+    }
+
+    /**
      * Generate a legacy invoice number for backward compatibility.
      * @deprecated Use invoice_prefix, invoice_sequence, invoice_year instead
      */

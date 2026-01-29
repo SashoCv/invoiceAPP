@@ -6,6 +6,7 @@ return [
     'new_offer' => 'Нова понуда',
     'no_offers' => 'Немате понуди',
     'create_first' => 'Креирајте ја вашата прва понуда',
+    'create_first_description' => 'Креирајте ја вашата прва понуда за да започнете со работа',
 
     // Table
     'offer' => 'Понуда',
@@ -24,8 +25,17 @@ return [
     'status_rejected' => 'Одбиена',
 
     // Form
+    'create_title' => 'Нова понуда',
+    'create_subtitle' => 'Креирајте нова понуда за вашите клиенти',
+    'duplicate_title' => 'Копирај понуда',
+    'basic_info' => 'Основни информации',
     'create_offer' => 'Креирај понуда',
     'edit_offer' => 'Измени понуда',
+    'prefix' => 'Префикс',
+    'number' => 'Број',
+    'year' => 'Година',
+    'save_offer' => 'Зачувај понуда',
+    'article' => 'Артикл',
     'select_client' => 'Изберете клиент',
     'issue_date' => 'Датум на издавање',
     'valid_until' => 'Важи до',
@@ -80,9 +90,16 @@ return [
 
     // Show
     'offer_details' => 'Детали за понуда',
+    'client_details' => 'Детали за клиент',
     'from' => 'Од',
     'to' => 'До',
     'offer_number' => 'Понуда бр.',
+    'tax_number' => 'ЕДБ',
+    'tax_rate' => 'Данок',
+    'back_to_list' => 'Назад кон листа',
+    'print_pdf' => 'Печати PDF',
+    'converted_to' => 'Конвертирана во',
+    'edit' => 'Измени',
 
     // Numbering
     'prefix_placeholder' => 'ПОН',

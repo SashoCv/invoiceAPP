@@ -1,0 +1,207 @@
+import { FormEventHandler, useState } from 'react';
+import { Head, useForm } from '@inertiajs/react';
+import AppLayout from '@/Components/AppLayout';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/Components/ui/avatar';
+import { useTranslation } from '@/hooks/use-translation';
+import type { User as UserType } from '@/types';
+
+interface ProfileProps {
+    user: UserType;
+}
+
+export default function Profile({ user }: ProfileProps) {
+    const { t } = useTranslation();
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name: user.name,
+        email: user.email,
+        avatar: null as File | null,
+        remove_avatar: false,
+        _method: 'PATCH',
+    });
+
+    const { data: passwordData, setData: setPasswordData, post: postPassword, processing: processingPassword, errors: passwordErrors, reset: resetPassword } = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('avatar', file);
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeAvatar = () => {
+        setData('remove_avatar', true);
+        setData('avatar', null);
+        setAvatarPreview(null);
+    };
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post('/profile', {
+            forceFormData: true,
+        });
+    };
+
+    const updatePassword: FormEventHandler = (e) => {
+        e.preventDefault();
+        postPassword('/password', {
+            onSuccess: () => resetPassword(),
+        });
+    };
+
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
+
+    return (
+        <AppLayout>
+            <Head title={t('settings.profile_title')} />
+
+            <div>
+                {/* Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900">{t('settings.profile_info')}</h1>
+                    <p className="mt-1 text-sm text-gray-500">{t('settings.profile_info_desc')}</p>
+                </div>
+
+                {/* Profile Form */}
+                <form onSubmit={submit}>
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle>{t('settings.profile_info')}</CardTitle>
+                            <CardDescription>{t('settings.profile_info_desc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Avatar */}
+                            <div className="flex items-center gap-6">
+                                <Avatar className="w-20 h-20">
+                                    <AvatarImage src={avatarPreview || (user.avatar ? `/storage/${user.avatar}` : undefined)} />
+                                    <AvatarFallback className="text-xl">{getInitials(user.name)}</AvatarFallback>
+                                </Avatar>
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <Button type="button" variant="outline" size="sm" asChild>
+                                            <label className="cursor-pointer">
+                                                {t('settings.change_avatar')}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleAvatarChange}
+                                                    className="hidden"
+                                                />
+                                            </label>
+                                        </Button>
+                                        {(user.avatar || avatarPreview) && (
+                                            <Button type="button" variant="outline" size="sm" onClick={removeAvatar}>
+                                                {t('settings.remove_avatar')}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500">{t('settings.avatar_hint')}</p>
+                                </div>
+                            </div>
+
+                            {/* Name */}
+                            <div>
+                                <Label htmlFor="name">{t('settings.name')} *</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) => setData('name', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                    error={errors.name}
+                                />
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <Label htmlFor="email">{t('settings.email')} *</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) => setData('email', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                    error={errors.email}
+                                />
+                            </div>
+
+                            <div className="pt-4">
+                                <Button type="submit" disabled={processing} loading={processing}>
+                                    {t('settings.save_profile')}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </form>
+
+                {/* Password Form */}
+                <form onSubmit={updatePassword}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('settings.change_password')}</CardTitle>
+                            <CardDescription>{t('settings.change_password_desc')}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <Label htmlFor="current_password">{t('settings.current_password')} *</Label>
+                                <Input
+                                    id="current_password"
+                                    type="password"
+                                    value={passwordData.current_password}
+                                    onChange={(e) => setPasswordData('current_password', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                    error={passwordErrors.current_password}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="password">{t('settings.new_password')} *</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    value={passwordData.password}
+                                    onChange={(e) => setPasswordData('password', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                    error={passwordErrors.password}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="password_confirmation">{t('settings.confirm_password')} *</Label>
+                                <Input
+                                    id="password_confirmation"
+                                    type="password"
+                                    value={passwordData.password_confirmation}
+                                    onChange={(e) => setPasswordData('password_confirmation', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                />
+                            </div>
+
+                            <div className="pt-4">
+                                <Button type="submit" disabled={processingPassword} loading={processingPassword}>
+                                    {t('settings.update_password')}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </form>
+            </div>
+        </AppLayout>
+    );
+}

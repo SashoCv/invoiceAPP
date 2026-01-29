@@ -91,6 +91,18 @@ class Offer extends Model
         return ($maxSequence ?? 0) + 1;
     }
 
+    /**
+     * Format offer number from prefix, year and sequence.
+     */
+    public static function formatOfferNumber(?string $prefix, int $year, int $sequence): string
+    {
+        $number = $year . '-' . $sequence;
+        if ($prefix) {
+            return trim($prefix) . ' ' . $number;
+        }
+        return $number;
+    }
+
     public function calculateTotals(): void
     {
         if ($this->has_items) {

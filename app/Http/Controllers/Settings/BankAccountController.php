@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class BankAccountController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $user = $request->user();
         $agency = $user->agency;
@@ -24,7 +25,7 @@ class BankAccountController extends Controller
             })
             ->get();
 
-        return view('settings.bank-accounts', [
+        return Inertia::render('Settings/BankAccounts', [
             'bankAccounts' => $bankAccounts,
             'hasAgency' => $agency !== null,
         ]);

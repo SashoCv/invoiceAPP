@@ -83,6 +83,18 @@ class ProformaInvoice extends Model
         return ($maxSequence ?? 0) + 1;
     }
 
+    /**
+     * Format proforma number from prefix, year and sequence.
+     */
+    public static function formatProformaNumber(?string $prefix, int $year, int $sequence): string
+    {
+        $number = $year . '-' . $sequence;
+        if ($prefix) {
+            return trim($prefix) . ' ' . $number;
+        }
+        return $number;
+    }
+
     public function calculateTotals(): void
     {
         $this->subtotal = $this->items->sum(function ($item) {

@@ -7,13 +7,14 @@ use App\Models\InvoiceItem;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class InvoiceController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $query = $request->user()->invoices()->with('client');
 
@@ -64,7 +65,7 @@ class InvoiceController extends Controller
         // Sorting
         $sortBy = $request->get('sort', 'created_at');
         $sortDir = $request->get('dir', 'desc');
-        $allowedSorts = ['invoice_number', 'issue_date', 'due_date', 'status', 'total', 'created_at'];
+        $allowedSorts = ['invoice_sequence', 'invoice_number', 'issue_date', 'due_date', 'status', 'total', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
         }
@@ -77,10 +78,15 @@ class InvoiceController extends Controller
         // Get clients for filter dropdown
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
 
-        return view('invoices.index', compact('invoices', 'clients', 'showDeleted'));
+        return Inertia::render('Invoices/Index', [
+            'invoices' => $invoices,
+            'clients' => $clients,
+            'showDeleted' => $showDeleted,
+            'filters' => $request->only(['invoice', 'client', 'status', 'date_from', 'date_to', 'per_page', 'sort', 'dir']),
+        ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
@@ -88,7 +94,12 @@ class InvoiceController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
 
-        return view('invoices.create', compact('clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('Invoices/Create', [
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -124,7 +135,7 @@ class InvoiceController extends Controller
         }
 
         $invoice = $request->user()->invoices()->create([
-            'invoice_number' => Invoice::generateInvoiceNumber(),
+            'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
             'invoice_prefix' => $validated['invoice_prefix'],
             'invoice_sequence' => $validated['invoice_sequence'],
             'invoice_year' => $invoiceYear,
@@ -154,16 +165,18 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.show', $invoice)->with('success', __('toast.invoice_created'));
     }
 
-    public function show(Invoice $invoice): View
+    public function show(Invoice $invoice): Response
     {
         $this->authorize('view', $invoice);
 
         $invoice->load(['client', 'items', 'user.agency']);
 
-        return view('invoices.show', compact('invoice'));
+        return Inertia::render('Invoices/Show', [
+            'invoice' => $invoice,
+        ]);
     }
 
-    public function edit(Invoice $invoice, Request $request): View
+    public function edit(Invoice $invoice, Request $request): Response
     {
         $this->authorize('update', $invoice);
 
@@ -171,7 +184,11 @@ class InvoiceController extends Controller
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $invoice->load('items');
 
-        return view('invoices.edit', compact('invoice', 'clients', 'articles'));
+        return Inertia::render('Invoices/Edit', [
+            'invoice' => $invoice,
+            'clients' => $clients,
+            'articles' => $articles,
+        ]);
     }
 
     public function update(Request $request, Invoice $invoice): RedirectResponse
@@ -211,6 +228,7 @@ class InvoiceController extends Controller
         }
 
         $invoice->update([
+            'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
             'client_id' => $validated['client_id'],
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
@@ -250,7 +268,7 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.index')->with('success', __('toast.invoice_deleted'));
     }
 
-    public function duplicate(Invoice $invoice, Request $request): View
+    public function duplicate(Invoice $invoice, Request $request): Response
     {
         $this->authorize('view', $invoice);
 
@@ -261,7 +279,14 @@ class InvoiceController extends Controller
         $currentYear = (int) date('Y');
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
 
-        return view('invoices.duplicate', compact('invoice', 'clients', 'articles', 'currentYear', 'nextSequence'));
+        return Inertia::render('Invoices/Create', [
+            'invoice' => $invoice,
+            'clients' => $clients,
+            'articles' => $articles,
+            'currentYear' => $currentYear,
+            'nextSequence' => $nextSequence,
+            'isDuplicate' => true,
+        ]);
     }
 
     public function restore(int $id, Request $request): RedirectResponse

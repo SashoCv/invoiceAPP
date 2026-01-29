@@ -8,6 +8,8 @@ return [
     'edit_article' => 'Измени артикл',
     'no_articles' => 'Немате артикли',
     'add_first_article' => 'Додадете го вашиот прв артикл',
+    'create_first_description' => 'Додадете го вашиот прв артикл за да започнете со работа',
+    'new_article' => 'Нов артикл',
 
     // Table
     'article' => 'Артикл',
