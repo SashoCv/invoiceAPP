@@ -29,6 +29,8 @@ return [
     'from' => 'Од',
     'to' => 'До',
 
+    'export_csv' => 'Извези CSV',
+
     // Languages
     'macedonian' => 'Македонски',
     'english' => 'English',

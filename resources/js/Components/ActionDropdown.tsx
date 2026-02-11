@@ -14,6 +14,8 @@ export interface ActionItem {
     label: string;
     icon?: LucideIcon;
     href?: string;
+    external?: boolean;
+    target?: string;
     onClick?: () => void;
     variant?: 'default' | 'destructive';
     disabled?: boolean;
@@ -84,6 +86,16 @@ function ActionMenuItem({ action }: { action: ActionItem }) {
         action.variant === 'destructive'
             ? 'text-destructive focus:text-destructive cursor-pointer'
             : 'cursor-pointer';
+
+    if (action.href && action.external) {
+        return (
+            <DropdownMenuItem asChild disabled={action.disabled}>
+                <a href={action.href} className={className} target={action.target} rel={action.target === '_blank' ? 'noopener noreferrer' : undefined}>
+                    {content}
+                </a>
+            </DropdownMenuItem>
+        );
+    }
 
     if (action.href) {
         return (

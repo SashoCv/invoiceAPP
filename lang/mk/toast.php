@@ -51,4 +51,20 @@ return [
     // Contracts
     'contract_uploaded' => 'Договорот е успешно прикачен',
     'contract_deleted' => 'Договорот е избришан',
+
+    // Expenses
+    'expense_created' => 'Трошокот е успешно додаден',
+    'expense_updated' => 'Трошокот е успешно ажуриран',
+    'expense_deleted' => 'Трошокот е избришан',
+    'expense_category_created' => 'Категоријата е успешно додадена',
+    'expense_category_updated' => 'Категоријата е успешно ажурирана',
+    'expense_category_deleted' => 'Категоријата е избришана',
+    'recurring_expense_created' => 'Рекурентниот трошок е успешно додаден',
+    'recurring_expense_updated' => 'Рекурентниот трошок е успешно ажуриран',
+    'recurring_expense_deleted' => 'Рекурентниот трошок е избришан',
+
+    // Email
+    'invoice_sent_email' => 'Фактурата е успешно испратена по email',
+    'proforma_sent_email' => 'Профактурата е успешно испратена по email',
+    'offer_sent_email' => 'Понудата е успешно испратена по email',
 ];

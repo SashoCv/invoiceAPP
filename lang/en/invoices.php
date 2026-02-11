@@ -122,4 +122,18 @@ return [
     'delete_permanently' => 'Delete permanently',
     'delete_permanently_confirm' => 'Are you sure? This action cannot be undone!',
     'no_deleted_invoices' => 'No deleted invoices',
+
+    // Status change
+    'change_status' => 'Change Status',
+
+    // Email
+    'send_invoice' => 'Send Invoice',
+    'send_email' => 'Send',
+    'email_to' => 'To (email)',
+    'email_subject' => 'Subject',
+    'email_body' => 'Message',
+    'email_default_body' => 'Dear Sir/Madam,\n\nPlease find the invoice attached.\n\nBest regards',
+    'email_sent' => 'Invoice sent',
+    'paid_date' => 'Paid on',
+    'pdf_attached' => 'The PDF invoice is attached to this message.',
 ];

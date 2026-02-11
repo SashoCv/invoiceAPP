@@ -122,4 +122,18 @@ return [
     'delete_permanently' => 'Избриши трајно',
     'delete_permanently_confirm' => 'Дали сте сигурни? Оваа акција не може да се врати!',
     'no_deleted_invoices' => 'Нема избришани фактури',
+
+    // Status change
+    'change_status' => 'Промени статус',
+
+    // Email
+    'send_invoice' => 'Испрати фактура',
+    'send_email' => 'Испрати',
+    'email_to' => 'До (email)',
+    'email_subject' => 'Предмет',
+    'email_body' => 'Порака',
+    'email_default_body' => 'Почитувани,\n\nВо прилог ви ја испраќаме фактурата.\n\nСо почит',
+    'email_sent' => 'Фактурата е испратена',
+    'paid_date' => 'Платена на',
+    'pdf_attached' => 'PDF фактурата е прикачена кон оваа порака.',
 ];

@@ -54,6 +54,21 @@ class User extends Authenticatable
         return $this->hasMany(ClientContract::class);
     }
 
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function recurringExpenses(): HasMany
+    {
+        return $this->hasMany(RecurringExpense::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     /**
      * The attributes that are mass assignable.
      *

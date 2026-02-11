@@ -51,4 +51,20 @@ return [
     // Contracts
     'contract_uploaded' => 'Contract uploaded successfully',
     'contract_deleted' => 'Contract deleted',
+
+    // Expenses
+    'expense_created' => 'Expense added successfully',
+    'expense_updated' => 'Expense updated successfully',
+    'expense_deleted' => 'Expense deleted',
+    'expense_category_created' => 'Category added successfully',
+    'expense_category_updated' => 'Category updated successfully',
+    'expense_category_deleted' => 'Category deleted',
+    'recurring_expense_created' => 'Recurring expense added successfully',
+    'recurring_expense_updated' => 'Recurring expense updated successfully',
+    'recurring_expense_deleted' => 'Recurring expense deleted',
+
+    // Email
+    'invoice_sent_email' => 'Invoice sent successfully via email',
+    'proforma_sent_email' => 'Proforma invoice sent successfully via email',
+    'offer_sent_email' => 'Offer sent successfully via email',
 ];

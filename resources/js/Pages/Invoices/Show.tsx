@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
 import {
     Table,
     TableBody,
@@ -16,12 +19,14 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { ArrowLeft, Pencil, Copy, FileText, Printer, Eye, Download } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, FileText, Printer, Eye, Download, Send } from 'lucide-react';
 import InvoicePreview from '@/Components/InvoicePreview';
 import type { Invoice, Agency, BankAccount } from '@/types';
 
@@ -47,6 +52,39 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
+    const [sendDialogOpen, setSendDialogOpen] = useState(false);
+    const [sendForm, setSendForm] = useState({
+        to: '',
+        subject: '',
+        body: '',
+    });
+    const [sendErrors, setSendErrors] = useState<Record<string, string>>({});
+    const [sendLoading, setSendLoading] = useState(false);
+
+    const openSendDialog = () => {
+        setSendForm({
+            to: invoice.client?.email || '',
+            subject: `${t('invoices.invoice')} ${invoice.invoice_number}`,
+            body: t('invoices.email_default_body').replace(/\\n/g, '\n'),
+        });
+        setSendErrors({});
+        setSendDialogOpen(true);
+    };
+
+    const submitSend = () => {
+        setSendLoading(true);
+        router.post(`/invoices/${invoice.id}/send`, sendForm, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSendDialogOpen(false);
+                setSendLoading(false);
+            },
+            onError: (errors) => {
+                setSendErrors(errors);
+                setSendLoading(false);
+            },
+        });
+    };
 
     const agency = invoice.user?.agency;
     const bankAccount = invoice.user?.bank_accounts?.find(
@@ -119,6 +157,10 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                             <Printer className="w-4 h-4" />
                             {t('invoices.print_pdf')}
                         </a>
+                    </Button>
+                    <Button onClick={openSendDialog} className="flex items-center gap-2">
+                        <Send className="w-4 h-4" />
+                        {t('invoices.send_invoice')}
                     </Button>
                 </div>
 
@@ -261,6 +303,61 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                     </Card>
                 )}
             </div>
+
+            {/* Send Email Dialog */}
+            <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('invoices.send_invoice')}</DialogTitle>
+                        <DialogDescription>
+                            {t('invoices.invoice')} {invoice.invoice_number}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label className="mb-2 block">{t('invoices.email_to')}</Label>
+                            <Input
+                                type="email"
+                                value={sendForm.to}
+                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
+                            />
+                            {sendErrors.to && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('invoices.email_subject')}</Label>
+                            <Input
+                                value={sendForm.subject}
+                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
+                            />
+                            {sendErrors.subject && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('invoices.email_body')}</Label>
+                            <Textarea
+                                rows={6}
+                                value={sendForm.body}
+                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
+                            />
+                            {sendErrors.body && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setSendDialogOpen(false)} disabled={sendLoading}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitSend} loading={sendLoading}>
+                            <Send className="w-4 h-4 mr-2" />
+                            {t('invoices.send_email')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

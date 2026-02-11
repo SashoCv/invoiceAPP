@@ -3,6 +3,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/Components/ui/tabs';
@@ -21,12 +23,20 @@ import {
     TableHeader,
     TableRow,
 } from '@/Components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 import SortableTableHead from '@/Components/SortableTableHead';
 import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, Check, X, ArrowRightLeft } from 'lucide-react';
+import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, Check, X, ArrowRightLeft, Download, Send, RefreshCw, Printer } from 'lucide-react';
 import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import type { Offer, Client, PaginatedData } from '@/types';
@@ -61,6 +71,55 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
     const [statusFilter, setStatusFilter] = useState(filters.status || '__all__');
     const [deleteOffer, setDeleteOffer] = useState<Offer | null>(null);
     const [forceDeleteOffer, setForceDeleteOffer] = useState<Offer | null>(null);
+
+    // Status change dialog
+    const [statusOffer, setStatusOffer] = useState<Offer | null>(null);
+    const [newStatus, setNewStatus] = useState('');
+
+    const openStatusDialog = (offer: Offer) => {
+        setStatusOffer(offer);
+        setNewStatus(offer.status);
+    };
+
+    const submitStatusChange = () => {
+        if (!statusOffer) return;
+        router.patch(`/offers/${statusOffer.id}/status`, { status: newStatus }, {
+            preserveScroll: true,
+            onSuccess: () => setStatusOffer(null),
+        });
+    };
+
+    // Send email dialog
+    const [sendOffer, setSendOffer] = useState<Offer | null>(null);
+    const [sendForm, setSendForm] = useState({ to: '', subject: '', body: '' });
+    const [sendErrors, setSendErrors] = useState<Record<string, string>>({});
+    const [sendLoading, setSendLoading] = useState(false);
+
+    const openSendDialog = (offer: Offer) => {
+        setSendOffer(offer);
+        setSendForm({
+            to: offer.client?.email || '',
+            subject: `${t('offers.offer')} ${offer.offer_number}`,
+            body: t('offers.email_default_body').replace(/\\n/g, '\n'),
+        });
+        setSendErrors({});
+    };
+
+    const submitSend = () => {
+        if (!sendOffer) return;
+        setSendLoading(true);
+        router.post(`/offers/${sendOffer.id}/send`, sendForm, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSendOffer(null);
+                setSendLoading(false);
+            },
+            onError: (errors) => {
+                setSendErrors(errors);
+                setSendLoading(false);
+            },
+        });
+    };
 
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
@@ -307,7 +366,9 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                             {
                                                                 label: t('offers.view'),
                                                                 icon: Eye,
-                                                                href: `/offers/${offer.id}`,
+                                                                href: `/offers/${offer.id}/pdf/preview`,
+                                                                external: true,
+                                                                target: '_blank',
                                                             },
                                                             {
                                                                 label: t('offers.edit'),
@@ -336,6 +397,29 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                                 label: t('offers.duplicate'),
                                                                 icon: Copy,
                                                                 href: `/offers/${offer.id}/duplicate`,
+                                                            },
+                                                            {
+                                                                label: t('offers.download_pdf'),
+                                                                icon: Download,
+                                                                href: `/offers/${offer.id}/pdf`,
+                                                                external: true,
+                                                            },
+                                                            {
+                                                                label: t('offers.print_pdf'),
+                                                                icon: Printer,
+                                                                href: `/offers/${offer.id}/pdf/preview`,
+                                                                external: true,
+                                                                target: '_blank',
+                                                            },
+                                                            {
+                                                                label: t('offers.change_status'),
+                                                                icon: RefreshCw,
+                                                                onClick: () => openStatusDialog(offer),
+                                                            },
+                                                            {
+                                                                label: t('offers.send_offer'),
+                                                                icon: Send,
+                                                                onClick: () => openSendDialog(offer),
                                                             },
                                                             {
                                                                 label: t('offers.delete'),
@@ -382,6 +466,95 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                 description={t('offers.delete_permanently_confirm')}
                 deleteUrl={forceDeleteOffer ? `/offers/${forceDeleteOffer.id}/force-delete` : ''}
             />
+
+            {/* Change Status Dialog */}
+            <Dialog open={!!statusOffer} onOpenChange={() => setStatusOffer(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t('offers.change_status')}</DialogTitle>
+                        <DialogDescription>
+                            {statusOffer?.offer_number}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div>
+                        <Label className="mb-2 block">{t('offers.status')}</Label>
+                        <Select value={newStatus} onValueChange={setNewStatus}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="draft">{t('offers.status_draft')}</SelectItem>
+                                <SelectItem value="sent">{t('offers.status_sent')}</SelectItem>
+                                <SelectItem value="accepted">{t('offers.status_accepted')}</SelectItem>
+                                <SelectItem value="rejected">{t('offers.status_rejected')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setStatusOffer(null)}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitStatusChange}>
+                            {t('general.save')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Send Email Dialog */}
+            <Dialog open={!!sendOffer} onOpenChange={() => setSendOffer(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('offers.send_offer')}</DialogTitle>
+                        <DialogDescription>
+                            {sendOffer?.offer_number}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label className="mb-2 block">{t('offers.email_to')}</Label>
+                            <Input
+                                type="email"
+                                value={sendForm.to}
+                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
+                            />
+                            {sendErrors.to && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('offers.email_subject')}</Label>
+                            <Input
+                                value={sendForm.subject}
+                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
+                            />
+                            {sendErrors.subject && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('offers.email_body')}</Label>
+                            <Textarea
+                                rows={6}
+                                value={sendForm.body}
+                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
+                            />
+                            {sendErrors.body && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setSendOffer(null)} disabled={sendLoading}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitSend} loading={sendLoading}>
+                            <Send className="w-4 h-4 mr-2" />
+                            {t('offers.send_email')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

@@ -23,7 +23,7 @@ import {
 import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { Plus, Archive, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Archive, Pencil, Trash2, Users, Download } from 'lucide-react';
 import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
@@ -89,6 +89,12 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                 </Link>
                             </Button>
                         )}
+                        <Button variant="outline" asChild>
+                            <a href="/clients/export/csv" className="flex items-center gap-2">
+                                <Download className="w-4 h-4" />
+                                {t('general.export_csv')}
+                            </a>
+                        </Button>
                         <Button asChild>
                             <Link href="/clients/create" className="flex items-center gap-2">
                                 <Plus className="w-4 h-4" />

@@ -3,6 +3,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/Components/ui/tabs';
@@ -21,11 +23,19 @@ import {
     TableHeader,
     TableRow,
 } from '@/Components/ui/table';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/Components/ui/dialog';
 import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, ArrowRightLeft } from 'lucide-react';
+import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, ArrowRightLeft, Download, Send, RefreshCw, Printer } from 'lucide-react';
 import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
@@ -60,6 +70,55 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
     const [statusFilter, setStatusFilter] = useState(filters.status || '__all__');
     const [deleteProforma, setDeleteProforma] = useState<ProformaInvoice | null>(null);
     const [forceDeleteProforma, setForceDeleteProforma] = useState<ProformaInvoice | null>(null);
+
+    // Status change dialog
+    const [statusProforma, setStatusProforma] = useState<ProformaInvoice | null>(null);
+    const [newStatus, setNewStatus] = useState('');
+
+    const openStatusDialog = (proforma: ProformaInvoice) => {
+        setStatusProforma(proforma);
+        setNewStatus(proforma.status);
+    };
+
+    const submitStatusChange = () => {
+        if (!statusProforma) return;
+        router.patch(`/proforma-invoices/${statusProforma.id}/status`, { status: newStatus }, {
+            preserveScroll: true,
+            onSuccess: () => setStatusProforma(null),
+        });
+    };
+
+    // Send email dialog
+    const [sendProforma, setSendProforma] = useState<ProformaInvoice | null>(null);
+    const [sendForm, setSendForm] = useState({ to: '', subject: '', body: '' });
+    const [sendErrors, setSendErrors] = useState<Record<string, string>>({});
+    const [sendLoading, setSendLoading] = useState(false);
+
+    const openSendDialog = (proforma: ProformaInvoice) => {
+        setSendProforma(proforma);
+        setSendForm({
+            to: proforma.client?.email || '',
+            subject: `${t('proforma.proforma')} ${proforma.proforma_number}`,
+            body: t('proforma.email_default_body').replace(/\\n/g, '\n'),
+        });
+        setSendErrors({});
+    };
+
+    const submitSend = () => {
+        if (!sendProforma) return;
+        setSendLoading(true);
+        router.post(`/proforma-invoices/${sendProforma.id}/send`, sendForm, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSendProforma(null);
+                setSendLoading(false);
+            },
+            onError: (errors) => {
+                setSendErrors(errors);
+                setSendLoading(false);
+            },
+        });
+    };
 
     const handleFilter = (e: React.FormEvent) => {
         e.preventDefault();
@@ -289,7 +348,9 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                                             {
                                                                 label: t('proforma.view'),
                                                                 icon: Eye,
-                                                                href: `/proforma-invoices/${proforma.id}`,
+                                                                href: `/proforma-invoices/${proforma.id}/pdf/preview`,
+                                                                external: true,
+                                                                target: '_blank',
                                                             },
                                                             {
                                                                 label: t('proforma.edit'),
@@ -306,6 +367,29 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                                                 label: t('proforma.duplicate'),
                                                                 icon: Copy,
                                                                 href: `/proforma-invoices/${proforma.id}/duplicate`,
+                                                            },
+                                                            {
+                                                                label: t('proforma.download_pdf'),
+                                                                icon: Download,
+                                                                href: `/proforma-invoices/${proforma.id}/pdf`,
+                                                                external: true,
+                                                            },
+                                                            {
+                                                                label: t('proforma.print_pdf'),
+                                                                icon: Printer,
+                                                                href: `/proforma-invoices/${proforma.id}/pdf/preview`,
+                                                                external: true,
+                                                                target: '_blank',
+                                                            },
+                                                            {
+                                                                label: t('proforma.change_status'),
+                                                                icon: RefreshCw,
+                                                                onClick: () => openStatusDialog(proforma),
+                                                            },
+                                                            {
+                                                                label: t('proforma.send_proforma'),
+                                                                icon: Send,
+                                                                onClick: () => openSendDialog(proforma),
                                                             },
                                                             {
                                                                 label: t('proforma.delete'),
@@ -352,6 +436,94 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                 description={t('proforma.delete_permanently_confirm')}
                 deleteUrl={forceDeleteProforma ? `/proforma-invoices/${forceDeleteProforma.id}/force-delete` : ''}
             />
+
+            {/* Change Status Dialog */}
+            <Dialog open={!!statusProforma} onOpenChange={() => setStatusProforma(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t('proforma.change_status')}</DialogTitle>
+                        <DialogDescription>
+                            {statusProforma?.proforma_number}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div>
+                        <Label className="mb-2 block">{t('proforma.status')}</Label>
+                        <Select value={newStatus} onValueChange={setNewStatus}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="draft">{t('proforma.status_draft')}</SelectItem>
+                                <SelectItem value="sent">{t('proforma.status_sent')}</SelectItem>
+                                <SelectItem value="converted_to_invoice">{t('proforma.status_converted')}</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setStatusProforma(null)}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitStatusChange}>
+                            {t('general.save')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Send Email Dialog */}
+            <Dialog open={!!sendProforma} onOpenChange={() => setSendProforma(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('proforma.send_proforma')}</DialogTitle>
+                        <DialogDescription>
+                            {sendProforma?.proforma_number}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label className="mb-2 block">{t('proforma.email_to')}</Label>
+                            <Input
+                                type="email"
+                                value={sendForm.to}
+                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
+                            />
+                            {sendErrors.to && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('proforma.email_subject')}</Label>
+                            <Input
+                                value={sendForm.subject}
+                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
+                            />
+                            {sendErrors.subject && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('proforma.email_body')}</Label>
+                            <Textarea
+                                rows={6}
+                                value={sendForm.body}
+                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
+                            />
+                            {sendErrors.body && (
+                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
+                            )}
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setSendProforma(null)} disabled={sendLoading}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitSend} loading={sendLoading}>
+                            <Send className="w-4 h-4 mr-2" />
+                            {t('proforma.send_email')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }
