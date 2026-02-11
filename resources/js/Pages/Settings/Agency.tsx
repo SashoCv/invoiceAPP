@@ -6,6 +6,13 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { Building2, Upload, X } from 'lucide-react';
 import type { Agency } from '@/types';
 
@@ -28,6 +35,7 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
         website: agency?.website || '',
         tax_number: agency?.tax_number || '',
         registration_number: agency?.bank_account || '',
+        display_currency: agency?.display_currency || 'MKD',
         logo: null as File | null,
         remove_logo: false,
         _method: 'PUT',
@@ -218,6 +226,25 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
                                         className="mt-1"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Display Currency */}
+                            <div>
+                                <Label htmlFor="display_currency">{t('settings.display_currency')}</Label>
+                                <p className="text-xs text-gray-500 mb-1">{t('settings.display_currency_desc')}</p>
+                                <Select
+                                    value={data.display_currency}
+                                    onValueChange={(value) => setData('display_currency', value)}
+                                >
+                                    <SelectTrigger className="w-full md:w-48" error={errors.display_currency}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MKD">MKD</SelectItem>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="pt-4">

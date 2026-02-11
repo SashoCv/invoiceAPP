@@ -32,6 +32,7 @@ class AgencyController extends Controller
             'website' => ['nullable', 'url', 'max:255'],
             'tax_number' => ['nullable', 'string', 'max:50'],
             'registration_number' => ['nullable', 'string', 'max:50'],
+            'display_currency' => ['nullable', 'string', 'in:MKD,EUR,USD'],
             'logo' => ['nullable', 'image', 'max:2048'],
         ]);
 

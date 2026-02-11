@@ -5,7 +5,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/Components/ui/toaster';
 import { Avatar, AvatarFallback } from '@/Components/ui/avatar';
-import { Button } from '@/Components/ui/button';
+import CurrencyCalculator from '@/Components/CurrencyCalculator';
 import {
     LayoutDashboard,
     FileText,
@@ -13,6 +13,7 @@ import {
     ClipboardList,
     Users,
     Package,
+    Receipt,
     CreditCard,
     FileCode,
     User,
@@ -20,6 +21,7 @@ import {
     LogOut,
     Menu,
     X,
+    Calculator,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -34,6 +36,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
     const { t, locale } = useTranslation();
     const { auth, flash } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [calcOpen, setCalcOpen] = useState(false);
     const { toast } = useToast();
     const currentPath = usePage().url;
 
@@ -92,6 +95,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
             active: currentPath.startsWith('/articles'),
         },
         {
+            name: t('navigation.expenses'),
+            href: '/expenses',
+            icon: Receipt,
+            active: currentPath.startsWith('/expenses'),
+        },
+        {
             name: t('navigation.bank_accounts'),
             href: '/settings/bank-accounts',
             icon: CreditCard,
@@ -138,6 +147,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
     return (
         <>
             <Toaster />
+            <CurrencyCalculator open={calcOpen} onOpenChange={setCalcOpen} />
             <div className="min-h-screen">
                 {/* Mobile backdrop */}
                 {sidebarOpen && (
@@ -206,6 +216,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
                                     {item.name}
                                 </Link>
                             ))}
+                            <button
+                                onClick={() => setCalcOpen(true)}
+                                className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            >
+                                <Calculator className="w-5 h-5" />
+                                {t('navigation.currency_calculator')}
+                            </button>
                         </div>
                     </nav>
 

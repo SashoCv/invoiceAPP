@@ -27,13 +27,6 @@
     </div>
 
     <div class="p-8 bg-gray-50">
-        {{-- Offer Title --}}
-        @if($isOffer && !empty($offerTitle))
-        <div class="mb-6 -mt-4">
-            <h2 class="text-xl font-semibold text-gray-900">{{ $offerTitle }}</h2>
-        </div>
-        @endif
-
         {{-- Info Cards --}}
         <div class="grid grid-cols-3 gap-4 -mt-12 mb-8">
             <div class="bg-white rounded-xl shadow-lg p-5">
@@ -59,6 +52,13 @@
                 <div class="text-sm text-gray-500">{{ $currencySymbol }}</div>
             </div>
         </div>
+
+        {{-- Offer Title --}}
+        @if($isOffer && !empty($offerTitle))
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">{{ $offerTitle }}</h2>
+        </div>
+        @endif
 
         {{-- Offer Content (when no items) --}}
         @if($isOffer && !$hasItems && !empty($offerContent))

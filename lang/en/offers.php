@@ -44,20 +44,7 @@ return [
     'title_placeholder' => 'Offer title',
     'content' => 'Content',
     'content_placeholder' => 'Describe the offer...',
-    'include_items' => 'Include priced items',
-
-    // Items
-    'items' => 'Items',
-    'add_item' => 'Add Item',
-    'select_article' => 'Select article or enter manually',
-    'description' => 'Description',
-    'quantity' => 'Qty',
-    'unit_price' => 'Price',
-    'item_total' => 'Total',
-
-    // Totals
-    'subtotal' => 'Subtotal',
-    'tax' => 'Tax',
+    'total_value' => 'Total Value',
 
     // Actions
     'view' => 'View',
@@ -122,4 +109,15 @@ return [
     // Convert
     'converted_notice' => 'This offer has been converted to an invoice',
     'view_invoice' => 'View Invoice',
+
+    // Status change
+    'change_status' => 'Change Status',
+
+    // Email
+    'send_offer' => 'Send Offer',
+    'send_email' => 'Send',
+    'email_to' => 'To (email)',
+    'email_subject' => 'Subject',
+    'email_body' => 'Message',
+    'email_default_body' => 'Dear Sir/Madam,\n\nPlease find the offer attached.\n\nBest regards',
 ];

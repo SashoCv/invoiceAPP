@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientContractController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\ProformaInvoiceController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\AgencyController;
 use App\Http\Controllers\Settings\BankAccountController;
 use App\Http\Controllers\Settings\TemplateController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +53,7 @@ Route::middleware('auth')->group(function () {
 
         // Templates
         Route::get('/templates', [TemplateController::class, 'index'])->name('templates');
+        Route::get('/templates/preview', [TemplateController::class, 'preview'])->name('templates.preview');
         Route::put('/templates', [TemplateController::class, 'update'])->name('templates.update');
     });
 
@@ -68,12 +71,32 @@ Route::middleware('auth')->group(function () {
     // Articles
     Route::resource('articles', ArticleController::class)->except(['show']);
 
+    // Expenses
+    Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::post('expenses/categories', [ExpenseController::class, 'storeCategory'])->name('expenses.categories.store');
+    Route::put('expenses/categories/{expenseCategory}', [ExpenseController::class, 'updateCategory'])->name('expenses.categories.update');
+    Route::delete('expenses/categories/{expenseCategory}', [ExpenseController::class, 'destroyCategory'])->name('expenses.categories.destroy');
+    Route::post('expenses/recurring', [ExpenseController::class, 'storeRecurring'])->name('expenses.recurring.store');
+    Route::put('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'updateRecurring'])->name('expenses.recurring.update');
+    Route::delete('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'destroyRecurring'])->name('expenses.recurring.destroy');
+    Route::post('expenses/recurring/{recurringExpense}/toggle', [ExpenseController::class, 'toggleRecurring'])->name('expenses.recurring.toggle');
+
+    // CSV Exports
+    Route::get('invoices/export/csv', [ExportController::class, 'exportInvoices'])->name('invoices.export.csv');
+    Route::get('expenses/export/csv', [ExportController::class, 'exportExpenses'])->name('expenses.export.csv');
+    Route::get('clients/export/csv', [ExportController::class, 'exportClients'])->name('clients.export.csv');
+
     // Invoices
     Route::get('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
     Route::get('invoices/{invoice}/pdf', [PdfController::class, 'invoice'])->name('invoices.pdf');
     Route::get('invoices/{invoice}/pdf/preview', [PdfController::class, 'invoicePreview'])->name('invoices.pdf.preview');
     Route::post('invoices/{id}/restore', [InvoiceController::class, 'restore'])->name('invoices.restore');
     Route::delete('invoices/{id}/force-delete', [InvoiceController::class, 'forceDelete'])->name('invoices.force-delete');
+    Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.update-status');
+    Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
     Route::resource('invoices', InvoiceController::class);
 
     // Proforma Invoices
@@ -83,6 +106,8 @@ Route::middleware('auth')->group(function () {
     Route::post('proforma-invoices/{proformaInvoice}/convert', [ProformaInvoiceController::class, 'convertToInvoice'])->name('proforma-invoices.convert');
     Route::post('proforma-invoices/{id}/restore', [ProformaInvoiceController::class, 'restore'])->name('proforma-invoices.restore');
     Route::delete('proforma-invoices/{id}/force-delete', [ProformaInvoiceController::class, 'forceDelete'])->name('proforma-invoices.force-delete');
+    Route::patch('proforma-invoices/{proformaInvoice}/status', [ProformaInvoiceController::class, 'updateStatus'])->name('proforma-invoices.update-status');
+    Route::post('proforma-invoices/{proformaInvoice}/send', [ProformaInvoiceController::class, 'send'])->name('proforma-invoices.send');
     Route::resource('proforma-invoices', ProformaInvoiceController::class);
 
     // Offers
@@ -94,7 +119,12 @@ Route::middleware('auth')->group(function () {
     Route::post('offers/{offer}/convert', [OfferController::class, 'convertToInvoice'])->name('offers.convert');
     Route::post('offers/{id}/restore', [OfferController::class, 'restore'])->name('offers.restore');
     Route::delete('offers/{id}/force-delete', [OfferController::class, 'forceDelete'])->name('offers.force-delete');
+    Route::patch('offers/{offer}/status', [OfferController::class, 'updateStatus'])->name('offers.update-status');
+    Route::post('offers/{offer}/send', [OfferController::class, 'send'])->name('offers.send');
     Route::resource('offers', OfferController::class);
+
+    // Currency converter
+    Route::post('currency/convert', [\App\Http\Controllers\CurrencyController::class, 'convert'])->name('currency.convert');
 
     // Client Contracts
     Route::get('clients/{client}/contracts', [ClientContractController::class, 'index'])->name('clients.contracts.index');

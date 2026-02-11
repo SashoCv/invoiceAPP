@@ -44,20 +44,7 @@ return [
     'title_placeholder' => 'Наслов на понудата',
     'content' => 'Содржина',
     'content_placeholder' => 'Опишете ја понудата...',
-    'include_items' => 'Вклучи ставки со цени',
-
-    // Items
-    'items' => 'Ставки',
-    'add_item' => 'Додади ставка',
-    'select_article' => 'Изберете артикл или внесете рачно',
-    'description' => 'Опис',
-    'quantity' => 'Кол.',
-    'unit_price' => 'Цена',
-    'item_total' => 'Вкупно',
-
-    // Totals
-    'subtotal' => 'Меѓузбир',
-    'tax' => 'ДДВ',
+    'total_value' => 'Вкупна вредност',
 
     // Actions
     'view' => 'Преглед',
@@ -122,4 +109,15 @@ return [
     // Convert
     'converted_notice' => 'Оваа понуда е конвертирана во фактура',
     'view_invoice' => 'Види фактура',
+
+    // Status change
+    'change_status' => 'Промени статус',
+
+    // Email
+    'send_offer' => 'Испрати понуда',
+    'send_email' => 'Испрати',
+    'email_to' => 'До (email)',
+    'email_subject' => 'Предмет',
+    'email_body' => 'Порака',
+    'email_default_body' => 'Почитувани,\n\nВо прилог ви ја испраќаме понудата.\n\nСо почит',
 ];

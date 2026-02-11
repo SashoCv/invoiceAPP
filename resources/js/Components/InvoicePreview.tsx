@@ -267,13 +267,6 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             </div>
 
             <div className="p-8 bg-gray-50">
-                {/* Offer Title */}
-                {offer?.title && (
-                    <div className="mb-6 -mt-4">
-                        <h2 className="text-xl font-semibold text-gray-900">{offer.title}</h2>
-                    </div>
-                )}
-
                 {/* Info Cards */}
                 <div className="grid grid-cols-3 gap-4 -mt-12 mb-8">
                     <div className="bg-white rounded-xl shadow-lg p-5">
@@ -299,6 +292,13 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                         <div className="text-sm text-gray-500">{currencySymbol}</div>
                     </div>
                 </div>
+
+                {/* Offer Title */}
+                {offer?.title && (
+                    <div className="mb-6">
+                        <h2 className="text-xl font-semibold text-gray-900">{offer.title}</h2>
+                    </div>
+                )}
 
                 {/* Offer Content (when no items) */}
                 {offer && !hasItems && offer.content && (

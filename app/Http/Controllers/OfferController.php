@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DocumentMail;
 use App\Models\Invoice;
 use App\Models\Offer;
+use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,14 +83,12 @@ class OfferController extends Controller
     public function create(Request $request): Response
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
-        $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
 
         $currentYear = (int) date('Y');
         $nextSequence = Offer::getNextSequence($request->user()->id, $currentYear);
 
         return Inertia::render('Offers/Create', [
             'clients' => $clients,
-            'articles' => $articles,
             'currentYear' => $currentYear,
             'nextSequence' => $nextSequence,
         ]);
@@ -97,9 +98,8 @@ class OfferController extends Controller
     {
         $issueDate = \Carbon\Carbon::parse($request->issue_date);
         $offerYear = (int) $issueDate->year;
-        $hasItems = $request->has('has_items') && $request->has_items === '1';
 
-        $rules = [
+        $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
@@ -109,18 +109,8 @@ class OfferController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
-            'has_items' => ['nullable'],
-        ];
-
-        if ($hasItems) {
-            $rules['items'] = ['required', 'array', 'min:1'];
-            $rules['items.*.description'] = ['required', 'string'];
-            $rules['items.*.quantity'] = ['required', 'numeric', 'min:0.01'];
-            $rules['items.*.unit_price'] = ['required', 'numeric', 'min:0'];
-            $rules['items.*.tax_rate'] = ['required', 'numeric', 'min:0', 'max:100'];
-        }
-
-        $validated = $request->validate($rules);
+            'total' => ['required', 'numeric', 'min:0'],
+        ]);
 
         $exists = Offer::where('user_id', $request->user()->id)
             ->where('offer_year', $offerYear)
@@ -133,7 +123,7 @@ class OfferController extends Controller
             ]);
         }
 
-        $offer = $request->user()->offers()->create([
+        $request->user()->offers()->create([
             'offer_number' => Offer::formatOfferNumber($validated['offer_prefix'] ?? null, $offerYear, $validated['offer_sequence']),
             'offer_prefix' => $validated['offer_prefix'],
             'offer_sequence' => $validated['offer_sequence'],
@@ -146,25 +136,13 @@ class OfferController extends Controller
             'content' => $validated['content'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'status' => 'draft',
-            'has_items' => $hasItems,
+            'has_items' => false,
             'subtotal' => 0,
             'tax_amount' => 0,
-            'total' => 0,
+            'total' => $validated['total'],
         ]);
 
-        if ($hasItems && isset($validated['items'])) {
-            foreach ($validated['items'] as $item) {
-                $offer->items()->create([
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'],
-                ]);
-            }
-            $offer->calculateTotals();
-        }
-
-        return redirect()->route('offers.show', $offer)->with('success', __('toast.offer_created'));
+        return redirect()->route('offers.index')->with('success', __('toast.offer_created'));
     }
 
     public function show(Offer $offer): Response
@@ -183,13 +161,10 @@ class OfferController extends Controller
         $this->authorize('update', $offer);
 
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
-        $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
-        $offer->load('items');
 
         return Inertia::render('Offers/Edit', [
             'offer' => $offer,
             'clients' => $clients,
-            'articles' => $articles,
         ]);
     }
 
@@ -199,9 +174,8 @@ class OfferController extends Controller
 
         $issueDate = \Carbon\Carbon::parse($request->issue_date);
         $offerYear = (int) $issueDate->year;
-        $hasItems = $request->has('has_items') && $request->has_items === '1';
 
-        $rules = [
+        $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
@@ -212,18 +186,8 @@ class OfferController extends Controller
             'content' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,sent,accepted,rejected'],
-            'has_items' => ['nullable'],
-        ];
-
-        if ($hasItems) {
-            $rules['items'] = ['required', 'array', 'min:1'];
-            $rules['items.*.description'] = ['required', 'string'];
-            $rules['items.*.quantity'] = ['required', 'numeric', 'min:0.01'];
-            $rules['items.*.unit_price'] = ['required', 'numeric', 'min:0'];
-            $rules['items.*.tax_rate'] = ['required', 'numeric', 'min:0', 'max:100'];
-        }
-
-        $validated = $request->validate($rules);
+            'total' => ['required', 'numeric', 'min:0'],
+        ]);
 
         $exists = Offer::where('user_id', $request->user()->id)
             ->where('offer_year', $offerYear)
@@ -236,6 +200,8 @@ class OfferController extends Controller
                 'offer_sequence' => __('offers.duplicate_number_error'),
             ]);
         }
+
+        $offer->items()->delete();
 
         $offer->update([
             'offer_number' => Offer::formatOfferNumber($validated['offer_prefix'] ?? null, $offerYear, $validated['offer_sequence']),
@@ -250,24 +216,11 @@ class OfferController extends Controller
             'content' => $validated['content'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'status' => $validated['status'],
-            'has_items' => $hasItems,
+            'has_items' => false,
+            'subtotal' => 0,
+            'tax_amount' => 0,
+            'total' => $validated['total'],
         ]);
-
-        $offer->items()->delete();
-
-        if ($hasItems && isset($validated['items'])) {
-            foreach ($validated['items'] as $item) {
-                $offer->items()->create([
-                    'description' => $item['description'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'],
-                ]);
-            }
-            $offer->calculateTotals();
-        } else {
-            $offer->update(['subtotal' => 0, 'tax_amount' => 0, 'total' => 0]);
-        }
 
         return redirect()->route('offers.show', $offer)->with('success', __('toast.offer_updated'));
     }
@@ -286,9 +239,7 @@ class OfferController extends Controller
     {
         $this->authorize('view', $offer);
 
-        $offer->load('items');
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
-        $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
 
         $currentYear = (int) date('Y');
         $nextSequence = Offer::getNextSequence($request->user()->id, $currentYear);
@@ -296,11 +247,63 @@ class OfferController extends Controller
         return Inertia::render('Offers/Create', [
             'offer' => $offer,
             'clients' => $clients,
-            'articles' => $articles,
             'currentYear' => $currentYear,
             'nextSequence' => $nextSequence,
             'isDuplicate' => true,
         ]);
+    }
+
+    public function updateStatus(Request $request, Offer $offer): RedirectResponse
+    {
+        $this->authorize('update', $offer);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:draft,sent,accepted,rejected'],
+        ]);
+
+        $offer->update(['status' => $validated['status']]);
+
+        return back()->with('success', __('toast.offer_updated'));
+    }
+
+    public function send(Request $request, Offer $offer): RedirectResponse
+    {
+        $this->authorize('view', $offer);
+
+        $validated = $request->validate([
+            'to' => ['required', 'email'],
+            'subject' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string'],
+        ]);
+
+        $pdfService = new PdfService();
+        $pdfPath = $pdfService->generateOfferPdf($offer);
+
+        try {
+            $mail = new DocumentMail(
+                docNumber: $offer->offer_number,
+                docLabel: __('offers.offer'),
+                issueDate: $offer->issue_date?->format('d.m.Y'),
+                dueDate: $offer->valid_until?->format('d.m.Y'),
+                dueDateLabel: __('offers.valid_until'),
+                total: number_format($offer->total, 2),
+                currency: $offer->currency,
+                bodyText: $validated['body'],
+                pdfPath: $pdfPath,
+                pdfFilename: $offer->offer_number . '.pdf',
+            );
+            $mail->subject($validated['subject']);
+
+            Mail::to($validated['to'])->send($mail);
+
+            if ($offer->status === 'draft') {
+                $offer->update(['status' => 'sent']);
+            }
+        } finally {
+            $pdfService->cleanup($pdfPath);
+        }
+
+        return back()->with('success', __('toast.offer_sent_email'));
     }
 
     public function restore(int $id, Request $request): RedirectResponse

@@ -25,6 +25,7 @@ export interface Agency {
     bank_name: string;
     bank_account: string;
     logo: string | null;
+    display_currency: string;
     created_at: string;
     updated_at: string;
 }
@@ -107,6 +108,7 @@ export interface Invoice {
     notes: string | null;
     client: Client;
     items: InvoiceItem[];
+    last_sent_at: string | null;
     created_at: string;
     updated_at: string;
     deleted_at: string | null;
@@ -195,6 +197,47 @@ export interface Offer {
     created_at: string;
     updated_at: string;
     deleted_at: string | null;
+}
+
+export interface ExpenseCategory {
+    id: number;
+    user_id: number;
+    name: string;
+    color: string | null;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface RecurringExpense {
+    id: number;
+    user_id: number;
+    category_id: number | null;
+    name: string;
+    description: string | null;
+    amount: number;
+    day_of_month: number;
+    start_date: string | null;
+    end_date: string | null;
+    is_active: boolean;
+    category?: ExpenseCategory;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Expense {
+    id: number;
+    user_id: number;
+    category_id: number | null;
+    recurring_expense_id: number | null;
+    name: string;
+    description: string | null;
+    amount: number;
+    date: string;
+    category?: ExpenseCategory;
+    recurring_expense?: RecurringExpense;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ClientContract {

@@ -4,18 +4,28 @@ return [
     'title' => 'Контролна табла',
     'subtitle' => 'Преглед на фактури и финансии',
 
+    // Period filter
+    'from' => 'Од',
+    'to' => 'До',
+    'apply' => 'Примени',
+
     // Stats cards
     'total_invoices' => 'Вкупно фактури',
     'clients' => 'клиенти',
     'collected' => 'Наплатено',
-    'currency' => 'МКД',
-    'paid' => 'платени',
+'paid' => 'платени',
     'pending_payment' => 'Чека наплата',
     'invoices' => 'фактури',
     'overdue' => 'Задоцнети',
+    'total_expenses' => 'Вкупно трошоци',
+    'expenses' => 'трошоци',
+    'profit' => 'Профит',
+    'revenue_minus_expenses' => 'приход - трошоци',
 
     // Charts
+    'monthly_overview' => 'Месечен преглед',
     'monthly_revenue' => 'Месечен приход',
+    'revenue_and_expenses' => 'Приходи и трошоци по месец',
     'last_6_months' => 'Последни 6 месеци',
     'revenue' => 'Приход',
 

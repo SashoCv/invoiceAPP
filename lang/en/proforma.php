@@ -24,14 +24,26 @@ return [
     'status_converted_to_invoice' => 'Converted',
 
     // Form
+    'create_title' => 'New Proforma Invoice',
+    'create_subtitle' => 'Create a new proforma invoice for your clients',
+    'duplicate_title' => 'Duplicate Proforma',
+    'edit_title' => 'Edit Proforma',
+    'basic_info' => 'Basic Information',
     'create_proforma' => 'Create Proforma',
     'edit_proforma' => 'Edit Proforma',
+    'save_proforma' => 'Save Proforma',
+    'update_proforma' => 'Update Proforma',
     'select_client' => 'Select client',
     'issue_date' => 'Issue Date',
     'valid_until' => 'Valid Until',
+    'prefix' => 'Prefix',
+    'number' => 'Number',
+    'year' => 'Year',
+    'article' => 'Article',
     'tax_rate' => 'Tax Rate',
     'notes' => 'Notes',
     'notes_placeholder' => 'Additional notes for the proforma...',
+    'back_to_proforma' => 'Back to proforma',
 
     // Items
     'items' => 'Items',
@@ -104,4 +116,15 @@ return [
     // Convert
     'converted_notice' => 'This proforma has been converted to an invoice',
     'view_invoice' => 'View Invoice',
+
+    // Status change
+    'change_status' => 'Change Status',
+
+    // Email
+    'send_proforma' => 'Send Proforma',
+    'send_email' => 'Send',
+    'email_to' => 'To (email)',
+    'email_subject' => 'Subject',
+    'email_body' => 'Message',
+    'email_default_body' => 'Dear Sir/Madam,\n\nPlease find the proforma invoice attached.\n\nBest regards',
 ];

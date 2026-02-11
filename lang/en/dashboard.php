@@ -4,18 +4,28 @@ return [
     'title' => 'Dashboard',
     'subtitle' => 'Overview of invoices and finances',
 
+    // Period filter
+    'from' => 'From',
+    'to' => 'To',
+    'apply' => 'Apply',
+
     // Stats cards
     'total_invoices' => 'Total Invoices',
     'clients' => 'clients',
     'collected' => 'Collected',
-    'currency' => 'MKD',
-    'paid' => 'paid',
+'paid' => 'paid',
     'pending_payment' => 'Pending Payment',
     'invoices' => 'invoices',
     'overdue' => 'Overdue',
+    'total_expenses' => 'Total Expenses',
+    'expenses' => 'expenses',
+    'profit' => 'Profit',
+    'revenue_minus_expenses' => 'revenue - expenses',
 
     // Charts
+    'monthly_overview' => 'Monthly Overview',
     'monthly_revenue' => 'Monthly Revenue',
+    'revenue_and_expenses' => 'Revenue and expenses by month',
     'last_6_months' => 'Last 6 months',
     'revenue' => 'Revenue',
 

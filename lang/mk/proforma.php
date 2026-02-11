@@ -24,14 +24,26 @@ return [
     'status_converted_to_invoice' => 'Конвертирана',
 
     // Form
+    'create_title' => 'Нова профактура',
+    'create_subtitle' => 'Креирајте нова профактура за вашите клиенти',
+    'duplicate_title' => 'Копирај профактура',
+    'edit_title' => 'Измени профактура',
+    'basic_info' => 'Основни информации',
     'create_proforma' => 'Креирај профактура',
     'edit_proforma' => 'Измени профактура',
+    'save_proforma' => 'Зачувај профактура',
+    'update_proforma' => 'Ажурирај профактура',
     'select_client' => 'Изберете клиент',
     'issue_date' => 'Датум на издавање',
     'valid_until' => 'Важи до',
+    'prefix' => 'Префикс',
+    'number' => 'Број',
+    'year' => 'Година',
+    'article' => 'Артикл',
     'tax_rate' => 'ДДВ стапка',
     'notes' => 'Забелешки',
     'notes_placeholder' => 'Дополнителни забелешки за профактурата...',
+    'back_to_proforma' => 'Назад кон профактура',
 
     // Items
     'items' => 'Ставки',
@@ -104,4 +116,15 @@ return [
     // Convert
     'converted_notice' => 'Оваа профактура е конвертирана во фактура',
     'view_invoice' => 'Види фактура',
+
+    // Status change
+    'change_status' => 'Промени статус',
+
+    // Email
+    'send_proforma' => 'Испрати профактура',
+    'send_email' => 'Испрати',
+    'email_to' => 'До (email)',
+    'email_subject' => 'Предмет',
+    'email_body' => 'Порака',
+    'email_default_body' => 'Почитувани,\n\nВо прилог ви ја испраќаме профактурата.\n\nСо почит',
 ];

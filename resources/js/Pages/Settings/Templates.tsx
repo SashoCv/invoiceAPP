@@ -9,7 +9,6 @@ import {
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { Check, Eye, FileText, FileSpreadsheet } from 'lucide-react';
-import InvoicePreview from '@/Components/InvoicePreview';
 import type { Template, Agency } from '@/types';
 
 interface TemplatesPageProps {
@@ -20,65 +19,10 @@ interface TemplatesPageProps {
     agency?: Agency;
 }
 
-// Sample data for preview
-const sampleInvoice = {
-    invoice_number: 'ФА-2025/001',
-    issue_date: new Date().toISOString().split('T')[0],
-    due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    currency: 'MKD',
-    status: 'draft',
-    subtotal: 50000,
-    tax_amount: 9000,
-    total: 59000,
-    notes: 'Ви благодариме за соработката!',
-    client: {
-        name: 'Примерна Компанија ДООЕЛ',
-        company: 'Примерна Компанија ДООЕЛ',
-        address: 'ул. Примерна бр. 123',
-        city: 'Скопје',
-        postal_code: '1000',
-        email: 'info@primer.mk',
-        tax_number: 'MK1234567890',
-    },
-    items: [
-        { description: 'Веб дизајн услуги', quantity: 1, unit_price: 30000, tax_rate: 18 },
-        { description: 'Хостинг (годишен)', quantity: 1, unit_price: 12000, tax_rate: 18 },
-        { description: 'Одржување на веб страна', quantity: 2, unit_price: 4000, tax_rate: 18 },
-    ],
-};
-
-const sampleOffer = {
-    offer_number: 'ПОН-2025/001',
-    title: 'Понуда за веб развој',
-    issue_date: new Date().toISOString().split('T')[0],
-    valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    currency: 'MKD',
-    status: 'sent',
-    subtotal: 80000,
-    tax_amount: 14400,
-    total: 94400,
-    notes: 'Понудата важи 30 дена.',
-    has_items: true,
-    client: {
-        name: 'Примерна Компанија ДООЕЛ',
-        company: 'Примерна Компанија ДООЕЛ',
-        address: 'ул. Примерна бр. 123',
-        city: 'Скопје',
-        postal_code: '1000',
-        email: 'info@primer.mk',
-        tax_number: 'MK1234567890',
-    },
-    items: [
-        { description: 'Дизајн на веб страна', quantity: 1, unit_price: 45000, tax_rate: 18 },
-        { description: 'Развој на функционалности', quantity: 1, unit_price: 35000, tax_rate: 18 },
-    ],
-};
-
 export default function TemplatesPage({
     templates,
     currentInvoiceTemplate,
     currentOfferTemplate,
-    agency,
 }: TemplatesPageProps) {
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -118,27 +62,6 @@ export default function TemplatesPage({
 
     const selectOfferTemplate = (templateKey: string) => {
         setData('offer_template', templateKey);
-    };
-
-    // Sample agency for preview
-    const sampleAgency = agency || {
-        name: 'Моја Агенција',
-        address: 'ул. Центар бр. 1',
-        city: 'Скопје',
-        postal_code: '1000',
-        phone: '+389 2 123 456',
-        email: 'info@agencija.mk',
-        tax_number: 'MK9876543210',
-        registration_number: '1234567',
-    };
-
-    const sampleBankAccount = {
-        bank_name: 'Стопанска Банка АД Скопје',
-        account_number: '200-1234567890-12',
-        iban: 'MK07200123456789012',
-        swift: 'STOBMK2X',
-        currency: 'MKD',
-        is_default: true,
     };
 
     // Mini preview thumbnails for each template style
@@ -405,13 +328,11 @@ export default function TemplatesPage({
 
                 {/* Preview Dialog */}
                 <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
-                        <InvoicePreview
-                            document={(previewType === 'invoice' ? sampleInvoice : sampleOffer) as any}
-                            type={previewType}
-                            agency={sampleAgency as any}
-                            bankAccount={previewType === 'invoice' ? sampleBankAccount as any : undefined}
-                            template={previewTemplate}
+                    <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
+                        <iframe
+                            src={`/settings/templates/preview?template=${previewTemplate}&type=${previewType}`}
+                            className="w-full h-[85vh] border-0"
+                            title={`Preview ${previewTemplate}`}
                         />
                     </DialogContent>
                 </Dialog>

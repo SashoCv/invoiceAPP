@@ -55,6 +55,8 @@ return [
     'upload_logo' => 'Upload Logo',
     'remove_logo' => 'Remove Logo',
     'logo_hint' => 'PNG, JPG up to 2MB. Will appear on invoices.',
+    'display_currency' => 'Display Currency',
+    'display_currency_desc' => 'Currency used for displaying totals on the dashboard.',
     'save_agency' => 'Save Agency',
 
     // Bank accounts

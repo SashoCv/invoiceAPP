@@ -56,6 +56,8 @@ return [
     'upload_logo' => 'Прикачи лого',
     'remove_logo' => 'Отстрани лого',
     'logo_hint' => 'PNG, JPG до 2MB. Ќе се прикажува на фактури.',
+    'display_currency' => 'Валута за приказ',
+    'display_currency_desc' => 'Валута за прикажување на вкупните суми на контролната табла.',
     'save_agency' => 'Зачувај агенција',
 
     // Bank accounts

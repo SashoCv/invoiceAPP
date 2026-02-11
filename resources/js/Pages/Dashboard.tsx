@@ -1,8 +1,11 @@
-import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 import {
     Table,
     TableBody,
@@ -21,12 +24,15 @@ import {
     ChevronRight,
     ArrowUp,
     Check,
+    Receipt,
+    ArrowDown,
 } from 'lucide-react';
 import type { Invoice } from '@/types';
 
-interface MonthlyRevenue {
+interface MonthlyData {
     month: string;
     revenue: number;
+    expenses: number;
 }
 
 interface StatusDistribution {
@@ -41,12 +47,16 @@ interface DashboardProps {
     pendingInvoices: number;
     overdueInvoices: number;
     totalRevenue: number;
+    totalExpenses: number;
     pendingAmount: number;
     overdueAmount: number;
     totalClients: number;
-    monthlyRevenue: MonthlyRevenue[];
-    recentInvoices: Invoice[];
+    monthlyData: MonthlyData[];
+    recentInvoices: (Invoice & { converted_total?: number })[];
     statusDistribution: StatusDistribution;
+    displayCurrency: string;
+    from: string;
+    to: string;
 }
 
 const statusBadgeVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive' | 'warning'> = {
@@ -60,19 +70,27 @@ const statusBadgeVariants: Record<string, 'success' | 'info' | 'gray' | 'destruc
 export default function Dashboard({
     totalInvoices,
     paidInvoices,
-    pendingInvoices,
-    overdueInvoices,
     totalRevenue,
-    pendingAmount,
-    overdueAmount,
+    totalExpenses,
     totalClients,
-    monthlyRevenue,
+    monthlyData,
     recentInvoices,
     statusDistribution,
+    displayCurrency,
+    from,
+    to,
 }: DashboardProps) {
     const { t } = useTranslation();
-    const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.revenue)) || 1;
+    const [fromDate, setFromDate] = useState(from);
+    const [toDate, setToDate] = useState(to);
+
+    const maxValue = Math.max(...monthlyData.map((m) => Math.max(m.revenue, m.expenses))) || 1;
     const successRate = totalInvoices > 0 ? Math.round((statusDistribution.paid / totalInvoices) * 100) : 0;
+    const profit = totalRevenue - totalExpenses;
+
+    const applyFilter = () => {
+        router.get('/dashboard', { from: fromDate, to: toDate }, { preserveState: true });
+    };
 
     return (
         <AppLayout>
@@ -80,18 +98,34 @@ export default function Dashboard({
 
             <div>
                 {/* Page Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
                         <p className="text-sm text-gray-500 mt-1">{t('dashboard.subtitle')}</p>
                     </div>
-                    <p className="hidden sm:block text-sm text-gray-400">
-                        {new Date().toLocaleDateString('mk-MK', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                        })}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-sm text-gray-500 whitespace-nowrap">{t('dashboard.from')}</Label>
+                            <Input
+                                type="date"
+                                value={fromDate}
+                                onChange={(e) => setFromDate(e.target.value)}
+                                className="w-[150px] h-9"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-sm text-gray-500 whitespace-nowrap">{t('dashboard.to')}</Label>
+                            <Input
+                                type="date"
+                                value={toDate}
+                                onChange={(e) => setToDate(e.target.value)}
+                                className="w-[150px] h-9"
+                            />
+                        </div>
+                        <Button size="sm" onClick={applyFilter}>
+                            {t('dashboard.apply')}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Main Stats Cards */}
@@ -125,94 +159,115 @@ export default function Dashboard({
                                 <div>
                                     <p className="text-emerald-100 text-sm font-medium">{t('dashboard.collected')}</p>
                                     <p className="text-3xl font-bold mt-2">{formatNumber(totalRevenue, 0)}</p>
-                                    <p className="text-emerald-200 text-sm">{t('dashboard.currency')}</p>
+                                    <p className="text-emerald-200 text-sm">{displayCurrency}</p>
                                 </div>
                                 <div className="bg-white/20 rounded-xl p-3">
-                                    <CheckCircle className="h-8 w-8" />
+                                    <ArrowUp className="h-8 w-8" />
                                 </div>
                             </div>
                             <div className="mt-4 flex items-center text-emerald-100 text-sm">
-                                <ArrowUp className="w-4 h-4 mr-1" />
+                                <CheckCircle className="w-4 h-4 mr-1" />
                                 <span className="font-medium">{paidInvoices} {t('dashboard.paid')}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Pending Amount */}
-                    <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-6 text-white">
-                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full" />
-                        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-white/10 rounded-full" />
-                        <div className="relative">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-amber-100 text-sm font-medium">{t('dashboard.pending_payment')}</p>
-                                    <p className="text-3xl font-bold mt-2">{formatNumber(pendingAmount, 0)}</p>
-                                    <p className="text-amber-200 text-sm">{t('dashboard.currency')}</p>
-                                </div>
-                                <div className="bg-white/20 rounded-xl p-3">
-                                    <Clock className="h-8 w-8" />
-                                </div>
-                            </div>
-                            <div className="mt-4 flex items-center text-amber-100 text-sm">
-                                <span className="font-medium">{pendingInvoices} {t('dashboard.invoices')}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Overdue Amount */}
+                    {/* Total Expenses */}
                     <div className="relative overflow-hidden bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl shadow-lg p-6 text-white">
                         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full" />
                         <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-white/10 rounded-full" />
                         <div className="relative">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-rose-100 text-sm font-medium">{t('dashboard.overdue')}</p>
-                                    <p className="text-3xl font-bold mt-2">{formatNumber(overdueAmount, 0)}</p>
-                                    <p className="text-rose-200 text-sm">{t('dashboard.currency')}</p>
+                                    <p className="text-rose-100 text-sm font-medium">{t('dashboard.total_expenses')}</p>
+                                    <p className="text-3xl font-bold mt-2">{formatNumber(totalExpenses, 0)}</p>
+                                    <p className="text-rose-200 text-sm">{displayCurrency}</p>
                                 </div>
                                 <div className="bg-white/20 rounded-xl p-3">
-                                    <AlertTriangle className="h-8 w-8" />
+                                    <Receipt className="h-8 w-8" />
                                 </div>
                             </div>
                             <div className="mt-4 flex items-center text-rose-100 text-sm">
-                                <span className="font-medium">{overdueInvoices} {t('dashboard.invoices')}</span>
+                                <ArrowDown className="w-4 h-4 mr-1" />
+                                <span className="font-medium">{t('dashboard.expenses')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Profit */}
+                    <div className={`relative overflow-hidden rounded-2xl shadow-lg p-6 text-white ${profit >= 0 ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-amber-500 to-orange-500'}`}>
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full" />
+                        <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-white/10 rounded-full" />
+                        <div className="relative">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className={`text-sm font-medium ${profit >= 0 ? 'text-violet-100' : 'text-amber-100'}`}>{t('dashboard.profit')}</p>
+                                    <p className="text-3xl font-bold mt-2">{formatNumber(profit, 0)}</p>
+                                    <p className={`text-sm ${profit >= 0 ? 'text-violet-200' : 'text-amber-200'}`}>{displayCurrency}</p>
+                                </div>
+                                <div className="bg-white/20 rounded-xl p-3">
+                                    {profit >= 0 ? <ArrowUp className="h-8 w-8" /> : <ArrowDown className="h-8 w-8" />}
+                                </div>
+                            </div>
+                            <div className={`mt-4 flex items-center text-sm ${profit >= 0 ? 'text-violet-100' : 'text-amber-100'}`}>
+                                <span className="font-medium">{t('dashboard.revenue_minus_expenses')}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Monthly Revenue Chart */}
+                    {/* Monthly Revenue & Expenses Chart */}
                     <Card className="lg:col-span-2">
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle>{t('dashboard.monthly_revenue')}</CardTitle>
-                                    <CardDescription>{t('dashboard.last_6_months')}</CardDescription>
+                                    <CardTitle>{t('dashboard.monthly_overview')}</CardTitle>
+                                    <CardDescription>{t('dashboard.revenue_and_expenses')}</CardDescription>
                                 </div>
-                                <Badge variant="success" className="flex items-center gap-1.5">
-                                    <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-                                    {t('dashboard.revenue')}
-                                </Badge>
+                                <div className="flex items-center gap-4">
+                                    <Badge variant="success" className="flex items-center gap-1.5">
+                                        <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                        {t('dashboard.revenue')}
+                                    </Badge>
+                                    <Badge variant="destructive" className="flex items-center gap-1.5">
+                                        <span className="w-2 h-2 bg-rose-500 rounded-full" />
+                                        {t('dashboard.expenses')}
+                                    </Badge>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-5">
-                                {monthlyRevenue.map((month, index) => {
-                                    const percentage = (month.revenue / maxRevenue) * 100;
+                                {monthlyData.map((item, index) => {
+                                    const revPercent = (item.revenue / maxValue) * 100;
+                                    const expPercent = (item.expenses / maxValue) * 100;
                                     return (
                                         <div key={index} className="group">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    {formatNumber(month.revenue, 0)} {t('dashboard.currency')}
-                                                </span>
+                                                <span className="text-sm font-medium text-gray-700">{item.month}</span>
+                                                <div className="flex items-center gap-4 text-sm">
+                                                    <span className="font-bold text-emerald-600">
+                                                        +{formatNumber(item.revenue, 0)}
+                                                    </span>
+                                                    <span className="font-bold text-rose-500">
+                                                        -{formatNumber(item.expenses, 0)}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="overflow-hidden h-3 rounded-full bg-gray-100">
-                                                <div
-                                                    className="h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500 ease-out group-hover:from-emerald-500 group-hover:to-emerald-600"
-                                                    style={{ width: `${percentage}%` }}
-                                                />
+                                            <div className="space-y-1.5">
+                                                <div className="overflow-hidden h-2.5 rounded-full bg-gray-100">
+                                                    <div
+                                                        className="h-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500 ease-out"
+                                                        style={{ width: `${revPercent}%` }}
+                                                    />
+                                                </div>
+                                                <div className="overflow-hidden h-2.5 rounded-full bg-gray-100">
+                                                    <div
+                                                        className="h-2.5 rounded-full bg-gradient-to-r from-rose-400 to-rose-500 transition-all duration-500 ease-out"
+                                                        style={{ width: `${expPercent}%` }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -350,7 +405,7 @@ export default function Dashboard({
                                         </TableCell>
                                         <TableCell>
                                             <p className="text-sm font-bold text-gray-900">
-                                                {formatNumber(invoice.total, 0)} {t('dashboard.currency')}
+                                                {formatNumber(invoice.converted_total ?? invoice.total, 0)} {displayCurrency}
                                             </p>
                                         </TableCell>
                                         <TableCell>

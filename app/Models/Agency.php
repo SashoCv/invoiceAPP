@@ -21,6 +21,7 @@ class Agency extends Model
         'tax_number',
         'registration_number',
         'logo',
+        'display_currency',
     ];
 
     public function user(): BelongsTo
