@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,9 +38,6 @@ class AdminUserController extends Controller
                         $q->whereNull('trial_ends_at')
                           ->orWhere('trial_ends_at', '<=', now());
                     }),
-                'trial' => $query->where('role', '!=', 'admin')
-                    ->whereNull('subscription_expires_at')
-                    ->where('trial_ends_at', '>', now()),
                 default => null,
             };
         }
@@ -62,6 +60,54 @@ class AdminUserController extends Controller
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
             'filters' => $request->only(['search', 'status']),
+        ]);
+    }
+
+    public function calendar(Request $request): Response
+    {
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
+
+        $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth()->endOfDay();
+
+        // Users with subscription expiring this month (non-admin)
+        $subscriptionUsers = User::where('role', '!=', 'admin')
+            ->whereBetween('subscription_expires_at', [$startOfMonth, $endOfMonth])
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'date' => $user->subscription_expires_at->toDateString(),
+                'type' => 'subscription',
+            ]);
+
+        // Users with trial ending this month (non-admin, without active subscription)
+        $trialUsers = User::where('role', '!=', 'admin')
+            ->whereBetween('trial_ends_at', [$startOfMonth, $endOfMonth])
+            ->where(function ($q) {
+                $q->whereNull('subscription_expires_at')
+                  ->orWhere('subscription_expires_at', '<=', now());
+            })
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'date' => $user->trial_ends_at->toDateString(),
+                'type' => 'trial',
+            ]);
+
+        $allUsers = $subscriptionUsers->merge($trialUsers);
+
+        $expirationsByDate = $allUsers->groupBy('date')->map(fn ($users) => $users->values())->toArray();
+
+        return Inertia::render('Admin/Users/Calendar', [
+            'expirationsByDate' => $expirationsByDate,
+            'month' => $month,
+            'year' => $year,
+            'totalExpiring' => $allUsers->count(),
         ]);
     }
 
@@ -128,5 +174,16 @@ class AdminUserController extends Controller
             : __('admin.user_demoted');
 
         return back()->with('success', $message);
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', __('admin.cannot_delete_self'));
+        }
+
+        $user->delete();
+
+        return back()->with('success', __('admin.user_deleted'));
     }
 }

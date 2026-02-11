@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react';
 import { Link } from '@inertiajs/react';
-import { FileText, BarChart3, Receipt, TrendingUp } from 'lucide-react';
+import { BarChart3, Receipt, TrendingUp } from 'lucide-react';
+import FynvoLogo from '@/Components/FynvoLogo';
 
 export default function GuestLayout({ children }: PropsWithChildren) {
     return (
@@ -28,11 +29,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                 <div className="relative z-10 flex flex-col justify-between p-12 w-full">
                     {/* Logo */}
                     <div>
-                        <Link href="/" className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                <FileText className="w-6 h-6 text-white" />
-                            </div>
-                            <span className="text-2xl font-bold text-white">InvoiceApp</span>
+                        <Link href="/">
+                            <FynvoLogo size={48} className="text-white/20 backdrop-blur-sm" textClassName="text-white text-2xl" />
                         </Link>
                     </div>
 
@@ -80,7 +78,7 @@ export default function GuestLayout({ children }: PropsWithChildren) {
 
                     {/* Bottom */}
                     <p className="text-blue-200/50 text-sm">
-                        &copy; {new Date().getFullYear()} InvoiceApp
+                        &copy; {new Date().getFullYear()} Fynvo
                     </p>
                 </div>
             </div>
@@ -89,11 +87,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
             <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-gray-50 lg:px-12">
                 {/* Mobile logo */}
                 <div className="lg:hidden mb-8">
-                    <Link href="/" className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center">
-                            <FileText className="w-6 h-6 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold text-gray-900">InvoiceApp</span>
+                    <Link href="/">
+                        <FynvoLogo size={48} className="text-blue-600" textClassName="text-gray-900 text-2xl" />
                     </Link>
                 </div>
 

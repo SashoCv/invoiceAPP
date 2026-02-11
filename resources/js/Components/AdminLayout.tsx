@@ -8,12 +8,15 @@ import { Avatar, AvatarFallback } from '@/Components/ui/avatar';
 import {
     LayoutDashboard,
     Users,
+    CalendarDays,
+    Mail,
     ArrowLeft,
     Shield,
     LogOut,
     Menu,
     X,
 } from 'lucide-react';
+import FynvoLogo from '@/Components/FynvoLogo';
 import type { PageProps } from '@/types';
 
 interface NavItem {
@@ -58,7 +61,19 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             name: t('admin.users'),
             href: '/admin/users',
             icon: Users,
-            active: currentPath.startsWith('/admin/users'),
+            active: currentPath === '/admin/users' || currentPath.match(/^\/admin\/users\/\d/),
+        },
+        {
+            name: t('admin.expiry_calendar'),
+            href: '/admin/users/calendar',
+            icon: CalendarDays,
+            active: currentPath.startsWith('/admin/users/calendar'),
+        },
+        {
+            name: t('admin.notifications'),
+            href: '/admin/notifications',
+            icon: Mail,
+            active: currentPath.startsWith('/admin/notifications'),
         },
     ];
 
@@ -96,12 +111,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 >
                     {/* Logo */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                        <Link href="/admin" className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                                <Shield className="w-4 h-4 text-white" />
-                            </div>
-                            <span className="text-gray-900 font-semibold">{t('admin.admin_panel')}</span>
+                        <Link href="/admin">
+                            <FynvoLogo size={32} className="text-indigo-600" showText={false} />
                         </Link>
+                        <span className="text-gray-900 font-semibold">{t('admin.admin_panel')}</span>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="ml-auto p-2 -mr-2 text-gray-400 hover:text-gray-600 lg:hidden"

@@ -16,7 +16,7 @@ import Pagination from '@/Components/Pagination';
 import ActionDropdown from '@/Components/ActionDropdown';
 import { formatDate } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
-import { Search, Eye, CalendarPlus, Ban, Shield } from 'lucide-react';
+import { Search, Eye, CalendarPlus, Ban, Shield, Trash2 } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -62,6 +62,7 @@ export default function UsersIndex({ users, filters }: Props) {
     const [extendDialogUser, setExtendDialogUser] = useState<AdminUser | null>(null);
     const [extendDays, setExtendDays] = useState('30');
     const [revokeDialogUser, setRevokeDialogUser] = useState<AdminUser | null>(null);
+    const [deleteDialogUser, setDeleteDialogUser] = useState<AdminUser | null>(null);
 
     const handleSearch = (value: string) => {
         setSearch(value);
@@ -98,6 +99,13 @@ export default function UsersIndex({ users, filters }: Props) {
         router.post(`/admin/users/${user.id}/toggle-admin`);
     };
 
+    const handleDelete = () => {
+        if (!deleteDialogUser) return;
+        router.delete(`/admin/users/${deleteDialogUser.id}`, {
+            onSuccess: () => setDeleteDialogUser(null),
+        });
+    };
+
     return (
         <AdminLayout>
             <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('admin.users')}</h1>
@@ -125,7 +133,6 @@ export default function UsersIndex({ users, filters }: Props) {
                                 <SelectItem value="all">{t('admin.all')}</SelectItem>
                                 <SelectItem value="admin">{t('admin.admins')}</SelectItem>
                                 <SelectItem value="active">{t('admin.active')}</SelectItem>
-                                <SelectItem value="trial">{t('admin.trial')}</SelectItem>
                                 <SelectItem value="expired">{t('admin.expired')}</SelectItem>
                             </SelectContent>
                         </Select>
@@ -199,6 +206,12 @@ export default function UsersIndex({ users, filters }: Props) {
                                                         icon: Shield,
                                                         onClick: () => handleToggleAdmin(user),
                                                     },
+                                                    {
+                                                        label: t('admin.delete_user'),
+                                                        icon: Trash2,
+                                                        onClick: () => setDeleteDialogUser(user),
+                                                        variant: 'destructive',
+                                                    },
                                                 ]}
                                             />
                                         </td>
@@ -266,6 +279,31 @@ export default function UsersIndex({ users, filters }: Props) {
                         </Button>
                         <Button variant="destructive" onClick={handleRevoke}>
                             {t('admin.revoke')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <Dialog open={!!deleteDialogUser} onOpenChange={() => setDeleteDialogUser(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('admin.delete_user')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm font-medium text-gray-900 mb-2">
+                            {deleteDialogUser?.name} ({deleteDialogUser?.email})
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            {t('admin.delete_user_confirm')}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteDialogUser(null)}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            {t('admin.delete_user')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

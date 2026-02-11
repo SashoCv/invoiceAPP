@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/Components/ui/toaster';
 import { Avatar, AvatarFallback } from '@/Components/ui/avatar';
 import CurrencyCalculator from '@/Components/CurrencyCalculator';
+import FynvoLogo from '@/Components/FynvoLogo';
 import {
     LayoutDashboard,
     FileText,
@@ -179,11 +180,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 >
                     {/* Logo */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                        <Link href="/dashboard" className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                                <FileText className="w-4 h-4 text-white" />
-                            </div>
-                            <span className="text-gray-900 font-semibold">InvoiceApp</span>
+                        <Link href="/dashboard">
+                            <FynvoLogo size={32} className="text-blue-600" textClassName="text-gray-900 text-lg" />
                         </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
@@ -332,7 +330,10 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         >
                             <Menu className="w-5 h-5" />
                         </button>
-                        <span className="ml-3 font-semibold text-gray-900">InvoiceApp</span>
+                        <span className="ml-3 font-semibold text-gray-900">
+                            <span className="font-bold tracking-tight">Fyn</span>
+                            <span className="font-light tracking-tight">vo</span>
+                        </span>
                     </header>
 
                     {/* Expired subscription banner */}
