@@ -76,7 +76,8 @@ class ProformaInvoice extends Model
 
     public static function getNextSequence(int $userId, int $year): int
     {
-        $maxSequence = self::where('user_id', $userId)
+        $maxSequence = self::withTrashed()
+            ->where('user_id', $userId)
             ->where('proforma_year', $year)
             ->max('proforma_sequence');
 

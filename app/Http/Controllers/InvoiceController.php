@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\InvoiceMail;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -123,7 +126,8 @@ class InvoiceController extends Controller
         ]);
 
         // Check for duplicate sequence number
-        $exists = Invoice::where('user_id', $request->user()->id)
+        $exists = Invoice::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('invoice_year', $invoiceYear)
             ->where('invoice_sequence', $validated['invoice_sequence'])
             ->exists();
@@ -215,7 +219,8 @@ class InvoiceController extends Controller
         ]);
 
         // Check for duplicate sequence number (excluding current invoice)
-        $exists = Invoice::where('user_id', $request->user()->id)
+        $exists = Invoice::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('invoice_year', $invoiceYear)
             ->where('invoice_sequence', $validated['invoice_sequence'])
             ->where('id', '!=', $invoice->id)
@@ -287,6 +292,54 @@ class InvoiceController extends Controller
             'nextSequence' => $nextSequence,
             'isDuplicate' => true,
         ]);
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('update', $invoice);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:draft,sent,unpaid,paid,overdue,cancelled'],
+        ]);
+
+        $invoice->update([
+            'status' => $validated['status'],
+            'paid_date' => $validated['status'] === 'paid' ? now() : null,
+        ]);
+
+        return back()->with('success', __('toast.invoice_updated'));
+    }
+
+    public function send(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $validated = $request->validate([
+            'to' => ['required', 'email'],
+            'subject' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string'],
+        ]);
+
+        $pdfService = new PdfService();
+        $pdfPath = $pdfService->generateInvoicePdf($invoice);
+
+        try {
+            $mail = new InvoiceMail($invoice, $validated['body'], $pdfPath);
+            $mail->subject($validated['subject']);
+
+            Mail::to($validated['to'])->send($mail);
+
+            // Update status to sent if currently draft
+            if ($invoice->status === 'draft') {
+                $invoice->update(['status' => 'sent']);
+            }
+
+            $invoice->update(['last_sent_at' => now()]);
+        } finally {
+            $pdfService->cleanup($pdfPath);
+        }
+
+        return back()->with('success', __('toast.invoice_sent_email'));
     }
 
     public function restore(int $id, Request $request): RedirectResponse

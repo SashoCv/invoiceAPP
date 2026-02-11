@@ -112,7 +112,8 @@ class OfferController extends Controller
             'total' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $exists = Offer::where('user_id', $request->user()->id)
+        $exists = Offer::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('offer_year', $offerYear)
             ->where('offer_sequence', $validated['offer_sequence'])
             ->exists();
@@ -189,7 +190,8 @@ class OfferController extends Controller
             'total' => ['required', 'numeric', 'min:0'],
         ]);
 
-        $exists = Offer::where('user_id', $request->user()->id)
+        $exists = Offer::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('offer_year', $offerYear)
             ->where('offer_sequence', $validated['offer_sequence'])
             ->where('id', '!=', $offer->id)

@@ -27,6 +27,7 @@ class Invoice extends Model
         'total',
         'notes',
         'paid_date',
+        'last_sent_at',
     ];
 
     public const CURRENCIES = [
@@ -44,6 +45,7 @@ class Invoice extends Model
         'issue_date' => 'date',
         'due_date' => 'date',
         'paid_date' => 'date',
+        'last_sent_at' => 'datetime',
         'subtotal' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
@@ -93,7 +95,8 @@ class Invoice extends Model
      */
     public static function getNextSequence(int $userId, int $year): int
     {
-        $maxSequence = self::where('user_id', $userId)
+        $maxSequence = self::withTrashed()
+            ->where('user_id', $userId)
             ->where('invoice_year', $year)
             ->max('invoice_sequence');
 

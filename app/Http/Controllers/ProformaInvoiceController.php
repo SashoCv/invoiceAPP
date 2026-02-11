@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DocumentMail;
 use App\Models\Invoice;
 use App\Models\ProformaInvoice;
+use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -112,7 +115,8 @@ class ProformaInvoiceController extends Controller
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        $exists = ProformaInvoice::where('user_id', $request->user()->id)
+        $exists = ProformaInvoice::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('proforma_year', $proformaYear)
             ->where('proforma_sequence', $validated['proforma_sequence'])
             ->exists();
@@ -202,7 +206,8 @@ class ProformaInvoiceController extends Controller
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        $exists = ProformaInvoice::where('user_id', $request->user()->id)
+        $exists = ProformaInvoice::withTrashed()
+            ->where('user_id', $request->user()->id)
             ->where('proforma_year', $proformaYear)
             ->where('proforma_sequence', $validated['proforma_sequence'])
             ->where('id', '!=', $proformaInvoice->id)
@@ -272,6 +277,59 @@ class ProformaInvoiceController extends Controller
             'nextSequence' => $nextSequence,
             'isDuplicate' => true,
         ]);
+    }
+
+    public function updateStatus(Request $request, ProformaInvoice $proformaInvoice): RedirectResponse
+    {
+        $this->authorize('update', $proformaInvoice);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:draft,sent,converted_to_invoice'],
+        ]);
+
+        $proformaInvoice->update(['status' => $validated['status']]);
+
+        return back()->with('success', __('toast.proforma_updated'));
+    }
+
+    public function send(Request $request, ProformaInvoice $proformaInvoice): RedirectResponse
+    {
+        $this->authorize('view', $proformaInvoice);
+
+        $validated = $request->validate([
+            'to' => ['required', 'email'],
+            'subject' => ['required', 'string', 'max:255'],
+            'body' => ['required', 'string'],
+        ]);
+
+        $pdfService = new PdfService();
+        $pdfPath = $pdfService->generateProformaPdf($proformaInvoice);
+
+        try {
+            $mail = new DocumentMail(
+                docNumber: $proformaInvoice->proforma_number,
+                docLabel: __('proforma.proforma'),
+                issueDate: $proformaInvoice->issue_date?->format('d.m.Y'),
+                dueDate: $proformaInvoice->valid_until?->format('d.m.Y'),
+                dueDateLabel: __('proforma.valid_until'),
+                total: number_format($proformaInvoice->total, 2),
+                currency: $proformaInvoice->currency,
+                bodyText: $validated['body'],
+                pdfPath: $pdfPath,
+                pdfFilename: $proformaInvoice->proforma_number . '.pdf',
+            );
+            $mail->subject($validated['subject']);
+
+            Mail::to($validated['to'])->send($mail);
+
+            if ($proformaInvoice->status === 'draft') {
+                $proformaInvoice->update(['status' => 'sent']);
+            }
+        } finally {
+            $pdfService->cleanup($pdfPath);
+        }
+
+        return back()->with('success', __('toast.proforma_sent_email'));
     }
 
     public function restore(int $id, Request $request): RedirectResponse

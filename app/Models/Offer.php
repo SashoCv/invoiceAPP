@@ -84,7 +84,8 @@ class Offer extends Model
 
     public static function getNextSequence(int $userId, int $year): int
     {
-        $maxSequence = self::where('user_id', $userId)
+        $maxSequence = self::withTrashed()
+            ->where('user_id', $userId)
             ->where('offer_year', $year)
             ->max('offer_sequence');
 
