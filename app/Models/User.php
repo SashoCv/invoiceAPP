@@ -85,6 +85,9 @@ class User extends Authenticatable
         'proforma_template',
         'offer_template',
         'password',
+        'role',
+        'subscription_expires_at',
+        'trial_ends_at',
     ];
 
     public function getAvatarUrlAttribute(): ?string
@@ -131,6 +134,64 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'subscription_expires_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($this->subscription_expires_at && $this->subscription_expires_at->isFuture()) {
+            return true;
+        }
+
+        if ($this->trial_ends_at && $this->trial_ends_at->isFuture()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function subscriptionStatus(): string
+    {
+        if ($this->isAdmin()) {
+            return 'admin';
+        }
+
+        if ($this->subscription_expires_at && $this->subscription_expires_at->isFuture()) {
+            return 'active';
+        }
+
+        if ($this->trial_ends_at && $this->trial_ends_at->isFuture()) {
+            return 'trial';
+        }
+
+        return 'expired';
+    }
+
+    public function daysRemaining(): ?int
+    {
+        if ($this->isAdmin()) {
+            return null;
+        }
+
+        if ($this->subscription_expires_at && $this->subscription_expires_at->isFuture()) {
+            return (int) now()->diffInDays($this->subscription_expires_at);
+        }
+
+        if ($this->trial_ends_at && $this->trial_ends_at->isFuture()) {
+            return (int) now()->diffInDays($this->trial_ends_at);
+        }
+
+        return 0;
     }
 }

@@ -6,11 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\BankAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class BankAccountController extends Controller
+class BankAccountController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: ['store', 'update', 'destroy']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $user = $request->user();

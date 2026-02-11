@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
@@ -48,6 +49,7 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 };
 
 export default function ShowProforma({ proforma }: ShowProformaProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -132,17 +134,31 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 mb-6">
-                    <Button variant="outline" asChild>
-                        <Link href={`/proforma-invoices/${proforma.id}/edit`} className="flex items-center gap-2">
-                            <Pencil className="w-4 h-4" />
-                            {t('proforma.edit')}
-                        </Link>
+                    <Button variant="outline" asChild={isActive} disabled={!isActive}>
+                        {isActive ? (
+                            <Link href={`/proforma-invoices/${proforma.id}/edit`} className="flex items-center gap-2">
+                                <Pencil className="w-4 h-4" />
+                                {t('proforma.edit')}
+                            </Link>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <Pencil className="w-4 h-4" />
+                                {t('proforma.edit')}
+                            </span>
+                        )}
                     </Button>
-                    <Button variant="outline" asChild>
-                        <Link href={`/proforma-invoices/${proforma.id}/duplicate`} className="flex items-center gap-2">
-                            <Copy className="w-4 h-4" />
-                            {t('proforma.duplicate')}
-                        </Link>
+                    <Button variant="outline" asChild={isActive} disabled={!isActive}>
+                        {isActive ? (
+                            <Link href={`/proforma-invoices/${proforma.id}/duplicate`} className="flex items-center gap-2">
+                                <Copy className="w-4 h-4" />
+                                {t('proforma.duplicate')}
+                            </Link>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <Copy className="w-4 h-4" />
+                                {t('proforma.duplicate')}
+                            </span>
+                        )}
                     </Button>
                     <Button variant="outline" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2">
                         <Eye className="w-4 h-4" />
@@ -160,12 +176,12 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                             {t('proforma.print_pdf')}
                         </a>
                     </Button>
-                    <Button onClick={openSendDialog} className="flex items-center gap-2">
+                    <Button onClick={openSendDialog} disabled={!isActive} className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         {t('proforma.send_proforma')}
                     </Button>
                     {proforma.status !== 'converted_to_invoice' && (
-                        <Button onClick={handleConvertToInvoice} className="flex items-center gap-2">
+                        <Button onClick={handleConvertToInvoice} disabled={!isActive} className="flex items-center gap-2">
                             <ArrowRightLeft className="w-4 h-4" />
                             {t('proforma.convert_to_invoice')}
                         </Button>

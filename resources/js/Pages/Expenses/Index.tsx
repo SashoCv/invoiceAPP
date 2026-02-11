@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -108,6 +109,7 @@ export default function ExpensesIndex({
     monthlyTotal,
 }: ExpensesIndexProps) {
     const { t } = useTranslation();
+    const { isActive } = useSubscription();
     const [activeTab, setActiveTab] = useState(tab || 'monthly');
 
     useEffect(() => {
@@ -371,7 +373,7 @@ export default function ExpensesIndex({
                         <Card>
                             <div className="flex items-center justify-between p-4 border-b">
                                 <h3 className="font-semibold text-gray-900">{t('expenses.tab_monthly')}</h3>
-                                <Button size="sm" onClick={() => openExpenseDialog()} className="gap-1.5">
+                                <Button size="sm" onClick={() => openExpenseDialog()} disabled={!isActive} className="gap-1.5">
                                     <Plus className="w-4 h-4" />
                                     {t('expenses.add_expense')}
                                 </Button>
@@ -428,6 +430,7 @@ export default function ExpensesIndex({
                                                             size="icon"
                                                             className="h-8 w-8"
                                                             onClick={() => openExpenseDialog(expense)}
+                                                            disabled={!isActive}
                                                         >
                                                             <Pencil className="w-4 h-4" />
                                                         </Button>
@@ -436,6 +439,7 @@ export default function ExpensesIndex({
                                                             size="icon"
                                                             className="h-8 w-8 text-red-600 hover:text-red-700"
                                                             onClick={() => setDeleteExpense(expense)}
+                                                            disabled={!isActive}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>
@@ -454,7 +458,7 @@ export default function ExpensesIndex({
                         <Card>
                             <div className="flex items-center justify-between p-4 border-b">
                                 <h3 className="font-semibold text-gray-900">{t('expenses.tab_recurring')}</h3>
-                                <Button size="sm" onClick={() => openRecurringDialog()} className="gap-1.5">
+                                <Button size="sm" onClick={() => openRecurringDialog()} disabled={!isActive} className="gap-1.5">
                                     <Plus className="w-4 h-4" />
                                     {t('expenses.add_recurring')}
                                 </Button>

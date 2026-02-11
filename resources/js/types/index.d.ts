@@ -10,8 +10,19 @@ export interface User {
     invoice_template?: string;
     proforma_template?: string;
     offer_template?: string;
+    role: 'user' | 'admin';
+    subscription_expires_at: string | null;
+    subscription_status?: string;
+    days_remaining?: number | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface SubscriptionInfo {
+    status: 'admin' | 'active' | 'trial' | 'expired';
+    isActive: boolean;
+    expiresAt: string | null;
+    daysRemaining: number | null;
 }
 
 export interface Agency {
@@ -282,6 +293,8 @@ export interface FlashMessages {
 export interface PageProps {
     auth: {
         user: User;
+        isAdmin: boolean;
+        subscription: SubscriptionInfo | null;
     };
     flash: FlashMessages;
     locale: string;

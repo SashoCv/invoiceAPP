@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -42,6 +43,7 @@ interface ArticlesIndexProps {
 }
 
 export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '__all__');
@@ -74,11 +76,18 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                         <h1 className="text-2xl font-bold text-gray-900">{t('articles.title')}</h1>
                         <p className="mt-1 text-sm text-gray-500">{t('articles.subtitle')}</p>
                     </div>
-                    <Button asChild>
-                        <Link href="/articles/create" className="flex items-center gap-2">
-                            <Plus className="w-4 h-4" />
-                            {t('articles.new_article')}
-                        </Link>
+                    <Button asChild={isActive} disabled={!isActive}>
+                        {isActive ? (
+                            <Link href="/articles/create" className="flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                {t('articles.new_article')}
+                            </Link>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                {t('articles.new_article')}
+                            </span>
+                        )}
                     </Button>
                 </div>
 
@@ -204,12 +213,14 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                                                             label: t('articles.edit'),
                                                             icon: Pencil,
                                                             href: `/articles/${article.id}/edit`,
+                                                            disabled: !isActive,
                                                         },
                                                         {
                                                             label: t('articles.delete'),
                                                             icon: Trash2,
                                                             onClick: () => setDeleteArticle(article),
                                                             variant: 'destructive',
+                                                            disabled: !isActive,
                                                         },
                                                     ]}
                                                 />

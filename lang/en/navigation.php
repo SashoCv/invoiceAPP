@@ -26,4 +26,6 @@ return [
     'calc_converting' => 'Converting...',
     'logout' => 'Log Out',
     'language' => 'Language',
+    'admin_panel' => 'Admin Panel',
+    'billing' => 'Billing',
 ];

@@ -6,12 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Agency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AgencyController extends Controller
+class AgencyController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: ['update']),
+        ];
+    }
+
     public function edit(Request $request): Response
     {
         return Inertia::render('Settings/Agency', [

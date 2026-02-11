@@ -5,28 +5,15 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/Components/ui/toaster';
 import { Avatar, AvatarFallback } from '@/Components/ui/avatar';
-import CurrencyCalculator from '@/Components/CurrencyCalculator';
 import {
     LayoutDashboard,
-    FileText,
-    FileCheck,
-    ClipboardList,
     Users,
-    Package,
-    Receipt,
-    CreditCard,
-    FileCode,
-    User,
-    Building2,
+    ArrowLeft,
+    Shield,
     LogOut,
     Menu,
     X,
-    Calculator,
-    Shield,
-    Wallet,
-    AlertTriangle,
 } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
 
 interface NavItem {
@@ -36,11 +23,10 @@ interface NavItem {
     active: boolean;
 }
 
-export default function AppLayout({ children }: PropsWithChildren) {
+export default function AdminLayout({ children }: PropsWithChildren) {
     const { t, locale } = useTranslation();
     const { auth, flash } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [calcOpen, setCalcOpen] = useState(false);
     const { toast } = useToast();
     const currentPath = usePage().url;
 
@@ -63,84 +49,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
     const navigation: NavItem[] = [
         {
-            name: t('navigation.dashboard'),
-            href: '/dashboard',
+            name: t('admin.dashboard'),
+            href: '/admin',
             icon: LayoutDashboard,
-            active: currentPath === '/dashboard',
+            active: currentPath === '/admin',
         },
         {
-            name: t('navigation.invoices'),
-            href: '/invoices',
-            icon: FileText,
-            active: currentPath.startsWith('/invoices'),
-        },
-        {
-            name: t('navigation.proforma_invoices'),
-            href: '/proforma-invoices',
-            icon: FileCheck,
-            active: currentPath.startsWith('/proforma-invoices'),
-        },
-        {
-            name: t('navigation.offers'),
-            href: '/offers',
-            icon: ClipboardList,
-            active: currentPath.startsWith('/offers'),
-        },
-        {
-            name: t('navigation.clients'),
-            href: '/clients',
+            name: t('admin.users'),
+            href: '/admin/users',
             icon: Users,
-            active: currentPath.startsWith('/clients'),
-        },
-        {
-            name: t('navigation.articles'),
-            href: '/articles',
-            icon: Package,
-            active: currentPath.startsWith('/articles'),
-        },
-        {
-            name: t('navigation.expenses'),
-            href: '/expenses',
-            icon: Receipt,
-            active: currentPath.startsWith('/expenses'),
-        },
-        {
-            name: t('navigation.bank_accounts'),
-            href: '/settings/bank-accounts',
-            icon: CreditCard,
-            active: currentPath === '/settings/bank-accounts',
-        },
-        {
-            name: t('navigation.templates'),
-            href: '/settings/templates',
-            icon: FileCode,
-            active: currentPath === '/settings/templates',
+            active: currentPath.startsWith('/admin/users'),
         },
     ];
-
-    const settingsNavigation: NavItem[] = [
-        {
-            name: t('navigation.profile'),
-            href: '/settings/profile',
-            icon: User,
-            active: currentPath === '/settings/profile',
-        },
-        {
-            name: t('navigation.agency'),
-            href: '/settings/agency',
-            icon: Building2,
-            active: currentPath === '/settings/agency',
-        },
-        {
-            name: t('navigation.billing'),
-            href: '/billing',
-            icon: Wallet,
-            active: currentPath === '/billing',
-        },
-    ];
-
-    const isAdmin = auth.isAdmin;
-    const subscriptionActive = auth.subscription?.isActive ?? false;
 
     const handleLogout = () => {
         router.post('/logout');
@@ -155,14 +75,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
         .map((n) => n[0])
         .join('')
         .toUpperCase()
-        .slice(0, 2) || 'U';
+        .slice(0, 2) || 'A';
 
     return (
         <>
             <Toaster />
-            <CurrencyCalculator open={calcOpen} onOpenChange={setCalcOpen} />
             <div className="min-h-screen">
-                {/* Mobile backdrop */}
                 {sidebarOpen && (
                     <div
                         className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
@@ -170,7 +88,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     />
                 )}
 
-                {/* Sidebar */}
                 <aside
                     className={cn(
                         'fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-200 ease-out lg:translate-x-0',
@@ -179,11 +96,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 >
                     {/* Logo */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                        <Link href="/dashboard" className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                                <FileText className="w-4 h-4 text-white" />
+                        <Link href="/admin" className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                                <Shield className="w-4 h-4 text-white" />
                             </div>
-                            <span className="text-gray-900 font-semibold">InvoiceApp</span>
+                            <span className="text-gray-900 font-semibold">{t('admin.admin_panel')}</span>
                         </Link>
                         <button
                             onClick={() => setSidebarOpen(false)}
@@ -191,6 +108,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         >
                             <X className="w-5 h-5" />
                         </button>
+                    </div>
+
+                    {/* Back to App */}
+                    <div className="px-4 pt-4">
+                        <Link
+                            href="/dashboard"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            {t('admin.back_to_app')}
+                        </Link>
                     </div>
 
                     {/* Navigation */}
@@ -202,7 +130,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                                 className={cn(
                                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                                     item.active
-                                        ? 'bg-blue-50 text-blue-600'
+                                        ? 'bg-indigo-50 text-indigo-600'
                                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                 )}
                                 onClick={() => setSidebarOpen(false)}
@@ -211,45 +139,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                                 {item.name}
                             </Link>
                         ))}
-
-                        <div className="pt-4 mt-4 border-t border-gray-100">
-                            {settingsNavigation.map((item) => (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                                        item.active
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                    )}
-                                    onClick={() => setSidebarOpen(false)}
-                                >
-                                    <item.icon className="w-5 h-5" />
-                                    {item.name}
-                                </Link>
-                            ))}
-                            <button
-                                onClick={() => setCalcOpen(true)}
-                                className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                            >
-                                <Calculator className="w-5 h-5" />
-                                {t('navigation.currency_calculator')}
-                            </button>
-                        </div>
-
-                        {isAdmin && (
-                            <div className="pt-4 mt-4 border-t border-gray-100">
-                                <Link
-                                    href="/admin"
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-indigo-600 hover:bg-indigo-50"
-                                    onClick={() => setSidebarOpen(false)}
-                                >
-                                    <Shield className="w-5 h-5" />
-                                    {t('navigation.admin_panel')}
-                                </Link>
-                            </div>
-                        )}
                     </nav>
 
                     {/* Bottom section */}
@@ -288,7 +177,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         {/* User */}
                         <div className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors">
                             <Avatar className="w-9 h-9">
-                                <AvatarFallback className="bg-gray-200 text-gray-600 text-sm font-medium">
+                                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-sm font-medium">
                                     {userInitials}
                                 </AvatarFallback>
                             </Avatar>
@@ -299,17 +188,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                                 <p className="text-xs text-gray-500 truncate">
                                     {auth.user?.email}
                                 </p>
-                                {!isAdmin && auth.subscription && (
-                                    <p className={cn(
-                                        'text-xs truncate mt-0.5',
-                                        subscriptionActive ? 'text-green-600' : 'text-red-500'
-                                    )}>
-                                        {subscriptionActive
-                                            ? `${t('subscription.expires_at')}: ${formatDate(auth.subscription.expiresAt!)}`
-                                            : t('subscription.status_expired')
-                                        }
-                                    </p>
-                                )}
                             </div>
                             <button
                                 onClick={handleLogout}
@@ -332,26 +210,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         >
                             <Menu className="w-5 h-5" />
                         </button>
-                        <span className="ml-3 font-semibold text-gray-900">InvoiceApp</span>
+                        <span className="ml-3 font-semibold text-gray-900">{t('admin.admin_panel')}</span>
                     </header>
-
-                    {/* Expired subscription banner */}
-                    {!subscriptionActive && !isAdmin && (
-                        <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
-                            <div className="flex items-center gap-3">
-                                <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
-                                <p className="text-sm text-yellow-800 flex-1">
-                                    {t('subscription.expired_banner')}
-                                </p>
-                                <Link
-                                    href="/billing"
-                                    className="shrink-0 inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors"
-                                >
-                                    {t('navigation.billing')}
-                                </Link>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Content */}
                     <main className="p-6">{children}</main>

@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
+
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'subscribed' => \App\Http\Middleware\EnsureUserIsSubscribed::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -9,12 +9,25 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ExpenseController extends Controller
+class ExpenseController extends Controller implements HasMiddleware
 {
     use AuthorizesRequests;
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: [
+                'store', 'update', 'destroy',
+                'storeCategory', 'updateCategory', 'destroyCategory',
+                'storeRecurring', 'updateRecurring', 'destroyRecurring', 'toggleRecurring',
+            ]),
+        ];
+    }
 
     public function index(Request $request): Response
     {

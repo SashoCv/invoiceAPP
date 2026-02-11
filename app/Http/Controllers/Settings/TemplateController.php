@@ -5,12 +5,21 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class TemplateController extends Controller
+class TemplateController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: ['update']),
+        ];
+    }
+
     public static array $templates = [
         'classic' => [
             'name' => 'Classic',

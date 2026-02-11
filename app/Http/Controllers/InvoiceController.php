@@ -9,13 +9,25 @@ use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class InvoiceController extends Controller
+class InvoiceController extends Controller implements HasMiddleware
 {
     use AuthorizesRequests;
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: [
+                'create', 'store', 'edit', 'update', 'destroy',
+                'duplicate', 'updateStatus', 'send',
+            ]),
+        ];
+    }
 
     public function index(Request $request): Response
     {

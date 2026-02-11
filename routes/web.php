@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientContractController;
 use App\Http\Controllers\ExpenseController;
@@ -131,6 +134,19 @@ Route::middleware('auth')->group(function () {
     Route::post('clients/{client}/contracts', [ClientContractController::class, 'store'])->name('clients.contracts.store');
     Route::get('contracts/{contract}/download', [ClientContractController::class, 'download'])->name('contracts.download');
     Route::delete('contracts/{contract}', [ClientContractController::class, 'destroy'])->name('contracts.destroy');
+
+    // Billing
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+});
+
+// Admin routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::post('/users/{user}/extend', [AdminUserController::class, 'extend'])->name('users.extend');
+    Route::post('/users/{user}/revoke', [AdminUserController::class, 'revoke'])->name('users.revoke');
+    Route::post('/users/{user}/toggle-admin', [AdminUserController::class, 'toggleAdmin'])->name('users.toggle-admin');
 });
 
 require __DIR__.'/auth.php';

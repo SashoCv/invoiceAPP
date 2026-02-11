@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -49,6 +50,7 @@ interface ClientsIndexProps {
 }
 
 export default function ClientsIndex({ clients, archivedCount, cities, filters }: ClientsIndexProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [city, setCity] = useState(filters.city || '__all__');
@@ -95,11 +97,18 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                 {t('general.export_csv')}
                             </a>
                         </Button>
-                        <Button asChild>
-                            <Link href="/clients/create" className="flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                {t('clients.add_client')}
-                            </Link>
+                        <Button asChild={isActive} disabled={!isActive}>
+                            {isActive ? (
+                                <Link href="/clients/create" className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('clients.add_client')}
+                                </Link>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('clients.add_client')}
+                                </span>
+                            )}
                         </Button>
                     </div>
                 </div>
@@ -229,12 +238,14 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                                             label: t('clients.edit'),
                                                             icon: Pencil,
                                                             href: `/clients/${client.id}/edit`,
+                                                            disabled: !isActive,
                                                         },
                                                         {
                                                             label: t('clients.archive'),
                                                             icon: Trash2,
                                                             onClick: () => setDeleteClient(client),
                                                             variant: 'destructive',
+                                                            disabled: !isActive,
                                                         },
                                                     ]}
                                                 />

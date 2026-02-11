@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -68,6 +69,7 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 
 export default function InvoicesIndex({ invoices, clients, showDeleted, filters }: InvoicesIndexProps) {
     const { t } = useTranslation();
+    const { isActive } = useSubscription();
     const [invoiceSearch, setInvoiceSearch] = useState(filters.invoice || '');
     const [clientFilter, setClientFilter] = useState(filters.client || '__all__');
     const [statusFilter, setStatusFilter] = useState(filters.status || '__all__');
@@ -172,11 +174,18 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                     {t('general.export_csv')}
                                 </a>
                             </Button>
-                            <Button asChild>
-                                <Link href="/invoices/create" className="flex items-center gap-2">
-                                    <Plus className="w-4 h-4" />
-                                    {t('invoices.new_invoice')}
-                                </Link>
+                            <Button asChild={isActive} disabled={!isActive}>
+                                {isActive ? (
+                                    <Link href="/invoices/create" className="flex items-center gap-2">
+                                        <Plus className="w-4 h-4" />
+                                        {t('invoices.new_invoice')}
+                                    </Link>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        <Plus className="w-4 h-4" />
+                                        {t('invoices.new_invoice')}
+                                    </span>
+                                )}
                             </Button>
                         </div>
                     )}
@@ -373,11 +382,13 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                                 label: t('invoices.edit_invoice'),
                                                                 icon: Pencil,
                                                                 href: `/invoices/${invoice.id}/edit`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('invoices.duplicate'),
                                                                 icon: Copy,
                                                                 href: `/invoices/${invoice.id}/duplicate`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('invoices.download_pdf'),
@@ -396,17 +407,20 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                                 label: t('invoices.change_status'),
                                                                 icon: RefreshCw,
                                                                 onClick: () => openStatusDialog(invoice),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('invoices.send_invoice'),
                                                                 icon: Send,
                                                                 onClick: () => openSendDialog(invoice),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('invoices.delete'),
                                                                 icon: Trash2,
                                                                 onClick: () => setDeleteInvoice(invoice),
                                                                 variant: 'destructive',
+                                                                disabled: !isActive,
                                                             },
                                                         ]}
                                                     />

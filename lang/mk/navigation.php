@@ -26,4 +26,6 @@ return [
     'calc_converting' => 'Конвертирам...',
     'logout' => 'Одјави се',
     'language' => 'Јазик',
+    'admin_panel' => 'Админ панел',
+    'billing' => 'Наплата',
 ];

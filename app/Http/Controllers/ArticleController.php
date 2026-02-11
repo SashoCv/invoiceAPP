@@ -6,12 +6,23 @@ use App\Models\Article;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ArticleController extends Controller
+class ArticleController extends Controller implements HasMiddleware
 {
     use AuthorizesRequests;
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('subscribed', only: [
+                'create', 'store', 'edit', 'update', 'destroy',
+            ]),
+        ];
+    }
 
     public function index(Request $request): Response
     {

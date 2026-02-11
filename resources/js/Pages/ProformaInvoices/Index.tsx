@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -64,6 +65,7 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 };
 
 export default function ProformaInvoicesIndex({ proformas, clients, showDeleted, filters }: ProformaInvoicesIndexProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [proformaSearch, setProformaSearch] = useState(filters.proforma || '');
     const [clientFilter, setClientFilter] = useState(filters.client || '__all__');
@@ -159,11 +161,18 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                         <p className="mt-1 text-sm text-gray-500">{t('proforma.subtitle')}</p>
                     </div>
                     {!showDeleted && (
-                        <Button asChild>
-                            <Link href="/proforma-invoices/create" className="flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                {t('proforma.new_proforma')}
-                            </Link>
+                        <Button asChild={isActive} disabled={!isActive}>
+                            {isActive ? (
+                                <Link href="/proforma-invoices/create" className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('proforma.new_proforma')}
+                                </Link>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('proforma.new_proforma')}
+                                </span>
+                            )}
                         </Button>
                     )}
                 </div>
@@ -356,17 +365,20 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                                                 label: t('proforma.edit'),
                                                                 icon: Pencil,
                                                                 href: `/proforma-invoices/${proforma.id}/edit`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('proforma.convert_to_invoice'),
                                                                 icon: ArrowRightLeft,
                                                                 onClick: () => handleConvertToInvoice(proforma.id),
                                                                 hidden: proforma.status === 'converted_to_invoice',
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('proforma.duplicate'),
                                                                 icon: Copy,
                                                                 href: `/proforma-invoices/${proforma.id}/duplicate`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('proforma.download_pdf'),
@@ -385,17 +397,20 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                                                 label: t('proforma.change_status'),
                                                                 icon: RefreshCw,
                                                                 onClick: () => openStatusDialog(proforma),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('proforma.send_proforma'),
                                                                 icon: Send,
                                                                 onClick: () => openSendDialog(proforma),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('proforma.delete'),
                                                                 icon: Trash2,
                                                                 onClick: () => setDeleteProforma(proforma),
                                                                 variant: 'destructive',
+                                                                disabled: !isActive,
                                                             },
                                                         ]}
                                                     />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
@@ -39,6 +40,7 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 };
 
 export default function ShowOffer({ offer }: ShowOfferProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
@@ -131,17 +133,31 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 mb-6 flex-wrap">
-                    <Button variant="outline" asChild>
-                        <Link href={`/offers/${offer.id}/edit`} className="flex items-center gap-2">
-                            <Pencil className="w-4 h-4" />
-                            {t('offers.edit')}
-                        </Link>
+                    <Button variant="outline" asChild={isActive} disabled={!isActive}>
+                        {isActive ? (
+                            <Link href={`/offers/${offer.id}/edit`} className="flex items-center gap-2">
+                                <Pencil className="w-4 h-4" />
+                                {t('offers.edit')}
+                            </Link>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <Pencil className="w-4 h-4" />
+                                {t('offers.edit')}
+                            </span>
+                        )}
                     </Button>
-                    <Button variant="outline" asChild>
-                        <Link href={`/offers/${offer.id}/duplicate`} className="flex items-center gap-2">
-                            <Copy className="w-4 h-4" />
-                            {t('offers.duplicate')}
-                        </Link>
+                    <Button variant="outline" asChild={isActive} disabled={!isActive}>
+                        {isActive ? (
+                            <Link href={`/offers/${offer.id}/duplicate`} className="flex items-center gap-2">
+                                <Copy className="w-4 h-4" />
+                                {t('offers.duplicate')}
+                            </Link>
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <Copy className="w-4 h-4" />
+                                {t('offers.duplicate')}
+                            </span>
+                        )}
                     </Button>
                     <Button variant="outline" onClick={() => setPreviewOpen(true)} className="flex items-center gap-2">
                         <Eye className="w-4 h-4" />
@@ -159,24 +175,24 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                             {t('offers.print_pdf')}
                         </a>
                     </Button>
-                    <Button onClick={openSendDialog} className="flex items-center gap-2">
+                    <Button onClick={openSendDialog} disabled={!isActive} className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         {t('offers.send_offer')}
                     </Button>
                     {offer.status === 'sent' && (
                         <>
-                            <Button onClick={handleAccept} variant="outline" className="flex items-center gap-2 text-green-600 hover:text-green-700">
+                            <Button onClick={handleAccept} disabled={!isActive} variant="outline" className="flex items-center gap-2 text-green-600 hover:text-green-700">
                                 <Check className="w-4 h-4" />
                                 {t('offers.accept')}
                             </Button>
-                            <Button onClick={handleReject} variant="outline" className="flex items-center gap-2 text-red-600 hover:text-red-700">
+                            <Button onClick={handleReject} disabled={!isActive} variant="outline" className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                 <X className="w-4 h-4" />
                                 {t('offers.reject')}
                             </Button>
                         </>
                     )}
                     {offer.status === 'accepted' && !offer.converted_invoice_id && (
-                        <Button onClick={handleConvertToInvoice} className="flex items-center gap-2">
+                        <Button onClick={handleConvertToInvoice} disabled={!isActive} className="flex items-center gap-2">
                             <ArrowRightLeft className="w-4 h-4" />
                             {t('offers.convert_to_invoice')}
                         </Button>

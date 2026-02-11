@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -65,6 +66,7 @@ const statusVariants: Record<string, 'success' | 'info' | 'gray' | 'destructive'
 };
 
 export default function OffersIndex({ offers, clients, showDeleted, filters }: OffersIndexProps) {
+    const { isActive } = useSubscription();
     const { t } = useTranslation();
     const [offerSearch, setOfferSearch] = useState(filters.offer || '');
     const [clientFilter, setClientFilter] = useState(filters.client || '__all__');
@@ -168,11 +170,18 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                         <p className="mt-1 text-sm text-gray-500">{t('offers.subtitle')}</p>
                     </div>
                     {!showDeleted && (
-                        <Button asChild>
-                            <Link href="/offers/create" className="flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                {t('offers.new_offer')}
-                            </Link>
+                        <Button asChild={isActive} disabled={!isActive}>
+                            {isActive ? (
+                                <Link href="/offers/create" className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('offers.new_offer')}
+                                </Link>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <Plus className="w-4 h-4" />
+                                    {t('offers.new_offer')}
+                                </span>
+                            )}
                         </Button>
                     )}
                 </div>
@@ -374,29 +383,34 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                                 label: t('offers.edit'),
                                                                 icon: Pencil,
                                                                 href: `/offers/${offer.id}/edit`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.accept'),
                                                                 icon: Check,
                                                                 onClick: () => handleAccept(offer.id),
                                                                 hidden: offer.status !== 'sent',
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.reject'),
                                                                 icon: X,
                                                                 onClick: () => handleReject(offer.id),
                                                                 hidden: offer.status !== 'sent',
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.convert_to_invoice'),
                                                                 icon: ArrowRightLeft,
                                                                 onClick: () => handleConvertToInvoice(offer.id),
                                                                 hidden: !(offer.status === 'accepted' && !offer.converted_invoice_id && offer.has_items),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.duplicate'),
                                                                 icon: Copy,
                                                                 href: `/offers/${offer.id}/duplicate`,
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.download_pdf'),
@@ -415,17 +429,20 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                                 label: t('offers.change_status'),
                                                                 icon: RefreshCw,
                                                                 onClick: () => openStatusDialog(offer),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.send_offer'),
                                                                 icon: Send,
                                                                 onClick: () => openSendDialog(offer),
+                                                                disabled: !isActive,
                                                             },
                                                             {
                                                                 label: t('offers.delete'),
                                                                 icon: Trash2,
                                                                 onClick: () => setDeleteOffer(offer),
                                                                 variant: 'destructive',
+                                                                disabled: !isActive,
                                                             },
                                                         ]}
                                                     />
