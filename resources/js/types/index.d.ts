@@ -1,7 +1,11 @@
 export interface User {
     id: number;
     name: string;
+    first_name: string | null;
+    last_name: string | null;
     email: string;
+    phone: string | null;
+    avatar: string | null;
     email_verified_at: string | null;
     invoice_template?: string;
     proforma_template?: string;

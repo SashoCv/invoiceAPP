@@ -18,8 +18,10 @@ export default function Profile({ user }: ProfileProps) {
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: user.name,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
         email: user.email,
+        phone: user.phone || '',
         avatar: null as File | null,
         remove_avatar: false,
         _method: 'PATCH',
@@ -59,13 +61,10 @@ export default function Profile({ user }: ProfileProps) {
         });
     };
 
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+    const getInitials = () => {
+        const first = data.first_name?.charAt(0) || '';
+        const last = data.last_name?.charAt(0) || '';
+        return (first + last).toUpperCase() || user.name?.charAt(0)?.toUpperCase() || '?';
     };
 
     return (
@@ -91,7 +90,7 @@ export default function Profile({ user }: ProfileProps) {
                             <div className="flex items-center gap-6">
                                 <Avatar className="w-20 h-20">
                                     <AvatarImage src={avatarPreview || (user.avatar ? `/storage/${user.avatar}` : undefined)} />
-                                    <AvatarFallback className="text-xl">{getInitials(user.name)}</AvatarFallback>
+                                    <AvatarFallback className="text-xl">{getInitials()}</AvatarFallback>
                                 </Avatar>
                                 <div className="space-y-2">
                                     <div className="flex gap-2">
@@ -116,16 +115,28 @@ export default function Profile({ user }: ProfileProps) {
                                 </div>
                             </div>
 
-                            {/* Name */}
-                            <div>
-                                <Label htmlFor="name">{t('settings.name')} *</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    className="mt-1 max-w-md"
-                                    error={errors.name}
-                                />
+                            {/* First Name & Last Name */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md">
+                                <div>
+                                    <Label htmlFor="first_name">{t('settings.first_name')}</Label>
+                                    <Input
+                                        id="first_name"
+                                        value={data.first_name}
+                                        onChange={(e) => setData('first_name', e.target.value)}
+                                        className="mt-1"
+                                        error={errors.first_name}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="last_name">{t('settings.last_name')}</Label>
+                                    <Input
+                                        id="last_name"
+                                        value={data.last_name}
+                                        onChange={(e) => setData('last_name', e.target.value)}
+                                        className="mt-1"
+                                        error={errors.last_name}
+                                    />
+                                </div>
                             </div>
 
                             {/* Email */}
@@ -138,6 +149,19 @@ export default function Profile({ user }: ProfileProps) {
                                     onChange={(e) => setData('email', e.target.value)}
                                     className="mt-1 max-w-md"
                                     error={errors.email}
+                                />
+                            </div>
+
+                            {/* Phone */}
+                            <div>
+                                <Label htmlFor="phone">{t('settings.phone')}</Label>
+                                <Input
+                                    id="phone"
+                                    type="tel"
+                                    value={data.phone}
+                                    onChange={(e) => setData('phone', e.target.value)}
+                                    className="mt-1 max-w-md"
+                                    error={errors.phone}
                                 />
                             </div>
 

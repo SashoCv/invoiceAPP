@@ -4,6 +4,7 @@ import GuestLayout from '@/Components/GuestLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
+import { Mail, Lock } from 'lucide-react';
 
 interface ResetPasswordProps {
     token: string;
@@ -29,59 +30,79 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
         <GuestLayout>
             <Head title="Reset Password" />
 
-            <form onSubmit={submit}>
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
+                <p className="mt-2 text-sm text-gray-500">
+                    Enter your new password below.
+                </p>
+            </div>
+
+            <form onSubmit={submit} className="space-y-5">
                 <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                        error={errors.email}
-                    />
+                    <div className="relative mt-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <Input
+                            id="email"
+                            type="email"
+                            name="email"
+                            value={data.email}
+                            className="pl-10"
+                            autoComplete="username"
+                            onChange={(e) => setData('email', e.target.value)}
+                            error={errors.email}
+                        />
+                    </div>
                 </div>
 
-                <div className="mt-4">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1"
-                        autoComplete="new-password"
-                        autoFocus
-                        onChange={(e) => setData('password', e.target.value)}
-                        error={errors.password}
-                    />
+                <div>
+                    <Label htmlFor="password">New Password</Label>
+                    <div className="relative mt-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Lock className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <Input
+                            id="password"
+                            type="password"
+                            name="password"
+                            value={data.password}
+                            className="pl-10"
+                            placeholder="Enter new password"
+                            autoComplete="new-password"
+                            autoFocus
+                            onChange={(e) => setData('password', e.target.value)}
+                            error={errors.password}
+                        />
+                    </div>
                 </div>
 
-                <div className="mt-4">
-                    <Label htmlFor="password_confirmation">
-                        Confirm Password
-                    </Label>
-                    <Input
-                        id="password_confirmation"
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                        error={errors.password_confirmation}
-                    />
+                <div>
+                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                    <div className="relative mt-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Lock className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <Input
+                            id="password_confirmation"
+                            type="password"
+                            name="password_confirmation"
+                            value={data.password_confirmation}
+                            className="pl-10"
+                            placeholder="Confirm new password"
+                            autoComplete="new-password"
+                            onChange={(e) =>
+                                setData('password_confirmation', e.target.value)
+                            }
+                            error={errors.password_confirmation}
+                        />
+                    </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <Button disabled={processing} loading={processing}>
-                        Reset Password
-                    </Button>
-                </div>
+                <Button className="w-full" size="lg" disabled={processing} loading={processing}>
+                    Reset password
+                </Button>
             </form>
         </GuestLayout>
     );
