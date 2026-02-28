@@ -1,6 +1,6 @@
 import { PropsWithChildren } from 'react';
 import { Link } from '@inertiajs/react';
-import { BarChart3, Receipt, TrendingUp } from 'lucide-react';
+import { BarChart3, Receipt, TrendingUp, Warehouse } from 'lucide-react';
 import FynvoLogo from '@/Components/FynvoLogo';
 
 export default function GuestLayout({ children }: PropsWithChildren) {
@@ -61,6 +61,16 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                                 <div>
                                     <p className="text-white font-medium">Expense Tracking</p>
                                     <p className="text-blue-200/70 text-sm">Track expenses, recurring costs, categories</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                                    <Warehouse className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium">Inventory Management</p>
+                                    <p className="text-blue-200/70 text-sm">Stock tracking, bundles, warehouse dashboard</p>
                                 </div>
                             </div>
 
