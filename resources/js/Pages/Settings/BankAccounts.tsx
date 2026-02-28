@@ -1,6 +1,6 @@
 import { FormEventHandler, useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/Components/AppLayout';
+import SettingsLayout from '@/Components/SettingsLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -101,16 +101,12 @@ export default function BankAccountsPage({ bankAccounts, hasAgency }: BankAccoun
     };
 
     return (
-        <AppLayout>
+        <SettingsLayout>
             <Head title={t('settings.bank_accounts_title')} />
 
             <div>
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{t('settings.bank_accounts_title')}</h1>
-                        <p className="mt-1 text-sm text-gray-500">{t('settings.bank_accounts_desc')}</p>
-                    </div>
+                <div className="flex items-center justify-end mb-6">
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                         <DialogTrigger asChild>
                             <Button className="flex items-center gap-2">
@@ -396,6 +392,6 @@ export default function BankAccountsPage({ bankAccounts, hasAgency }: BankAccoun
                     </CardContent>
                 </Card>
             </div>
-        </AppLayout>
+        </SettingsLayout>
     );
 }

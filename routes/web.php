@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\BundleController;
+use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ClientContractController;
 use App\Http\Controllers\ExpenseController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\AgencyController;
 use App\Http\Controllers\Settings\BankAccountController;
 use App\Http\Controllers\Settings\TemplateController;
+use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
@@ -37,6 +40,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Settings routes
+    Route::get('/settings', function () {
+        return redirect('/settings/profile');
+    })->name('settings');
+
     Route::prefix('settings')->name('settings.')->group(function () {
         // Profile
         Route::get('/profile', function () {
@@ -75,6 +82,14 @@ Route::middleware('auth')->group(function () {
     // Articles
     Route::resource('articles', ArticleController::class)->except(['show']);
 
+    // Inventory
+    Route::get('warehouse', [\App\Http\Controllers\WarehouseDashboardController::class, 'index'])->name('warehouse.dashboard');
+    Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
+    Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
+
+    // Bundles
+    Route::resource('bundles', BundleController::class)->except(['index', 'show']);
+
     // Expenses
     Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
@@ -87,6 +102,13 @@ Route::middleware('auth')->group(function () {
     Route::put('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'updateRecurring'])->name('expenses.recurring.update');
     Route::delete('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'destroyRecurring'])->name('expenses.recurring.destroy');
     Route::post('expenses/recurring/{recurringExpense}/toggle', [ExpenseController::class, 'toggleRecurring'])->name('expenses.recurring.toggle');
+
+    // Bank Transactions
+    Route::get('bank-transactions/export/csv', [ExportController::class, 'exportBankTransactions'])->name('bank-transactions.export.csv');
+    Route::get('bank-transactions', [BankTransactionController::class, 'index'])->name('bank-transactions.index');
+    Route::post('bank-transactions', [BankTransactionController::class, 'store'])->name('bank-transactions.store');
+    Route::put('bank-transactions/{bankTransaction}', [BankTransactionController::class, 'update'])->name('bank-transactions.update');
+    Route::delete('bank-transactions/{bankTransaction}', [BankTransactionController::class, 'destroy'])->name('bank-transactions.destroy');
 
     // CSV Exports
     Route::get('invoices/export/csv', [ExportController::class, 'exportInvoices'])->name('invoices.export.csv');

@@ -147,20 +147,24 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Кол.</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Цена</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
+                                <th className="text-right px-4 py-3 text-sm font-semibold">Рабат</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Вкупно</th>
                             </tr>
                         </thead>
                         <tbody>
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
-                                const tax = subtotal * (item.tax_rate / 100);
-                                const total = subtotal + tax;
+                                const discountAmount = subtotal * ((item.discount || 0) / 100);
+                                const afterDiscount = subtotal - discountAmount;
+                                const tax = afterDiscount * (item.tax_rate / 100);
+                                const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className={index % 2 === 1 ? 'bg-gray-50' : 'bg-white'}>
                                         <td className="px-4 py-3 text-sm border-b border-gray-200">{item.description}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.quantity, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{item.tax_rate}%</td>
+                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{Number(item.discount || 0).toFixed(0)}%</td>
                                         <td className="px-4 py-3 text-sm text-right font-medium border-b border-gray-200">{formatNumber(total, 2)}</td>
                                     </tr>
                                 );
@@ -174,15 +178,28 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
             {hasItems && (
                 <div className="flex justify-end mb-8">
                     <div className="w-64">
-                        <div className="flex justify-between text-sm text-gray-500 py-1">
-                            <span>Меѓузбир:</span><span>{formatNumber(document.subtotal, 2)} {currencySymbol}</span>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-500 py-1">
-                            <span>ДДВ:</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
-                        </div>
-                        <div className="flex justify-between text-lg font-bold text-blue-800 py-2 border-t-2 border-blue-800 mt-2">
-                            <span>ВКУПНО:</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
-                        </div>
+                        {(() => {
+                            const grossSubtotal = document.items?.reduce((sum: number, item: any) => sum + Number(item.quantity) * Number(item.unit_price), 0) || 0;
+                            const totalDiscountAmount = grossSubtotal - Number(document.subtotal);
+                            return (
+                                <>
+                                    <div className="flex justify-between text-sm text-gray-500 py-1">
+                                        <span>Меѓузбир:</span><span>{formatNumber(grossSubtotal, 2)} {currencySymbol}</span>
+                                    </div>
+                                    {totalDiscountAmount > 0 && (
+                                        <div className="flex justify-between text-sm text-red-500 py-1">
+                                            <span>Рабат:</span><span>-{formatNumber(totalDiscountAmount, 2)} {currencySymbol}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-sm text-gray-500 py-1">
+                                        <span>ДДВ:</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
+                                    </div>
+                                    <div className="flex justify-between text-lg font-bold text-blue-800 py-2 border-t-2 border-blue-800 mt-2">
+                                        <span>ВКУПНО:</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -321,20 +338,24 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Кол.</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Цена</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">ДДВ</th>
+                                    <th className="text-right px-4 py-4 text-sm font-semibold">Рабат</th>
                                     <th className="text-right px-6 py-4 text-sm font-semibold">Вкупно</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {document.items.map((item, index) => {
                                     const subtotal = item.quantity * item.unit_price;
-                                    const tax = subtotal * (item.tax_rate / 100);
-                                    const total = subtotal + tax;
+                                    const discountAmount = subtotal * ((item.discount || 0) / 100);
+                                    const afterDiscount = subtotal - discountAmount;
+                                    const tax = afterDiscount * (item.tax_rate / 100);
+                                    const total = afterDiscount + tax;
                                     return (
                                         <tr key={index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors">
                                             <td className="px-6 py-4 text-sm text-gray-900">{item.description}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.quantity, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{item.tax_rate}%</td>
+                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
                                             <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{formatNumber(total, 2)}</td>
                                         </tr>
                                     );
@@ -346,15 +367,28 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                         <div className="bg-gray-50 px-6 py-4">
                             <div className="flex justify-end">
                                 <div className="w-64 space-y-2">
-                                    <div className="flex justify-between text-sm text-gray-500">
-                                        <span>Меѓузбир</span><span>{formatNumber(document.subtotal, 2)} {currencySymbol}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm text-gray-500">
-                                        <span>ДДВ</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xl font-bold text-purple-600 pt-2 border-t border-purple-200">
-                                        <span>Вкупно</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
-                                    </div>
+                                    {(() => {
+                                        const grossSubtotal = document.items?.reduce((sum: number, item: any) => sum + Number(item.quantity) * Number(item.unit_price), 0) || 0;
+                                        const totalDiscountAmount = grossSubtotal - Number(document.subtotal);
+                                        return (
+                                            <>
+                                                <div className="flex justify-between text-sm text-gray-500">
+                                                    <span>Меѓузбир</span><span>{formatNumber(grossSubtotal, 2)} {currencySymbol}</span>
+                                                </div>
+                                                {totalDiscountAmount > 0 && (
+                                                    <div className="flex justify-between text-sm text-red-500">
+                                                        <span>Рабат</span><span>-{formatNumber(totalDiscountAmount, 2)} {currencySymbol}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between text-sm text-gray-500">
+                                                    <span>ДДВ</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
+                                                </div>
+                                                <div className="flex justify-between text-xl font-bold text-purple-600 pt-2 border-t border-purple-200">
+                                                    <span>Вкупно</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -478,19 +512,23 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-left py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Опис</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Кол.</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена</th>
+                                <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Рабат</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Износ</th>
                             </tr>
                         </thead>
                         <tbody>
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
-                                const tax = subtotal * (item.tax_rate / 100);
-                                const total = subtotal + tax;
+                                const discountAmount = subtotal * ((item.discount || 0) / 100);
+                                const afterDiscount = subtotal - discountAmount;
+                                const tax = afterDiscount * (item.tax_rate / 100);
+                                const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className="border-b border-gray-100">
                                         <td className="py-5 text-gray-900">{item.description}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.quantity, 0)}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
+                                        <td className="py-5 text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
                                         <td className="py-5 text-right text-gray-900">{formatNumber(total, 2)}</td>
                                     </tr>
                                 );
@@ -504,16 +542,29 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
             {hasItems && (
                 <div className="flex justify-end mb-16">
                     <div className="w-72">
-                        <div className="flex justify-between py-2 text-sm text-gray-400">
-                            <span>Меѓузбир</span><span className="text-gray-600">{formatNumber(document.subtotal, 2)}</span>
-                        </div>
-                        <div className="flex justify-between py-2 text-sm text-gray-400">
-                            <span>ДДВ</span><span className="text-gray-600">{formatNumber(document.tax_amount, 2)}</span>
-                        </div>
-                        <div className="flex justify-between py-4 border-t border-gray-900 mt-2">
-                            <span className="text-xs uppercase tracking-[0.2em] text-gray-400">Вкупно</span>
-                            <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, 2)} <span className="text-sm">{currencySymbol}</span></span>
-                        </div>
+                        {(() => {
+                            const grossSubtotal = document.items?.reduce((sum: number, item: any) => sum + Number(item.quantity) * Number(item.unit_price), 0) || 0;
+                            const totalDiscountAmount = grossSubtotal - Number(document.subtotal);
+                            return (
+                                <>
+                                    <div className="flex justify-between py-2 text-sm text-gray-400">
+                                        <span>Меѓузбир</span><span className="text-gray-600">{formatNumber(grossSubtotal, 2)}</span>
+                                    </div>
+                                    {totalDiscountAmount > 0 && (
+                                        <div className="flex justify-between py-2 text-sm text-red-500">
+                                            <span>Рабат</span><span>-{formatNumber(totalDiscountAmount, 2)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between py-2 text-sm text-gray-400">
+                                        <span>ДДВ</span><span className="text-gray-600">{formatNumber(document.tax_amount, 2)}</span>
+                                    </div>
+                                    <div className="flex justify-between py-4 border-t border-gray-900 mt-2">
+                                        <span className="text-xs uppercase tracking-[0.2em] text-gray-400">Вкупно</span>
+                                        <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, 2)} <span className="text-sm">{currencySymbol}</span></span>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}

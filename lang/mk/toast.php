@@ -63,6 +63,20 @@ return [
     'recurring_expense_updated' => 'Рекурентниот трошок е успешно ажуриран',
     'recurring_expense_deleted' => 'Рекурентниот трошок е избришан',
 
+    // Inventory
+    'inventory_tracking_enabled' => 'Магацинското следење е вклучено',
+    'inventory_tracking_disabled' => 'Магацинското следење е исклучено',
+    'inventory_item_updated' => 'Магацинскиот артикл е успешно ажуриран',
+    'stock_adjusted' => 'Залихата е успешно корегирана',
+    'bundle_created' => 'Пакетот е успешно креиран',
+    'bundle_updated' => 'Пакетот е успешно ажуриран',
+    'bundle_deleted' => 'Пакетот е избришан',
+
+    // Bank Transactions
+    'bank_transaction_created' => 'Плаќањето е успешно евидентирано',
+    'bank_transaction_updated' => 'Плаќањето е успешно ажурирано',
+    'bank_transaction_deleted' => 'Плаќањето е избришано',
+
     // Email
     'invoice_sent_email' => 'Фактурата е успешно испратена по email',
     'proforma_sent_email' => 'Профактурата е успешно испратена по email',

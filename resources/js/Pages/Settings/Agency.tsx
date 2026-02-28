@@ -1,6 +1,6 @@
 import { FormEventHandler, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/Components/AppLayout';
+import SettingsLayout from '@/Components/SettingsLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -63,16 +63,10 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
     };
 
     return (
-        <AppLayout>
+        <SettingsLayout>
             <Head title={t('settings.agency_title')} />
 
             <div>
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">{t('settings.agency_info')}</h1>
-                    <p className="mt-1 text-sm text-gray-500">{t('settings.agency_info_desc')}</p>
-                </div>
-
                 <form onSubmit={submit}>
                     <Card className="mb-6">
                         <CardHeader>
@@ -256,6 +250,6 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
                     </Card>
                 </form>
             </div>
-        </AppLayout>
+        </SettingsLayout>
     );
 }

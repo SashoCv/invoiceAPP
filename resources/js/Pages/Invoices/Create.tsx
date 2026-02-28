@@ -1,4 +1,4 @@
-import { useState, FormEventHandler } from 'react';
+import { FormEventHandler } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
@@ -16,49 +16,73 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import type { Client, Article, Invoice } from '@/types';
+import type { Client, Article, Invoice, Bundle } from '@/types';
+
+type ItemSource = 'article' | 'bundle';
 
 interface InvoiceItem {
     article_id: string;
+    bundle_id: string;
     description: string;
     quantity: number;
     unit_price: number;
     tax_rate: number;
-    is_manual: boolean;
+    discount: number;
+    item_source: ItemSource;
 }
 
 interface CreateInvoiceProps {
     clients: Client[];
     articles: Article[];
+    bundles?: Bundle[];
     currentYear: number;
     nextSequence: number;
     invoice?: Invoice;
     isDuplicate?: boolean;
 }
 
-export default function CreateInvoice({ clients, articles, currentYear, nextSequence, invoice, isDuplicate }: CreateInvoiceProps) {
+export default function CreateInvoice({ clients, articles, bundles = [], currentYear, nextSequence, invoice, isDuplicate }: CreateInvoiceProps) {
     const { t } = useTranslation();
 
-    const { data, setData, post, processing, errors } = useForm({
-        client_id: invoice?.client_id?.toString() || '',
-        currency: invoice?.currency || 'MKD',
-        issue_date: new Date().toISOString().split('T')[0],
-        due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        invoice_prefix: invoice?.invoice_prefix || '',
-        invoice_sequence: nextSequence,
-        notes: invoice?.notes || '',
-        items: invoice?.items?.map((item) => ({
+    const defaultItem: InvoiceItem = { article_id: '', bundle_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 18, discount: 0, item_source: 'article' };
+
+    const mapExistingItem = (item: any): InvoiceItem => {
+        const source: ItemSource = item.bundle_id ? 'bundle' : 'article';
+        return {
             article_id: item.article_id?.toString() || '',
+            bundle_id: item.bundle_id?.toString() || '',
             description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price,
             tax_rate: item.tax_rate,
-            is_manual: !item.article_id,
-        })) || [{ article_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 18, is_manual: false }] as InvoiceItem[],
+            discount: item.discount ?? 0,
+            item_source: source,
+        };
+    };
+
+    const { data, setData, post, processing, errors } = useForm<{
+        client_id: string;
+        currency: string;
+        issue_date: string;
+        due_date: string;
+        invoice_prefix: string;
+        invoice_sequence: number;
+        notes: string;
+        items: InvoiceItem[];
+    }>({
+        client_id: invoice?.client_id?.toString() || '',
+        currency: invoice?.currency || 'MKD',
+        issue_date: new Date().toISOString().split('T')[0],
+        due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        invoice_prefix: '',
+        invoice_sequence: nextSequence,
+        notes: invoice?.notes || '',
+        items: invoice?.items?.map(mapExistingItem) || [defaultItem],
     });
 
     const addItem = () => {
-        setData('items', [...data.items, { article_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 18, is_manual: false }]);
+        const client = clients.find(c => c.id.toString() === data.client_id);
+        setData('items', [...data.items, { ...defaultItem, discount: client?.discount ?? 0 }]);
     };
 
     const removeItem = (index: number) => {
@@ -80,21 +104,40 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
             items[index] = {
                 ...items[index],
                 article_id: articleId,
+                bundle_id: '',
                 description: article.name,
                 unit_price: article.price,
                 tax_rate: article.tax_rate,
-                is_manual: false,
+                item_source: 'article',
             };
             setData('items', items);
         }
     };
 
-    const setItemMode = (index: number, isManual: boolean) => {
+    const selectBundle = (index: number, bundleId: string) => {
+        const bundle = bundles.find((b) => b.id.toString() === bundleId);
+        if (bundle) {
+            const items = [...data.items];
+            items[index] = {
+                ...items[index],
+                article_id: '',
+                bundle_id: bundleId,
+                description: bundle.name,
+                unit_price: bundle.price,
+                tax_rate: bundle.tax_rate,
+                item_source: 'bundle',
+            };
+            setData('items', items);
+        }
+    };
+
+    const setItemSource = (index: number, source: ItemSource) => {
         const items = [...data.items];
         items[index] = {
             ...items[index],
-            is_manual: isManual,
+            item_source: source,
             article_id: '',
+            bundle_id: '',
             description: '',
             unit_price: 0,
             tax_rate: 18,
@@ -103,14 +146,23 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
     };
 
     const calculateItemTotal = (item: InvoiceItem) => {
-        const subtotal = item.quantity * item.unit_price;
-        const tax = subtotal * (item.tax_rate / 100);
-        return subtotal + tax;
+        const base = item.quantity * item.unit_price;
+        const discounted = base * (1 - (item.discount || 0) / 100);
+        const tax = discounted * (item.tax_rate / 100);
+        return discounted + tax;
     };
 
     const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
-    const taxAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unit_price * (item.tax_rate / 100), 0);
-    const total = subtotal + taxAmount;
+    const discountAmount = data.items.reduce((sum, item) => {
+        const base = item.quantity * item.unit_price;
+        return sum + base * ((item.discount || 0) / 100);
+    }, 0);
+    const taxAmount = data.items.reduce((sum, item) => {
+        const base = item.quantity * item.unit_price;
+        const discounted = base * (1 - (item.discount || 0) / 100);
+        return sum + discounted * (item.tax_rate / 100);
+    }, 0);
+    const total = subtotal - discountAmount + taxAmount;
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -146,7 +198,15 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <Label htmlFor="client_id">{t('invoices.client')} *</Label>
-                                    <Select value={data.client_id} onValueChange={(v) => setData('client_id', v)}>
+                                    <Select value={data.client_id} onValueChange={(v) => {
+                                        const client = clients.find(c => c.id.toString() === v);
+                                        const clientDiscount = client?.discount ?? 0;
+                                        setData(prev => ({
+                                            ...prev,
+                                            client_id: v,
+                                            items: prev.items.map(item => ({ ...item, discount: clientDiscount })),
+                                        }));
+                                    }}>
                                         <SelectTrigger className="mt-1" error={errors.client_id}>
                                             <SelectValue placeholder={t('invoices.select_client')} />
                                         </SelectTrigger>
@@ -257,32 +317,32 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                                             </Button>
                                         </div>
 
-                                        {/* Mode selector - Article or Manual */}
-                                        {articles.length > 0 && (
-                                            <div className="flex gap-2 mb-4">
+                                        {/* Mode selector - only show if bundles exist */}
+                                        {bundles.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-4">
                                                 <Button
                                                     type="button"
-                                                    variant={!item.is_manual ? 'default' : 'outline'}
+                                                    variant={item.item_source === 'article' ? 'default' : 'outline'}
                                                     size="sm"
-                                                    onClick={() => setItemMode(index, false)}
+                                                    onClick={() => setItemSource(index, 'article')}
                                                 >
                                                     {t('invoices.select_article')}
                                                 </Button>
                                                 <Button
                                                     type="button"
-                                                    variant={item.is_manual ? 'default' : 'outline'}
+                                                    variant={item.item_source === 'bundle' ? 'default' : 'outline'}
                                                     size="sm"
-                                                    onClick={() => setItemMode(index, true)}
+                                                    onClick={() => setItemSource(index, 'bundle')}
                                                 >
-                                                    {t('invoices.manual_entry')}
+                                                    {t('invoices.select_bundle')}
                                                 </Button>
                                             </div>
                                         )}
 
-                                        {/* Article selector - shown when NOT manual mode */}
-                                        {!item.is_manual && articles.length > 0 && (
+                                        {/* Article selector */}
+                                        {item.item_source === 'article' && (
                                             <div className="mb-4">
-                                                <Label>{t('invoices.article')}</Label>
+                                                <Label>{t('invoices.article')} *</Label>
                                                 <Select
                                                     value={item.article_id}
                                                     onValueChange={(v) => selectArticle(index, v)}
@@ -301,29 +361,30 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                                             </div>
                                         )}
 
-                                        {/* Manual entry fields - shown when manual mode OR no articles exist */}
-                                        {(item.is_manual || articles.length === 0) && (
+                                        {/* Bundle selector */}
+                                        {item.item_source === 'bundle' && (
                                             <div className="mb-4">
-                                                <Label>{t('invoices.description')}</Label>
-                                                <Textarea
-                                                    value={item.description}
-                                                    onChange={(e) => updateItem(index, 'description', e.target.value)}
-                                                    placeholder={t('invoices.item_description')}
-                                                    className="mt-1"
-                                                    rows={3}
-                                                />
+                                                <Label>{t('invoices.select_bundle')} *</Label>
+                                                <Select
+                                                    value={item.bundle_id}
+                                                    onValueChange={(v) => selectBundle(index, v)}
+                                                >
+                                                    <SelectTrigger className="mt-1">
+                                                        <SelectValue placeholder={t('invoices.select_bundle')} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {bundles.map((b) => (
+                                                            <SelectItem key={b.id} value={b.id.toString()}>
+                                                                {b.name} - {formatNumber(b.price)} {data.currency}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                         )}
 
-                                        {/* Show selected article info when article is selected */}
-                                        {!item.is_manual && item.article_id && (
-                                            <div className="mb-4 p-3 bg-blue-50 rounded-md">
-                                                <p className="text-sm font-medium text-blue-900">{item.description}</p>
-                                            </div>
-                                        )}
-
-                                        {/* Quantity, Price, Tax, Total */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {/* Quantity, Price, Discount, Tax, Total */}
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                             <div>
                                                 <Label>{t('invoices.quantity')}</Label>
                                                 <Input
@@ -342,7 +403,18 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                                                     value={item.unit_price}
                                                     onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
                                                     className="mt-1"
-                                                    disabled={!item.is_manual && !!item.article_id}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>{t('invoices.discount')}</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="100"
+                                                    value={item.discount}
+                                                    onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
+                                                    className="mt-1"
                                                 />
                                             </div>
                                             <div>
@@ -353,7 +425,6 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                                                     value={item.tax_rate}
                                                     onChange={(e) => updateItem(index, 'tax_rate', parseFloat(e.target.value) || 0)}
                                                     className="mt-1"
-                                                    disabled={!item.is_manual && !!item.article_id}
                                                 />
                                             </div>
                                             <div>
@@ -375,6 +446,12 @@ export default function CreateInvoice({ clients, articles, currentYear, nextSequ
                                             <span className="text-gray-600">{t('invoices.subtotal')}:</span>
                                             <span className="font-medium">{formatNumber(subtotal, 2)} {data.currency}</span>
                                         </div>
+                                        {discountAmount > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">{t('invoices.discount')}:</span>
+                                                <span className="font-medium text-red-600">-{formatNumber(discountAmount, 2)} {data.currency}</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">{t('invoices.tax')}:</span>
                                             <span className="font-medium">{formatNumber(taxAmount, 2)} {data.currency}</span>

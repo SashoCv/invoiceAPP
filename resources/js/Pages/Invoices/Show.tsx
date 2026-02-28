@@ -257,6 +257,7 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                                     <TableHead className="w-1/2">{t('invoices.description')}</TableHead>
                                     <TableHead className="text-right">{t('invoices.quantity')}</TableHead>
                                     <TableHead className="text-right">{t('invoices.unit_price')}</TableHead>
+                                    <TableHead className="text-right">{t('invoices.discount')}</TableHead>
                                     <TableHead className="text-right">{t('invoices.tax_rate')}</TableHead>
                                     <TableHead className="text-right">{t('invoices.total')}</TableHead>
                                 </TableRow>
@@ -264,13 +265,15 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                             <TableBody>
                                 {invoice.items?.map((item, index) => {
                                     const itemSubtotal = item.quantity * item.unit_price;
-                                    const itemTax = itemSubtotal * (item.tax_rate / 100);
-                                    const itemTotal = itemSubtotal + itemTax;
+                                    const afterDiscount = itemSubtotal * (1 - (item.discount || 0) / 100);
+                                    const itemTax = afterDiscount * (item.tax_rate / 100);
+                                    const itemTotal = afterDiscount + itemTax;
                                     return (
                                         <TableRow key={index}>
                                             <TableCell>{item.description}</TableCell>
                                             <TableCell className="text-right">{formatNumber(item.quantity, 2)}</TableCell>
                                             <TableCell className="text-right">{formatNumber(item.unit_price, 2)}</TableCell>
+                                            <TableCell className="text-right">{Number(item.discount || 0).toFixed(0)}%</TableCell>
                                             <TableCell className="text-right">{item.tax_rate}%</TableCell>
                                             <TableCell className="text-right font-medium">{formatNumber(itemTotal, 2)}</TableCell>
                                         </TableRow>
@@ -279,26 +282,26 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-right font-medium">
+                                    <TableCell colSpan={5} className="text-right font-medium">
                                         {t('invoices.subtotal')}:
                                     </TableCell>
-                                    <TableCell className="text-right font-medium">
+                                    <TableCell className="text-right font-medium whitespace-nowrap">
                                         {formatNumber(invoice.subtotal, 2)} {invoice.currency}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-right font-medium">
+                                    <TableCell colSpan={5} className="text-right font-medium">
                                         {t('invoices.tax')}:
                                     </TableCell>
-                                    <TableCell className="text-right font-medium">
+                                    <TableCell className="text-right font-medium whitespace-nowrap">
                                         {formatNumber(invoice.tax_amount, 2)} {invoice.currency}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-right text-lg font-bold">
+                                    <TableCell colSpan={5} className="text-right text-lg font-bold">
                                         {t('invoices.total')}:
                                     </TableCell>
-                                    <TableCell className="text-right text-lg font-bold">
+                                    <TableCell className="text-right text-lg font-bold whitespace-nowrap">
                                         {formatNumber(invoice.total, 2)} {invoice.currency}
                                     </TableCell>
                                 </TableRow>

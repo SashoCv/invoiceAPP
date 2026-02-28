@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\DocumentMail;
+use App\Models\Article;
+use App\Models\Bundle;
 use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Services\PdfService;
@@ -95,6 +97,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
+        $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
         $currentYear = (int) date('Y');
         $nextSequence = ProformaInvoice::getNextSequence($request->user()->id, $currentYear);
@@ -102,6 +105,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
         return Inertia::render('ProformaInvoices/Create', [
             'clients' => $clients,
             'articles' => $articles,
+            'bundles' => $bundles,
             'currentYear' => $currentYear,
             'nextSequence' => $nextSequence,
         ]);
@@ -121,10 +125,13 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'proforma_sequence' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.article_id' => ['nullable', 'integer'],
+            'items.*.bundle_id' => ['nullable', 'integer'],
             'items.*.description' => ['required', 'string'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $exists = ProformaInvoice::withTrashed()
@@ -157,10 +164,13 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         foreach ($validated['items'] as $item) {
             $proforma->items()->create([
+                'article_id' => $item['article_id'] ?? null,
+                'bundle_id' => $item['bundle_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
+                'discount' => $item['discount'] ?? 0,
             ]);
         }
 
@@ -186,12 +196,14 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
+        $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
         $proformaInvoice->load('items');
 
         return Inertia::render('ProformaInvoices/Edit', [
             'proforma' => $proformaInvoice,
             'clients' => $clients,
             'articles' => $articles,
+            'bundles' => $bundles,
         ]);
     }
 
@@ -212,10 +224,13 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'notes' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,sent,converted_to_invoice'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.article_id' => ['nullable', 'integer'],
+            'items.*.bundle_id' => ['nullable', 'integer'],
             'items.*.description' => ['required', 'string'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $exists = ProformaInvoice::withTrashed()
@@ -248,13 +263,17 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         foreach ($validated['items'] as $item) {
             $proformaInvoice->items()->create([
+                'article_id' => $item['article_id'] ?? null,
+                'bundle_id' => $item['bundle_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
+                'discount' => $item['discount'] ?? 0,
             ]);
         }
 
+        $proformaInvoice->load('items');
         $proformaInvoice->calculateTotals();
 
         return redirect()->route('proforma-invoices.show', $proformaInvoice)->with('success', __('toast.proforma_updated'));
@@ -397,11 +416,30 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         foreach ($proformaInvoice->items as $item) {
             $invoice->items()->create([
+                'article_id' => $item->article_id,
+                'bundle_id' => $item->bundle_id,
                 'description' => $item->description,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'tax_rate' => $item->tax_rate,
+                'discount' => $item->discount,
             ]);
+
+            // Deduct stock for articles with inventory tracking
+            if ($item->article_id) {
+                $article = Article::find($item->article_id);
+                if ($article && $article->track_inventory) {
+                    $article->deductStock($item->quantity, 'invoice', $invoice->id);
+                }
+            }
+
+            // Deduct component stocks for bundles
+            if ($item->bundle_id) {
+                $bundle = Bundle::with('bundleItems.article')->find($item->bundle_id);
+                if ($bundle) {
+                    $bundle->deductComponentStocks($item->quantity, 'invoice', $invoice->id);
+                }
+            }
         }
 
         $invoice->calculateTotals();

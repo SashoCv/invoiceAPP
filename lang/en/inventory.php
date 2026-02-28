@@ -1,0 +1,153 @@
+<?php
+
+return [
+    'title' => 'Warehouse',
+    'subtitle' => 'Manage inventory items, bundles, and stock movements',
+
+    // Tabs
+    'items_tab' => 'Items',
+    'bundles_tab' => 'Bundles',
+    'movements_tab' => 'Movements',
+
+    // Items
+    'new_item' => 'New Item',
+    'create_title' => 'New Inventory Item',
+    'create_subtitle' => 'Add a new item to your warehouse',
+    'edit_title' => 'Edit Inventory Item',
+    'edit_subtitle' => 'Update item details',
+    'item_info' => 'Item Information',
+    'stock_info' => 'Stock Information',
+    'back_to_list' => 'Back to warehouse',
+    'save_item' => 'Save Item',
+    'update_item' => 'Update Item',
+
+    // Fields
+    'name' => 'Name',
+    'sku' => 'SKU',
+    'description' => 'Description',
+    'unit' => 'Unit',
+    'price' => 'Price',
+    'tax_rate' => 'Tax Rate',
+    'stock_quantity' => 'Stock Quantity',
+    'low_stock_threshold' => 'Low Stock Threshold',
+    'current_stock' => 'Current Stock',
+    'status' => 'Status',
+    'actions' => 'Actions',
+    'initial_stock' => 'Initial stock',
+
+    // Status
+    'in_stock' => 'In Stock',
+    'low_stock' => 'Low Stock',
+    'out_of_stock' => 'Out of Stock',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+    'all_statuses' => 'All statuses',
+    'all_stock_statuses' => 'All stock levels',
+
+    // Filters
+    'search' => 'Search',
+    'search_placeholder' => 'Name, SKU or description...',
+    'filter' => 'Filter',
+    'clear_filters' => 'Clear',
+
+    // Actions
+    'edit' => 'Edit',
+    'delete' => 'Delete',
+    'view' => 'View',
+    'delete_item' => 'Delete Item',
+    'delete_confirm' => 'Are you sure you want to delete this item? Stock history will be preserved.',
+    'adjust_stock' => 'Adjust Stock',
+    'add_stock' => 'Add Stock',
+    'add_to_warehouse' => 'Add to Warehouse',
+    'select_article' => 'Select Article',
+    'enable_tracking' => 'Enable Tracking',
+    'disable_tracking' => 'Disable Tracking',
+    'disable_tracking_confirm' => 'Are you sure you want to disable tracking for this article? Stock quantity will be reset to 0.',
+
+    // Stock adjustment
+    'adjustment_type' => 'Type',
+    'receipt' => 'Receipt (add stock)',
+    'issue' => 'Issue (remove stock)',
+    'adjustment' => 'Adjustment (set quantity)',
+    'quantity' => 'Quantity',
+    'notes' => 'Notes',
+    'notes_placeholder' => 'Reason for adjustment...',
+
+    // Bundles
+    'new_bundle' => 'New Bundle',
+    'create_bundle' => 'New Bundle',
+    'create_bundle_subtitle' => 'Create a bundle of inventory items',
+    'edit_bundle' => 'Edit Bundle',
+    'edit_bundle_subtitle' => 'Update bundle details',
+    'bundle_info' => 'Bundle Information',
+    'bundle_name' => 'Bundle Name',
+    'components' => 'Components',
+    'component_count' => 'Components',
+    'add_component' => 'Add Component',
+    'select_item' => 'Select item',
+    'component_quantity' => 'Qty',
+    'save_bundle' => 'Save Bundle',
+    'update_bundle' => 'Update Bundle',
+    'delete_bundle' => 'Delete Bundle',
+    'delete_bundle_confirm' => 'Are you sure you want to delete this bundle?',
+    'no_bundles' => 'No bundles yet',
+    'create_first_bundle' => 'Create your first bundle to group items together',
+
+    // Movements
+    'movement_date' => 'Date',
+    'movement_item' => 'Item',
+    'movement_type' => 'Type',
+    'movement_quantity' => 'Quantity',
+    'movement_before' => 'Before',
+    'movement_after' => 'After',
+    'movement_notes' => 'Notes',
+    'movement_all_types' => 'All types',
+    'movement_from' => 'From',
+    'movement_to' => 'To',
+    'type_receipt' => 'Receipt',
+    'type_issue' => 'Issue',
+    'type_adjustment' => 'Adjustment',
+    'type_invoice_deduction' => 'Invoice',
+    'no_movements' => 'No stock movements yet',
+
+    // Empty state
+    'no_items' => 'No inventory items yet',
+    'create_first_description' => 'Add your first item to start tracking inventory',
+
+    // Show page
+    'item_details' => 'Item Details',
+    'stock_history' => 'Stock History',
+
+    // Invoice integration
+    'inventory_item' => 'Inventory Item',
+    'bundle' => 'Bundle',
+
+    // Dashboard
+    'dashboard_title' => 'Warehouse Overview',
+    'dashboard_subtitle' => 'Stock levels, movements and alerts at a glance',
+    'dashboard_total_items' => 'Tracked Items',
+    'dashboard_tracked' => 'Articles with tracking',
+    'dashboard_stock_value' => 'Stock Value',
+    'dashboard_total_value' => 'Total inventory value',
+    'dashboard_low_stock' => 'Low Stock',
+    'dashboard_needs_restock' => 'Need restocking',
+    'dashboard_out_of_stock' => 'Out of Stock',
+    'dashboard_unavailable' => 'Unavailable items',
+    'dashboard_monthly_movement' => 'Monthly Movement',
+    'dashboard_receipts_issues' => 'Receipts and issues over the last 6 months',
+    'dashboard_receipts' => 'Receipts',
+    'dashboard_issues' => 'Issues',
+    'dashboard_stock_status' => 'Stock Status',
+    'dashboard_status_overview' => 'Distribution of stock levels',
+    'dashboard_in_stock_rate' => 'In stock rate',
+    'dashboard_alerts' => 'Stock Alerts',
+    'dashboard_alerts_desc' => 'Items that need attention',
+    'dashboard_all_stocked' => 'All items are well stocked!',
+    'dashboard_top_items' => 'Top Items by Value',
+    'dashboard_top_items_desc' => 'Highest value items in stock',
+    'dashboard_value' => 'Value',
+    'dashboard_recent_movements' => 'Recent Movements',
+    'dashboard_recent_movements_desc' => 'Latest stock changes',
+    'dashboard_reference' => 'Invoice',
+    'go_to_warehouse' => 'Go to Warehouse',
+];

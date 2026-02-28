@@ -402,6 +402,7 @@ class OfferController extends Controller implements HasMiddleware
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
                     'tax_rate' => $item->tax_rate,
+                    'discount' => $item->discount,
                 ]);
             }
             $invoice->calculateTotals();

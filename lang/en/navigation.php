@@ -27,5 +27,13 @@ return [
     'logout' => 'Log Out',
     'language' => 'Language',
     'admin_panel' => 'Admin Panel',
+    'inventory' => 'Warehouse',
+    'warehouse_dashboard' => 'Warehouse Overview',
     'billing' => 'Billing',
+    'section_documents' => 'Documents',
+    'section_manage' => 'Manage',
+    'section_warehouse' => 'Warehouse',
+    'section_finance' => 'Finance',
+    'section_settings' => 'Settings',
+    'bank_transactions' => 'Bank Statements',
 ];

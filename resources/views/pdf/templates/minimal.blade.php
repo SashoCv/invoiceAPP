@@ -43,9 +43,10 @@
 <table class="items-table">
     <thead>
         <tr>
-            <th style="width: 50%;">Опис</th>
-            <th class="right" style="width: 12%;">Кол.</th>
-            <th class="right" style="width: 18%;">Цена</th>
+            <th style="width: 42%;">Опис</th>
+            <th class="right" style="width: 10%;">Кол.</th>
+            <th class="right" style="width: 16%;">Цена</th>
+            <th class="right" style="width: 12%;">Рабат</th>
             <th class="right" style="width: 20%;">Износ</th>
         </tr>
     </thead>
@@ -55,7 +56,8 @@
             <td>{{ $item->description }}</td>
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
-            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
+            <td class="right">{{ number_format($item->discount, 0) }}%</td>
+            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $item->discount / 100) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
         </tr>
         @endforeach
     </tbody>
@@ -63,11 +65,21 @@
 @endif
 
 {{-- Totals --}}
+@php
+    $grossSubtotal = $items->sum(fn($i) => $i->quantity * $i->unit_price);
+    $discountTotal = $grossSubtotal - $subtotal;
+@endphp
 <div class="totals">
     <div class="totals-row">
         <span class="label">Меѓузбир</span>
-        <span class="value">{{ number_format($subtotal, 2, ',', ' ') }}</span>
+        <span class="value">{{ number_format($grossSubtotal, 2, ',', ' ') }}</span>
     </div>
+    @if($discountTotal > 0)
+    <div class="totals-row">
+        <span class="label">Рабат</span>
+        <span class="value">-{{ number_format($discountTotal, 2, ',', ' ') }}</span>
+    </div>
+    @endif
     <div class="totals-row">
         <span class="label">ДДВ</span>
         <span class="value">{{ number_format($taxAmount, 2, ',', ' ') }}</span>

@@ -6,6 +6,12 @@ return [
     'add_client' => 'Додади клиент',
     'add_client_desc' => 'Додадете нов клиент за вашите фактури',
     'edit_client' => 'Измени клиент',
+    'create_title' => 'Додади клиент',
+    'create_subtitle' => 'Додадете нов клиент за вашите фактури',
+    'save_client' => 'Зачувај клиент',
+    'update_client' => 'Ажурирај клиент',
+    'archive_title' => 'Архивирај клиент',
+    'archive_description' => 'Клиентот ќе биде преместен во архива. Може да го вратите подоцна.',
     'no_clients' => 'Немате клиенти',
     'add_first_client' => 'Додадете го вашиот прв клиент',
     'add_first_client_description' => 'Додадете го вашиот прв клиент за да започнете со работа',
@@ -33,6 +39,8 @@ return [
     'city' => 'Град',
     'postal_code' => 'Поштенски број',
     'country' => 'Држава',
+    'discount' => 'Рабат (%)',
+    'discount_placeholder' => 'Стандарден попуст за овој клиент',
 
     // Actions
     'back_to_list' => 'Назад кон листа',
@@ -66,4 +74,21 @@ return [
     'showing' => 'Прикажани',
     'of' => 'од',
     'per_page' => 'По страна',
+
+    // Show page
+    'view' => 'Преглед',
+    'client_details' => 'Детали за клиент',
+    'statistics' => 'Статистика',
+    'total_invoiced' => 'Вкупно фактурирано',
+    'total_paid' => 'Вкупно платено',
+    'total_unpaid' => 'Неплатено',
+    'invoice_count' => 'Фактури',
+    'article_breakdown' => 'Купени артикли',
+    'article_name' => 'Артикл',
+    'total_quantity' => 'Количина',
+    'total_amount' => 'Износ',
+    'recent_invoices' => 'Последни фактури',
+    'no_invoices' => 'Нема фактури за овој клиент',
+    'no_articles' => 'Нема купени артикли',
+    'contact_info' => 'Контакт информации',
 ];

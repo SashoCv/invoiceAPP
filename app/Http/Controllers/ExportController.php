@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankTransaction;
 use App\Models\Invoice;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -145,6 +146,65 @@ class ExportController extends Controller
                 $client->address ?? '',
                 $client->city ?? '',
                 $client->tax_number ?? '',
+            ];
+        });
+    }
+
+    public function exportBankTransactions(Request $request): StreamedResponse
+    {
+        $query = $request->user()->bankTransactions()
+            ->with(['bankAccount', 'invoice.client', 'client']);
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('date', '<=', $request->date_to);
+        }
+
+        if ($request->filled('bank_account')) {
+            $query->where('bank_account_id', $request->bank_account);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $transactions = $query->orderBy('date', 'desc')->get();
+
+        $typeLabels = [
+            'income' => __('bank_transactions.type_income'),
+            'expense' => __('bank_transactions.type_expense'),
+        ];
+
+        $headers = [
+            __('bank_transactions.date'),
+            __('bank_transactions.type'),
+            __('bank_transactions.client'),
+            __('bank_transactions.invoice'),
+            __('bank_transactions.bank_account'),
+            __('bank_transactions.amount'),
+            __('bank_transactions.currency'),
+            __('bank_transactions.reference'),
+            __('bank_transactions.description'),
+        ];
+
+        return $this->streamCsv('bank_transactions.csv', $headers, $transactions, function ($transaction) use ($typeLabels) {
+            $clientName = $transaction->client?->name
+                ?? $transaction->invoice?->client?->name
+                ?? '';
+
+            return [
+                $transaction->date?->format('d.m.Y') ?? '',
+                $typeLabels[$transaction->type] ?? $transaction->type,
+                $clientName,
+                $transaction->invoice?->invoice_number ?? '',
+                $transaction->bankAccount?->bank_name ?? '',
+                $transaction->amount,
+                $transaction->currency,
+                $transaction->reference ?? '',
+                $transaction->description ?? '',
             ];
         });
     }

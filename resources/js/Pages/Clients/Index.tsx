@@ -24,7 +24,7 @@ import {
 import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
-import { Plus, Archive, Pencil, Trash2, Users, Download } from 'lucide-react';
+import { Plus, Archive, Pencil, Trash2, Users, Download, Eye } from 'lucide-react';
 import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
@@ -199,9 +199,12 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                         <TableRow key={client.id}>
                                             <TableCell>
                                                 <div>
-                                                    <p className="text-sm font-medium text-gray-900">
+                                                    <Link
+                                                        href={`/clients/${client.id}`}
+                                                        className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                                                    >
                                                         {client.name}
-                                                    </p>
+                                                    </Link>
                                                     {client.city && (
                                                         <p className="text-xs text-gray-400">{client.city}, {client.country}</p>
                                                     )}
@@ -234,6 +237,11 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                             <TableCell className="text-right">
                                                 <ActionDropdown
                                                     actions={[
+                                                        {
+                                                            label: t('clients.view'),
+                                                            icon: Eye,
+                                                            href: `/clients/${client.id}`,
+                                                        },
                                                         {
                                                             label: t('clients.edit'),
                                                             icon: Pencil,

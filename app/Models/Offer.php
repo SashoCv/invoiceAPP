@@ -108,7 +108,8 @@ class Offer extends Model
     {
         if ($this->has_items) {
             $this->subtotal = $this->items->sum(function ($item) {
-                return $item->quantity * $item->unit_price;
+                $lineTotal = $item->quantity * $item->unit_price;
+                return $lineTotal - ($lineTotal * $item->discount / 100);
             });
             $this->tax_amount = $this->items->sum('tax_amount');
             $this->total = $this->subtotal + $this->tax_amount;

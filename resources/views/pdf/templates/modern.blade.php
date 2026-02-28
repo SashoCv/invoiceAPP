@@ -51,10 +51,11 @@
 <table class="items-table">
     <thead>
         <tr>
-            <th style="width: 45%;">Опис</th>
-            <th class="right" style="width: 12%;">Кол.</th>
-            <th class="right" style="width: 15%;">Цена</th>
-            <th class="right" style="width: 12%;">ДДВ</th>
+            <th style="width: 35%;">Опис</th>
+            <th class="right" style="width: 10%;">Кол.</th>
+            <th class="right" style="width: 13%;">Цена</th>
+            <th class="right" style="width: 10%;">Рабат</th>
+            <th class="right" style="width: 10%;">ДДВ</th>
             <th class="right" style="width: 16%;">Вкупно</th>
         </tr>
     </thead>
@@ -64,19 +65,30 @@
             <td>{{ $item->description }}</td>
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
+            <td class="right">{{ number_format($item->discount, 0) }}%</td>
             <td class="right">{{ number_format($item->tax_rate, 0) }}%</td>
-            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
+            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $item->discount / 100) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
         </tr>
         @endforeach
     </tbody>
 </table>
 
+@php
+    $grossSubtotal = $items->sum(fn($i) => $i->quantity * $i->unit_price);
+    $discountTotal = $grossSubtotal - $subtotal;
+@endphp
 <div class="totals-section">
     <div class="totals">
         <div class="totals-row">
             <span class="label">Меѓузбир</span>
-            <span class="value">{{ number_format($subtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+            <span class="value">{{ number_format($grossSubtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
         </div>
+        @if($discountTotal > 0)
+        <div class="totals-row">
+            <span class="label">Рабат</span>
+            <span class="value">-{{ number_format($discountTotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+        </div>
+        @endif
         <div class="totals-row">
             <span class="label">ДДВ</span>
             <span class="value">{{ number_format($taxAmount, 2, ',', ' ') }} {{ $currencySymbol }}</span>

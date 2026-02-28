@@ -1,4 +1,5 @@
-import AppLayout from '@/Components/AppLayout';
+import { Head } from '@inertiajs/react';
+import SettingsLayout from '@/Components/SettingsLayout';
 import { useTranslation } from '@/hooks/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
@@ -36,9 +37,9 @@ export default function BillingIndex({ subscriptionStatus, expiresAt, trialEndsA
     ];
 
     return (
-        <AppLayout>
+        <SettingsLayout>
+            <Head title={t('navigation.billing')} />
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('subscription.your_subscription')}</h1>
 
                 {/* Current status card */}
                 <Card className="mb-8">
@@ -169,6 +170,6 @@ export default function BillingIndex({ subscriptionStatus, expiresAt, trialEndsA
                     </>
                 )}
             </div>
-        </AppLayout>
+        </SettingsLayout>
     );
 }

@@ -116,7 +116,7 @@ export default function CreateArticle() {
                             <Link href="/articles">{t('general.cancel')}</Link>
                         </Button>
                         <Button type="submit" disabled={processing} loading={processing}>
-                            {t('articles.save_article')}
+                            {t('articles.save')}
                         </Button>
                     </div>
                 </form>

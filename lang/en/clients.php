@@ -6,6 +6,12 @@ return [
     'add_client' => 'Add Client',
     'add_client_desc' => 'Add a new client for your invoices',
     'edit_client' => 'Edit Client',
+    'create_title' => 'Add Client',
+    'create_subtitle' => 'Add a new client for your invoices',
+    'save_client' => 'Save Client',
+    'update_client' => 'Update Client',
+    'archive_title' => 'Archive Client',
+    'archive_description' => 'This client will be moved to archive. You can restore it later.',
     'no_clients' => 'No clients yet',
     'add_first_client' => 'Add your first client',
     'add_first_client_description' => 'Add your first client to get started',
@@ -33,6 +39,8 @@ return [
     'city' => 'City',
     'postal_code' => 'Postal Code',
     'country' => 'Country',
+    'discount' => 'Discount (%)',
+    'discount_placeholder' => 'Default discount for this client',
 
     // Actions
     'back_to_list' => 'Back to list',
@@ -66,4 +74,21 @@ return [
     'showing' => 'Showing',
     'of' => 'of',
     'per_page' => 'Per page',
+
+    // Show page
+    'view' => 'View',
+    'client_details' => 'Client Details',
+    'statistics' => 'Statistics',
+    'total_invoiced' => 'Total Invoiced',
+    'total_paid' => 'Total Paid',
+    'total_unpaid' => 'Outstanding',
+    'invoice_count' => 'Invoices',
+    'article_breakdown' => 'Articles Purchased',
+    'article_name' => 'Article',
+    'total_quantity' => 'Quantity',
+    'total_amount' => 'Amount',
+    'recent_invoices' => 'Recent Invoices',
+    'no_invoices' => 'No invoices for this client yet',
+    'no_articles' => 'No articles purchased yet',
+    'contact_info' => 'Contact Information',
 ];

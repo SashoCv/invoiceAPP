@@ -15,16 +15,14 @@ import {
     Users,
     Package,
     Receipt,
-    CreditCard,
-    FileCode,
-    User,
-    Building2,
+    Landmark,
+    Warehouse,
+    Settings,
     LogOut,
     Menu,
     X,
     Calculator,
     Shield,
-    Wallet,
     AlertTriangle,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
@@ -35,6 +33,11 @@ interface NavItem {
     href: string;
     icon: React.ElementType;
     active: boolean;
+}
+
+interface NavSection {
+    label?: string;
+    items: NavItem[];
 }
 
 export default function AppLayout({ children }: PropsWithChildren) {
@@ -62,81 +65,86 @@ export default function AppLayout({ children }: PropsWithChildren) {
         }
     }, [flash]);
 
-    const navigation: NavItem[] = [
+    const navSections: NavSection[] = [
         {
-            name: t('navigation.dashboard'),
-            href: '/dashboard',
-            icon: LayoutDashboard,
-            active: currentPath === '/dashboard',
+            items: [
+                {
+                    name: t('navigation.dashboard'),
+                    href: '/dashboard',
+                    icon: LayoutDashboard,
+                    active: currentPath === '/dashboard',
+                },
+                {
+                    name: t('navigation.warehouse_dashboard'),
+                    href: '/warehouse',
+                    icon: Warehouse,
+                    active: currentPath === '/warehouse',
+                },
+            ],
         },
         {
-            name: t('navigation.invoices'),
-            href: '/invoices',
-            icon: FileText,
-            active: currentPath.startsWith('/invoices'),
+            label: t('navigation.section_documents'),
+            items: [
+                {
+                    name: t('navigation.invoices'),
+                    href: '/invoices',
+                    icon: FileText,
+                    active: currentPath.startsWith('/invoices'),
+                },
+                {
+                    name: t('navigation.proforma_invoices'),
+                    href: '/proforma-invoices',
+                    icon: FileCheck,
+                    active: currentPath.startsWith('/proforma-invoices'),
+                },
+                {
+                    name: t('navigation.offers'),
+                    href: '/offers',
+                    icon: ClipboardList,
+                    active: currentPath.startsWith('/offers'),
+                },
+            ],
         },
         {
-            name: t('navigation.proforma_invoices'),
-            href: '/proforma-invoices',
-            icon: FileCheck,
-            active: currentPath.startsWith('/proforma-invoices'),
-        },
-        {
-            name: t('navigation.offers'),
-            href: '/offers',
-            icon: ClipboardList,
-            active: currentPath.startsWith('/offers'),
-        },
-        {
-            name: t('navigation.clients'),
-            href: '/clients',
-            icon: Users,
-            active: currentPath.startsWith('/clients'),
-        },
-        {
-            name: t('navigation.articles'),
-            href: '/articles',
-            icon: Package,
-            active: currentPath.startsWith('/articles'),
-        },
-        {
-            name: t('navigation.expenses'),
-            href: '/expenses',
-            icon: Receipt,
-            active: currentPath.startsWith('/expenses'),
-        },
-        {
-            name: t('navigation.bank_accounts'),
-            href: '/settings/bank-accounts',
-            icon: CreditCard,
-            active: currentPath === '/settings/bank-accounts',
-        },
-        {
-            name: t('navigation.templates'),
-            href: '/settings/templates',
-            icon: FileCode,
-            active: currentPath === '/settings/templates',
-        },
-    ];
-
-    const settingsNavigation: NavItem[] = [
-        {
-            name: t('navigation.profile'),
-            href: '/settings/profile',
-            icon: User,
-            active: currentPath === '/settings/profile',
-        },
-        {
-            name: t('navigation.agency'),
-            href: '/settings/agency',
-            icon: Building2,
-            active: currentPath === '/settings/agency',
-        },
-        {
-            name: t('navigation.billing'),
-            href: '/billing',
-            icon: Wallet,
-            active: currentPath === '/billing',
+            label: t('navigation.section_manage'),
+            items: [
+                {
+                    name: t('navigation.clients'),
+                    href: '/clients',
+                    icon: Users,
+                    active: currentPath.startsWith('/clients'),
+                },
+                {
+                    name: t('navigation.articles'),
+                    href: '/articles',
+                    icon: Package,
+                    active: currentPath.startsWith('/articles'),
+                },
+                {
+                    name: t('navigation.inventory'),
+                    href: '/inventory',
+                    icon: Warehouse,
+                    active: currentPath.startsWith('/inventory') || currentPath.startsWith('/bundles'),
+                },
+                {
+                    name: t('navigation.expenses'),
+                    href: '/expenses',
+                    icon: Receipt,
+                    active: currentPath.startsWith('/expenses'),
+                },
+                {
+                    name: t('navigation.bank_transactions'),
+                    href: '/bank-transactions',
+                    icon: Landmark,
+                    active: currentPath.startsWith('/bank-transactions'),
+                },
+                {
+                    name: t('navigation.section_settings'),
+                    href: '/settings/profile',
+                    icon: Settings,
+                    active: currentPath.startsWith('/settings') || currentPath === '/billing',
+                },
+            ],
         },
     ];
 
@@ -192,41 +200,37 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {navigation.map((item) => (
-                            <Link
-                                key={item.name}
-                                href={item.href}
-                                className={cn(
-                                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                                    item.active
-                                        ? 'bg-blue-50 text-blue-600'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    <nav className="flex-1 px-4 py-3 overflow-y-auto">
+                        {navSections.map((section, sectionIndex) => (
+                            <div key={sectionIndex} className={sectionIndex > 0 ? 'mt-4 pt-4 border-t border-gray-100' : ''}>
+                                {section.label && (
+                                    <p className="px-3 mb-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        {section.label}
+                                    </p>
                                 )}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                {item.name}
-                            </Link>
+                                <div className="space-y-0.5">
+                                    {section.items.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={cn(
+                                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                                                item.active
+                                                    ? 'bg-blue-50 text-blue-600'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                            )}
+                                            onClick={() => setSidebarOpen(false)}
+                                        >
+                                            <item.icon className="w-5 h-5" />
+                                            {item.name}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
 
-                        <div className="pt-4 mt-4 border-t border-gray-100">
-                            {settingsNavigation.map((item) => (
-                                <Link
-                                    key={item.name}
-                                    href={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                                        item.active
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                    )}
-                                    onClick={() => setSidebarOpen(false)}
-                                >
-                                    <item.icon className="w-5 h-5" />
-                                    {item.name}
-                                </Link>
-                            ))}
+                        {/* Tools */}
+                        <div className="mt-4 pt-4 border-t border-gray-100">
                             <button
                                 onClick={() => setCalcOpen(true)}
                                 className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -237,7 +241,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         </div>
 
                         {isAdmin && (
-                            <div className="pt-4 mt-4 border-t border-gray-100">
+                            <div className="mt-4 pt-4 border-t border-gray-100">
                                 <Link
                                     href="/admin"
                                     className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-indigo-600 hover:bg-indigo-50"

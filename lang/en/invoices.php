@@ -52,6 +52,8 @@ return [
     'add_item' => 'Add Item',
     'article' => 'Article',
     'select_article' => 'Select article',
+    'select_inventory_item' => 'Inventory item',
+    'select_bundle' => 'Bundle',
     'manual_entry' => 'Manual entry',
     'or_manual' => 'or enter manually',
     'description' => 'Service/Product description',
@@ -64,6 +66,7 @@ return [
 
     // Totals
     'subtotal' => 'Subtotal',
+    'discount' => 'Discount %',
     'tax' => 'Tax',
 
     // Actions

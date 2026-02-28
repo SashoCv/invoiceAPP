@@ -27,6 +27,7 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
         country: client.country || 'Македонија',
         tax_number: client.tax_number || '',
         registration_number: '',
+        discount: client.discount ?? 0,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -105,6 +106,25 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
                                         onChange={(e) => setData('registration_number', e.target.value)}
                                         className="mt-1"
                                         error={errors.registration_number}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Discount */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="discount">{t('clients.discount')}</Label>
+                                    <Input
+                                        id="discount"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        value={data.discount}
+                                        onChange={(e) => setData('discount', parseFloat(e.target.value) || 0)}
+                                        placeholder={t('clients.discount_placeholder')}
+                                        className="mt-1"
+                                        error={errors.discount}
                                     />
                                 </div>
                             </div>

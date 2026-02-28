@@ -77,6 +77,7 @@
                         <th class="text-left px-6 py-4 text-sm font-semibold">Опис</th>
                         <th class="text-right px-4 py-4 text-sm font-semibold">Кол.</th>
                         <th class="text-right px-4 py-4 text-sm font-semibold">Цена</th>
+                        <th class="text-right px-4 py-4 text-sm font-semibold">Рабат</th>
                         <th class="text-right px-4 py-4 text-sm font-semibold">ДДВ</th>
                         <th class="text-right px-6 py-4 text-sm font-semibold">Вкупно</th>
                     </tr>
@@ -85,13 +86,16 @@
                     @foreach($items as $index => $item)
                     @php
                         $itemSubtotal = $item->quantity * $item->unit_price;
-                        $itemTax = $itemSubtotal * ($item->tax_rate / 100);
-                        $itemTotal = $itemSubtotal + $itemTax;
+                        $itemDiscount = $itemSubtotal * ($item->discount / 100);
+                        $afterDiscount = $itemSubtotal - $itemDiscount;
+                        $itemTax = $afterDiscount * ($item->tax_rate / 100);
+                        $itemTotal = $afterDiscount + $itemTax;
                     @endphp
                     <tr class="border-b border-gray-100">
                         <td class="px-6 py-4 text-sm text-gray-900">{{ $item->description }}</td>
                         <td class="px-4 py-4 text-sm text-right text-gray-600">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
                         <td class="px-4 py-4 text-sm text-right text-gray-600">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
+                        <td class="px-4 py-4 text-sm text-right text-gray-600">{{ number_format($item->discount, 0) }}%</td>
                         <td class="px-4 py-4 text-sm text-right text-gray-600">{{ number_format($item->tax_rate, 0) }}%</td>
                         <td class="px-6 py-4 text-sm text-right font-semibold text-gray-900">{{ number_format($itemTotal, 2, ',', ' ') }}</td>
                     </tr>
@@ -100,12 +104,21 @@
             </table>
 
             {{-- Totals inside card --}}
+            @php
+                $grossSubtotal = $items->sum(fn($i) => $i->quantity * $i->unit_price);
+                $discountTotal = $grossSubtotal - $subtotal;
+            @endphp
             <div class="bg-gray-50 px-6 py-4">
                 <div class="flex justify-end">
                     <div class="w-64 space-y-2">
                         <div class="flex justify-between text-sm text-gray-500">
-                            <span>Меѓузбир</span><span>{{ number_format($subtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+                            <span>Меѓузбир</span><span>{{ number_format($grossSubtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
                         </div>
+                        @if($discountTotal > 0)
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span>Рабат</span><span>-{{ number_format($discountTotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between text-sm text-gray-500">
                             <span>ДДВ</span><span>{{ number_format($taxAmount, 2, ',', ' ') }} {{ $currencySymbol }}</span>
                         </div>

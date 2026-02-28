@@ -63,6 +63,20 @@ return [
     'recurring_expense_updated' => 'Recurring expense updated successfully',
     'recurring_expense_deleted' => 'Recurring expense deleted',
 
+    // Inventory
+    'inventory_tracking_enabled' => 'Inventory tracking enabled',
+    'inventory_tracking_disabled' => 'Inventory tracking disabled',
+    'inventory_item_updated' => 'Inventory item updated successfully',
+    'stock_adjusted' => 'Stock adjusted successfully',
+    'bundle_created' => 'Bundle created successfully',
+    'bundle_updated' => 'Bundle updated successfully',
+    'bundle_deleted' => 'Bundle deleted',
+
+    // Bank Transactions
+    'bank_transaction_created' => 'Payment recorded successfully',
+    'bank_transaction_updated' => 'Payment updated successfully',
+    'bank_transaction_deleted' => 'Payment deleted',
+
     // Email
     'invoice_sent_email' => 'Invoice sent successfully via email',
     'proforma_sent_email' => 'Proforma invoice sent successfully via email',

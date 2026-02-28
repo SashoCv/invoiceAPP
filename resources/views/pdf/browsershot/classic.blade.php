@@ -71,6 +71,7 @@
                     <th class="text-left px-4 py-3 text-sm font-semibold">Опис</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Кол.</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Цена</th>
+                    <th class="text-right px-4 py-3 text-sm font-semibold">Рабат</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Вкупно</th>
                 </tr>
@@ -79,13 +80,16 @@
                 @foreach($items as $index => $item)
                 @php
                     $itemSubtotal = $item->quantity * $item->unit_price;
-                    $itemTax = $itemSubtotal * ($item->tax_rate / 100);
-                    $itemTotal = $itemSubtotal + $itemTax;
+                    $itemDiscount = $itemSubtotal * ($item->discount / 100);
+                    $afterDiscount = $itemSubtotal - $itemDiscount;
+                    $itemTax = $afterDiscount * ($item->tax_rate / 100);
+                    $itemTotal = $afterDiscount + $itemTax;
                 @endphp
                 <tr class="{{ $index % 2 === 1 ? 'bg-gray-50' : 'bg-white' }}">
                     <td class="px-4 py-3 text-sm border-b border-gray-200">{{ $item->description }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
+                    <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->discount, 0) }}%</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->tax_rate, 0) }}%</td>
                     <td class="px-4 py-3 text-sm text-right font-medium border-b border-gray-200">{{ number_format($itemTotal, 2, ',', ' ') }}</td>
                 </tr>
@@ -97,11 +101,20 @@
 
     {{-- Totals - only show if has items --}}
     @if($hasItems)
+    @php
+        $grossSubtotal = $items->sum(fn($i) => $i->quantity * $i->unit_price);
+        $discountTotal = $grossSubtotal - $subtotal;
+    @endphp
     <div class="flex justify-end mb-8">
         <div class="w-64">
             <div class="flex justify-between text-sm text-gray-500 py-1">
-                <span>Меѓузбир:</span><span>{{ number_format($subtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+                <span>Меѓузбир:</span><span>{{ number_format($grossSubtotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
             </div>
+            @if($discountTotal > 0)
+            <div class="flex justify-between text-sm text-gray-500 py-1">
+                <span>Рабат:</span><span>-{{ number_format($discountTotal, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+            </div>
+            @endif
             <div class="flex justify-between text-sm text-gray-500 py-1">
                 <span>ДДВ:</span><span>{{ number_format($taxAmount, 2, ',', ' ') }} {{ $currencySymbol }}</span>
             </div>

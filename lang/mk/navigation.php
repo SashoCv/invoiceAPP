@@ -27,5 +27,13 @@ return [
     'logout' => 'Одјави се',
     'language' => 'Јазик',
     'admin_panel' => 'Админ панел',
+    'inventory' => 'Магацин',
+    'warehouse_dashboard' => 'Магацински преглед',
     'billing' => 'Наплата',
+    'section_documents' => 'Документи',
+    'section_manage' => 'Управување',
+    'section_warehouse' => 'Магацин',
+    'section_finance' => 'Финансии',
+    'section_settings' => 'Подесувања',
+    'bank_transactions' => 'Изводи',
 ];

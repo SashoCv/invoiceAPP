@@ -57,6 +57,7 @@ return [
 
     // Totals
     'subtotal' => 'Меѓузбир',
+    'discount' => 'Рабат %',
     'tax' => 'ДДВ',
 
     // Actions

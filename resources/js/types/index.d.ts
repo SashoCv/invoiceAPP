@@ -69,13 +69,17 @@ export interface Client {
     id: number;
     user_id: number;
     name: string;
+    company?: string;
     email: string;
     phone: string;
     address: string;
     city: string;
     zip_code: string;
+    postal_code?: string;
     country: string;
     tax_number: string;
+    registration_number?: string;
+    discount?: number;
     notes: string | null;
     created_at: string;
     updated_at: string;
@@ -91,19 +95,64 @@ export interface Article {
     price: number;
     tax_rate: number;
     is_active: boolean;
+    track_inventory: boolean;
+    stock_quantity: number;
+    low_stock_threshold: number;
+    stock_status: 'not_tracked' | 'in_stock' | 'low_stock' | 'out_of_stock';
     created_at: string;
     updated_at: string;
+}
+
+export interface Bundle {
+    id: number;
+    user_id: number;
+    name: string;
+    description: string | null;
+    price: number;
+    tax_rate: number;
+    is_active: boolean;
+    bundle_items?: BundleItem[];
+    total_component_price?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BundleItem {
+    id: number;
+    bundle_id: number;
+    article_id: number;
+    quantity: number;
+    article?: Article;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface StockMovement {
+    id: number;
+    user_id: number;
+    article_id: number;
+    type: 'receipt' | 'issue' | 'adjustment' | 'invoice_deduction';
+    quantity: number;
+    quantity_before: number;
+    quantity_after: number;
+    reference_type: string | null;
+    reference_id: number | null;
+    notes: string | null;
+    article?: Article;
+    created_at: string;
 }
 
 export interface InvoiceItem {
     id?: number;
     invoice_id?: number;
     article_id?: number;
+    bundle_id?: number | null;
     description: string;
     quantity: number;
     unit?: string;
     unit_price: number;
     tax_rate: number;
+    discount?: number;
     tax_amount?: number;
     total: number;
 }
@@ -113,6 +162,9 @@ export interface Invoice {
     user_id: number;
     client_id: number;
     invoice_number: string;
+    invoice_prefix: string | null;
+    invoice_sequence: number;
+    invoice_year: number;
     issue_date: string;
     due_date: string;
     status: 'draft' | 'sent' | 'unpaid' | 'paid' | 'overdue' | 'cancelled';
@@ -133,11 +185,13 @@ export interface ProformaInvoiceItem {
     id?: number;
     proforma_invoice_id?: number;
     article_id?: number;
+    bundle_id?: number | null;
     description: string;
     quantity: number;
     unit?: string;
     unit_price: number;
     tax_rate: number;
+    discount?: number;
     tax_amount?: number;
     total: number;
 }
@@ -173,11 +227,13 @@ export interface OfferItem {
     id?: number;
     offer_id?: number;
     article_id?: number;
+    bundle_id?: number | null;
     description: string;
     quantity: number;
     unit?: string;
     unit_price: number;
     tax_rate: number;
+    discount?: number;
     tax_amount?: number;
     total: number;
 }
@@ -251,6 +307,25 @@ export interface Expense {
     date: string;
     category?: ExpenseCategory;
     recurring_expense?: RecurringExpense;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BankTransaction {
+    id: number;
+    user_id: number;
+    bank_account_id: number | null;
+    invoice_id: number | null;
+    client_id: number | null;
+    type: 'income' | 'expense';
+    amount: number;
+    currency: string;
+    date: string;
+    description: string | null;
+    reference: string | null;
+    bank_account?: BankAccount;
+    invoice?: Invoice;
+    client?: Client;
     created_at: string;
     updated_at: string;
 }

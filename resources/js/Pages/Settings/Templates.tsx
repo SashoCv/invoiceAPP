@@ -1,6 +1,6 @@
 import { FormEventHandler, useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import AppLayout from '@/Components/AppLayout';
+import SettingsLayout from '@/Components/SettingsLayout';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import {
@@ -249,16 +249,10 @@ export default function TemplatesPage({
     };
 
     return (
-        <AppLayout>
+        <SettingsLayout>
             <Head title={t('settings.templates_title')} />
 
             <div>
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900">{t('settings.templates_title')}</h1>
-                    <p className="mt-1 text-sm text-gray-500">{t('settings.templates_desc')}</p>
-                </div>
-
                 <form onSubmit={submit} className="space-y-6">
                     {/* Invoice & Proforma Templates */}
                     <Card>
@@ -337,6 +331,6 @@ export default function TemplatesPage({
                     </DialogContent>
                 </Dialog>
             </div>
-        </AppLayout>
+        </SettingsLayout>
     );
 }

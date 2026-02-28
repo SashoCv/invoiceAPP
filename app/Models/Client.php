@@ -22,6 +22,11 @@ class Client extends Model
         'country',
         'tax_number',
         'registration_number',
+        'discount',
+    ];
+
+    protected $casts = [
+        'discount' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

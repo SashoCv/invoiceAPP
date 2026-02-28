@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -112,6 +113,7 @@ class ClientController extends Controller implements HasMiddleware
                 }),
             ],
             'registration_number' => ['nullable', 'string', 'max:50'],
+            'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $request->user()->clients()->create($validated);
@@ -123,8 +125,47 @@ class ClientController extends Controller implements HasMiddleware
     {
         $this->authorize('view', $client);
 
+        // Invoices paginated, recent first
+        $invoices = $client->invoices()
+            ->select('id', 'client_id', 'invoice_number', 'issue_date', 'due_date', 'status', 'currency', 'total')
+            ->orderBy('issue_date', 'desc')
+            ->paginate(10);
+
+        // Statistics
+        $baseQuery = $client->invoices()->where('status', '!=', 'cancelled');
+        $stats = [
+            'total_invoiced' => (float) (clone $baseQuery)->sum('total'),
+            'total_paid' => (float) $client->invoices()->where('status', 'paid')->sum('total'),
+            'total_unpaid' => (float) $client->invoices()->whereIn('status', ['sent', 'unpaid', 'overdue'])->sum('total'),
+            'invoice_count' => (int) (clone $baseQuery)->count(),
+            'currency' => $client->invoices()
+                ->where('status', '!=', 'cancelled')
+                ->selectRaw('currency, COUNT(*) as cnt')
+                ->groupBy('currency')
+                ->orderByDesc('cnt')
+                ->value('currency') ?? 'MKD',
+        ];
+
+        // Article breakdown - group by description
+        $articleBreakdown = DB::table('invoice_items')
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->where('invoices.client_id', $client->id)
+            ->where('invoices.status', '!=', 'cancelled')
+            ->whereNull('invoices.deleted_at')
+            ->select(
+                'invoice_items.description as name',
+                DB::raw('SUM(invoice_items.quantity) as total_quantity'),
+                DB::raw('SUM(invoice_items.total) as total_amount')
+            )
+            ->groupBy('invoice_items.description')
+            ->orderByDesc('total_amount')
+            ->get();
+
         return Inertia::render('Clients/Show', [
             'client' => $client,
+            'invoices' => $invoices,
+            'stats' => $stats,
+            'articleBreakdown' => $articleBreakdown,
         ]);
     }
 
@@ -165,6 +206,7 @@ class ClientController extends Controller implements HasMiddleware
                 })->ignore($client->id),
             ],
             'registration_number' => ['nullable', 'string', 'max:50'],
+            'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $client->update($validated);

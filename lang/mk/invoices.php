@@ -52,6 +52,8 @@ return [
     'add_item' => 'Додади ставка',
     'article' => 'Артикл',
     'select_article' => 'Изберете артикл',
+    'select_inventory_item' => 'Магацински артикл',
+    'select_bundle' => 'Пакет',
     'manual_entry' => 'Рачен внос',
     'or_manual' => 'или внесете рачно',
     'description' => 'Опис на услугата/производот',
@@ -64,6 +66,7 @@ return [
 
     // Totals
     'subtotal' => 'Меѓузбир',
+    'discount' => 'Рабат %',
     'tax' => 'ДДВ',
 
     // Actions

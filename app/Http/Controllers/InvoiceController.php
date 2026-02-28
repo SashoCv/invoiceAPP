@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\InvoiceMail;
+use App\Models\Article;
+use App\Models\Bundle;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Services\PdfService;
@@ -105,6 +107,7 @@ class InvoiceController extends Controller implements HasMiddleware
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
+        $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
         $currentYear = (int) date('Y');
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
@@ -112,6 +115,7 @@ class InvoiceController extends Controller implements HasMiddleware
         return Inertia::render('Invoices/Create', [
             'clients' => $clients,
             'articles' => $articles,
+            'bundles' => $bundles,
             'currentYear' => $currentYear,
             'nextSequence' => $nextSequence,
         ]);
@@ -135,6 +139,9 @@ class InvoiceController extends Controller implements HasMiddleware
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.article_id' => ['required_without:items.*.bundle_id', 'nullable', 'exists:articles,id'],
+            'items.*.bundle_id' => ['required_without:items.*.article_id', 'nullable', 'exists:bundles,id'],
         ]);
 
         // Check for duplicate sequence number
@@ -173,7 +180,26 @@ class InvoiceController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
+                'discount' => $item['discount'] ?? 0,
+                'article_id' => $item['article_id'] ?? null,
+                'bundle_id' => $item['bundle_id'] ?? null,
             ]);
+
+            // Deduct stock for articles with inventory tracking
+            if (!empty($item['article_id'])) {
+                $article = Article::find($item['article_id']);
+                if ($article && $article->track_inventory) {
+                    $article->deductStock($item['quantity'], 'invoice', $invoice->id);
+                }
+            }
+
+            // Deduct component stocks for bundles
+            if (!empty($item['bundle_id'])) {
+                $bundle = Bundle::with('bundleItems.article')->find($item['bundle_id']);
+                if ($bundle) {
+                    $bundle->deductComponentStocks($item['quantity'], 'invoice', $invoice->id);
+                }
+            }
         }
 
         $invoice->calculateTotals();
@@ -198,12 +224,14 @@ class InvoiceController extends Controller implements HasMiddleware
 
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
+        $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
         $invoice->load('items');
 
         return Inertia::render('Invoices/Edit', [
             'invoice' => $invoice,
             'clients' => $clients,
             'articles' => $articles,
+            'bundles' => $bundles,
         ]);
     }
 
@@ -228,6 +256,9 @@ class InvoiceController extends Controller implements HasMiddleware
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.article_id' => ['required_without:items.*.bundle_id', 'nullable', 'exists:articles,id'],
+            'items.*.bundle_id' => ['required_without:items.*.article_id', 'nullable', 'exists:bundles,id'],
         ]);
 
         // Check for duplicate sequence number (excluding current invoice)
@@ -243,6 +274,9 @@ class InvoiceController extends Controller implements HasMiddleware
                 'invoice_sequence' => __('invoices.duplicate_number_error'),
             ]);
         }
+
+        // Restore stock from old items before replacing (using article_id from existing items)
+        $this->restoreStockForInvoice($invoice);
 
         $invoice->update([
             'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
@@ -267,9 +301,29 @@ class InvoiceController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
+                'discount' => $item['discount'] ?? 0,
+                'article_id' => $item['article_id'] ?? null,
+                'bundle_id' => $item['bundle_id'] ?? null,
             ]);
+
+            // Deduct stock for articles with inventory tracking
+            if (!empty($item['article_id'])) {
+                $article = Article::find($item['article_id']);
+                if ($article && $article->track_inventory) {
+                    $article->deductStock($item['quantity'], 'invoice', $invoice->id);
+                }
+            }
+
+            // Deduct component stocks for bundles
+            if (!empty($item['bundle_id'])) {
+                $bundle = Bundle::with('bundleItems.article')->find($item['bundle_id']);
+                if ($bundle) {
+                    $bundle->deductComponentStocks($item['quantity'], 'invoice', $invoice->id);
+                }
+            }
         }
 
+        $invoice->load('items');
         $invoice->calculateTotals();
 
         return redirect()->route('invoices.show', $invoice)->with('success', __('toast.invoice_updated'));
@@ -278,6 +332,8 @@ class InvoiceController extends Controller implements HasMiddleware
     public function destroy(Invoice $invoice): RedirectResponse
     {
         $this->authorize('delete', $invoice);
+
+        $this->restoreStockForInvoice($invoice);
 
         $invoice->items()->delete();
         $invoice->delete();
@@ -292,6 +348,7 @@ class InvoiceController extends Controller implements HasMiddleware
         $invoice->load('items');
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
+        $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
         $currentYear = (int) date('Y');
         $nextSequence = Invoice::getNextSequence($request->user()->id, $currentYear);
@@ -300,6 +357,7 @@ class InvoiceController extends Controller implements HasMiddleware
             'invoice' => $invoice,
             'clients' => $clients,
             'articles' => $articles,
+            'bundles' => $bundles,
             'currentYear' => $currentYear,
             'nextSequence' => $nextSequence,
             'isDuplicate' => true,
@@ -375,5 +433,31 @@ class InvoiceController extends Controller implements HasMiddleware
         $invoice->forceDelete();
 
         return redirect()->route('invoices.index', ['deleted' => 1])->with('success', __('toast.invoice_permanently_deleted'));
+    }
+
+    /**
+     * Restore stock for all items in an invoice that have tracked articles or bundles.
+     */
+    private function restoreStockForInvoice(Invoice $invoice): void
+    {
+        foreach ($invoice->items as $item) {
+            if ($item->article_id) {
+                $article = Article::find($item->article_id);
+                if ($article && $article->track_inventory) {
+                    $article->addStock(
+                        $item->quantity,
+                        "Restored: invoice #{$invoice->invoice_number}",
+                        'adjustment'
+                    );
+                }
+            }
+
+            if ($item->bundle_id) {
+                $bundle = Bundle::with('bundleItems.article')->find($item->bundle_id);
+                if ($bundle) {
+                    $bundle->restoreComponentStocks($item->quantity, 'invoice', $invoice->id);
+                }
+            }
+        }
     }
 }

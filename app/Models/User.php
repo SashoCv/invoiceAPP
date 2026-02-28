@@ -69,6 +69,21 @@ class User extends Authenticatable
         return $this->hasMany(Expense::class);
     }
 
+    public function bundles(): HasMany
+    {
+        return $this->hasMany(Bundle::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function bankTransactions(): HasMany
+    {
+        return $this->hasMany(BankTransaction::class);
+    }
+
     /**
      * The attributes that are mass assignable.
      *
