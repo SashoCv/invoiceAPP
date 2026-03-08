@@ -7,7 +7,7 @@ interface InvoicePreviewProps {
     type: 'invoice' | 'proforma' | 'offer';
     agency?: Agency | null;
     bankAccount?: BankAccount | null;
-    template?: 'classic' | 'modern' | 'minimal';
+    template?: 'classic' | 'modern' | 'minimal' | 'formal';
 }
 
 const getCurrencySymbol = (currency: string): string => {
@@ -46,6 +46,7 @@ const templateNames: Record<string, string> = {
     classic: 'Classic Template',
     modern: 'Modern Template',
     minimal: 'Minimal Template',
+    formal: 'Formal Template',
 };
 
 // Helper to check if document is an Offer
@@ -609,12 +610,208 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
     );
 }
 
+// ============ FORMAL TEMPLATE ============
+function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePreviewProps, 'template'>) {
+    const currencySymbol = getCurrencySymbol(document.currency);
+    const offer = isOffer(document) ? document : null;
+    const hasItems = offer ? offer.has_items : true;
+
+    const getDocumentNumber = () => {
+        if ('invoice_number' in document) return document.invoice_number;
+        if ('proforma_number' in document) return document.proforma_number;
+        if ('offer_number' in document) return document.offer_number;
+        return '';
+    };
+
+    const getDueDate = () => {
+        if ('due_date' in document) return document.due_date;
+        if ('valid_until' in document) return document.valid_until;
+        return null;
+    };
+
+    // Calculate tax breakdown
+    let tax5Base = 0, tax18Base = 0, tax5Amount = 0, tax18Amount = 0;
+    let totalBase = 0, totalWithVat = 0;
+
+    const itemsData = (document.items || []).map((item: any) => {
+        const lineSubtotal = item.quantity * item.unit_price;
+        const lineDiscount = lineSubtotal * ((item.discount || 0) / 100);
+        const lineBase = lineSubtotal - lineDiscount;
+        const lineTax = lineBase * (item.tax_rate / 100);
+        const lineTotal = lineBase + lineTax;
+
+        totalBase += lineBase;
+        totalWithVat += lineTotal;
+
+        if (item.tax_rate === 5) {
+            tax5Base += lineBase;
+            tax5Amount += lineTax;
+        } else {
+            tax18Base += lineBase;
+            tax18Amount += lineTax;
+        }
+
+        return { ...item, base: lineBase, total: lineTotal };
+    });
+
+    const totalTax = tax5Amount + tax18Amount;
+
+    return (
+        <div className="p-8 text-[11px] leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            {/* Header: Company info top-right */}
+            <div className="flex justify-between items-start mb-6">
+                <div className="w-1/3" />
+                <div className="text-right text-[10px] leading-snug">
+                    {agency && (
+                        <>
+                            <div className="font-bold text-[12px] mb-1">{agency.name}</div>
+                            {agency.address && <span>{agency.address} {agency.city || ''}</span>}
+                            {agency.phone && <span> Телефон: {agency.phone}</span>}
+                            {agency.email && <><br />email: {agency.email}</>}
+                            {agency.tax_number && <><br />ЕДБС:{agency.tax_number}</>}
+                            {bankAccount && <><br />Жиро сметка: {bankAccount.account_number} {bankAccount.bank_name}</>}
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Document title and client */}
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <div className="font-bold mb-1">До</div>
+                    <div className="font-bold">{document.client?.company || document.client?.name}</div>
+                    {document.client?.address && <div>{document.client.address}</div>}
+                    {document.client?.city && <div>{document.client.postal_code && `${document.client.postal_code} `}{document.client.city}</div>}
+                </div>
+                <div className="text-right">
+                    <div className="text-[22px] font-bold mb-2">{titles[type]}</div>
+                    <table className="ml-auto text-[11px]">
+                        <tbody>
+                            <tr><td className="pr-4 font-bold">Сериски број</td><td className="font-bold">{getDocumentNumber()}</td></tr>
+                            <tr><td className="pr-4">Датум:</td><td className="font-bold">{formatDate(document.issue_date)}</td></tr>
+                            <tr><td className="pr-4">Валута:</td><td className="font-bold">{getDueDate() ? formatDate(getDueDate()) : formatDate(document.issue_date)}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Items Table */}
+            {hasItems && itemsData.length > 0 && (
+                <>
+                    <table className="w-full text-[10px] mb-1">
+                        <thead>
+                            <tr className="border-t border-b border-black">
+                                <th className="text-left py-2 px-1 font-bold w-[4%]">Рб</th>
+                                <th className="text-left py-2 px-1 font-bold w-[30%]">Опис на артикал - услуга</th>
+                                <th className="text-right py-2 px-1 font-bold w-[8%]">Кол.</th>
+                                <th className="text-right py-2 px-1 font-bold w-[12%]">Цена</th>
+                                <th className="text-right py-2 px-1 font-bold w-[8%]">Рабат</th>
+                                <th className="text-right py-2 px-1 font-bold w-[14%]">Износ</th>
+                                <th className="text-center py-2 px-1 font-bold w-[8%]">ддв</th>
+                                <th className="text-right py-2 px-1 font-bold w-[16%]">Вкупно</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {itemsData.map((item: any, index: number) => (
+                                <tr key={index} className="border-b border-gray-300">
+                                    <td className="py-2 px-1">{index + 1}.</td>
+                                    <td className="py-2 px-1">{item.description}</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.quantity, 0)}</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.unit_price, 2)}</td>
+                                    <td className="py-2 px-1 text-right">{Number(item.discount || 0).toFixed(0)}%</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.base, 2)}</td>
+                                    <td className="py-2 px-1 text-center">{item.tax_rate}%</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.total, 2)}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {/* Closing row number */}
+                    <div className="text-[10px] mb-4 mt-2 italic">
+                        Заклучно со реден број {itemsData.length}.
+                    </div>
+
+                    {/* Total base */}
+                    <div className="flex justify-end mb-3">
+                        <div className="border-t border-black pt-2">
+                            <span className="font-bold mr-6">Вкупна цена:</span>
+                            <span className="font-bold">{formatNumber(totalBase, 2)}</span>
+                        </div>
+                    </div>
+
+                    {/* Tax breakdown and payment */}
+                    <div className="flex justify-between items-end mt-4">
+                        <div className="text-[10px]">
+                            <div className="mb-1"><span className="font-bold">Рок за плаќање:</span></div>
+                            <div className="font-bold">
+                                {getDueDate() && getDueDate() !== document.issue_date ? formatDate(getDueDate()) : 'Веднаш'}
+                            </div>
+                        </div>
+                        <div>
+                            <table className="text-[10px] border-collapse">
+                                <tbody>
+                                    <tr className="border-t border-b border-black">
+                                        <td className="py-1 px-2">Осн. 5%:</td>
+                                        <td className="py-1 px-2 text-right">{formatNumber(tax5Base, 2)}</td>
+                                        <td className="py-1 px-2">Осн. 18%:</td>
+                                        <td className="py-1 px-2 text-right">{formatNumber(tax18Base, 2)}</td>
+                                        <td className="py-1 px-2 font-bold">Основа:</td>
+                                        <td className="py-1 px-2 text-right font-bold">{formatNumber(totalBase, 2)}</td>
+                                    </tr>
+                                    <tr className="border-b border-black">
+                                        <td className="py-1 px-2">ДДВ 5%:</td>
+                                        <td className="py-1 px-2 text-right">{formatNumber(tax5Amount, 2)}</td>
+                                        <td className="py-1 px-2">ДДВ 18%:</td>
+                                        <td className="py-1 px-2 text-right">{formatNumber(tax18Amount, 2)}</td>
+                                        <td className="py-1 px-2 font-bold">ДДВ:</td>
+                                        <td className="py-1 px-2 text-right font-bold">{formatNumber(totalTax, 2)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan={4}></td>
+                                        <td className="py-2 px-2 font-bold text-[11px]">Вкупно за наплата денари:</td>
+                                        <td className="py-2 px-2 text-right font-bold text-[11px]">{formatNumber(totalWithVat, 2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Notes */}
+            {document.notes && (
+                <div className="mt-4 mb-4 text-[10px]">
+                    <span className="font-bold">Забелешка:</span> {document.notes}
+                </div>
+            )}
+
+            {/* Signatures */}
+            <div className="flex justify-between mt-16 pt-4 text-[10px]">
+                <div className="text-center">
+                    <div className="border-t border-black w-40 mb-1" />
+                    <div>Примил</div>
+                </div>
+                <div className="text-center">
+                    <div className="border-t border-black w-40 mb-1" />
+                    <div>Фактурирал</div>
+                </div>
+                <div className="text-center">
+                    <div className="border-t border-black w-40 mb-1" />
+                    <div>Овластено лице</div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ============ MAIN COMPONENT ============
 export default function InvoicePreview({ document, type, agency, bankAccount, template = 'classic' }: InvoicePreviewProps) {
     const headerColors: Record<string, string> = {
         classic: 'from-blue-600 to-blue-800',
         modern: 'from-violet-600 to-purple-600',
         minimal: 'from-gray-700 to-gray-900',
+        formal: 'from-gray-800 to-gray-950',
     };
 
     return (
@@ -629,6 +826,7 @@ export default function InvoicePreview({ document, type, agency, bankAccount, te
             {template === 'classic' && <ClassicTemplate document={document} type={type} agency={agency} bankAccount={bankAccount} />}
             {template === 'modern' && <ModernTemplate document={document} type={type} agency={agency} bankAccount={bankAccount} />}
             {template === 'minimal' && <MinimalTemplate document={document} type={type} agency={agency} bankAccount={bankAccount} />}
+            {template === 'formal' && <FormalTemplate document={document} type={type} agency={agency} bankAccount={bankAccount} />}
         </div>
     );
 }

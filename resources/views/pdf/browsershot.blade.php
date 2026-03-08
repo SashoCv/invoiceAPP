@@ -43,6 +43,8 @@
             @include('pdf.browsershot.classic')
         @elseif($template === 'modern')
             @include('pdf.browsershot.modern')
+        @elseif($template === 'formal')
+            @include('pdf.browsershot.formal')
         @else
             @include('pdf.browsershot.minimal')
         @endif

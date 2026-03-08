@@ -450,6 +450,47 @@
             margin-bottom: 8px;
         }
 
+        /* Formal Template Styles */
+        .formal .header {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .formal .header-left {
+            display: table-cell;
+            width: 33%;
+            vertical-align: top;
+        }
+
+        .formal .header-right {
+            display: table-cell;
+            width: 67%;
+            vertical-align: top;
+            text-align: right;
+            font-size: 9pt;
+        }
+
+        .formal .items-table th {
+            font-size: 9pt;
+            font-weight: bold;
+            padding: 6px 3px;
+            text-align: left;
+        }
+
+        .formal .items-table th.right {
+            text-align: right;
+        }
+
+        .formal .items-table td {
+            padding: 5px 3px;
+            font-size: 9pt;
+        }
+
+        .formal .items-table td.right {
+            text-align: right;
+        }
+
         /* Minimal Template Styles */
         .minimal .header {
             display: table;
@@ -612,6 +653,8 @@
             @include('pdf.templates.classic')
         @elseif($template === 'modern')
             @include('pdf.templates.modern')
+        @elseif($template === 'formal')
+            @include('pdf.templates.formal')
         @else
             @include('pdf.templates.minimal')
         @endif

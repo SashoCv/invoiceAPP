@@ -27,7 +27,7 @@ export default function TemplatesPage({
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewType, setPreviewType] = useState<'invoice' | 'offer'>('invoice');
-    const [previewTemplate, setPreviewTemplate] = useState<'classic' | 'modern' | 'minimal'>('classic');
+    const [previewTemplate, setPreviewTemplate] = useState<'classic' | 'modern' | 'minimal' | 'formal'>('classic');
 
     const { data, setData, put, processing } = useForm({
         invoice_template: currentInvoiceTemplate,
@@ -46,7 +46,7 @@ export default function TemplatesPage({
         description: value.description,
     }));
 
-    const handlePreview = (type: 'invoice' | 'offer', templateKey: 'classic' | 'modern' | 'minimal') => {
+    const handlePreview = (type: 'invoice' | 'offer', templateKey: 'classic' | 'modern' | 'minimal' | 'formal') => {
         setPreviewType(type);
         setPreviewTemplate(templateKey);
         setPreviewOpen(true);
@@ -164,6 +164,62 @@ export default function TemplatesPage({
         </div>
     );
 
+    const FormalMiniPreview = () => (
+        <div className="w-[85%] h-[90%] bg-white rounded shadow-sm p-2 text-[6px] overflow-hidden">
+            {/* Header - company right */}
+            <div className="flex justify-between mb-2">
+                <div className="w-6 h-4 bg-gray-200 rounded-sm"></div>
+                <div className="text-right">
+                    <div className="w-14 h-1.5 bg-gray-800 rounded-sm mb-0.5 ml-auto"></div>
+                    <div className="w-20 h-1 bg-gray-300 rounded-sm ml-auto"></div>
+                </div>
+            </div>
+            {/* До + Title */}
+            <div className="flex justify-between mb-2">
+                <div>
+                    <div className="w-4 h-1 bg-gray-800 rounded-sm mb-0.5"></div>
+                    <div className="w-16 h-1 bg-gray-300 rounded-sm"></div>
+                </div>
+                <div className="text-right">
+                    <div className="w-16 h-2.5 bg-gray-800 rounded-sm ml-auto"></div>
+                </div>
+            </div>
+            {/* Table with borders */}
+            <div className="border-t border-b border-gray-800 py-0.5 mb-0.5">
+                <div className="flex gap-1">
+                    <div className="w-2 h-1 bg-gray-400 rounded-sm"></div>
+                    <div className="w-12 h-1 bg-gray-400 rounded-sm"></div>
+                    <div className="flex-1"></div>
+                    <div className="w-6 h-1 bg-gray-400 rounded-sm"></div>
+                </div>
+            </div>
+            <div className="space-y-0.5 mb-1">
+                <div className="flex gap-1 border-b border-gray-200 pb-0.5">
+                    <div className="w-2 h-1 bg-gray-200 rounded-sm"></div>
+                    <div className="w-12 h-1 bg-gray-200 rounded-sm"></div>
+                    <div className="flex-1"></div>
+                    <div className="w-6 h-1 bg-gray-300 rounded-sm"></div>
+                </div>
+                <div className="flex gap-1 border-b border-gray-200 pb-0.5">
+                    <div className="w-2 h-1 bg-gray-200 rounded-sm"></div>
+                    <div className="w-10 h-1 bg-gray-200 rounded-sm"></div>
+                    <div className="flex-1"></div>
+                    <div className="w-6 h-1 bg-gray-300 rounded-sm"></div>
+                </div>
+            </div>
+            {/* Tax breakdown */}
+            <div className="border-t border-gray-800 pt-0.5 flex justify-end mb-2">
+                <div className="w-12 h-1.5 bg-gray-700 rounded-sm"></div>
+            </div>
+            {/* Signatures */}
+            <div className="flex justify-between mt-auto pt-2">
+                <div className="w-8 border-t border-gray-400"></div>
+                <div className="w-8 border-t border-gray-400"></div>
+                <div className="w-8 border-t border-gray-400"></div>
+            </div>
+        </div>
+    );
+
     const TemplateCard = ({
         template,
         isSelected,
@@ -198,6 +254,8 @@ export default function TemplatesPage({
                     return <ModernMiniPreview />;
                 case 'minimal':
                     return <MinimalMiniPreview />;
+                case 'formal':
+                    return <FormalMiniPreview />;
                 default:
                     return <ClassicMiniPreview accent={colors.accent} />;
             }
@@ -268,14 +326,14 @@ export default function TemplatesPage({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {templateOptions.map((template) => (
                                     <TemplateCard
                                         key={template.value}
                                         template={template}
                                         isSelected={data.invoice_template === template.value}
                                         onSelect={() => selectInvoiceTemplate(template.value)}
-                                        onPreview={() => handlePreview('invoice', template.value as 'classic' | 'modern' | 'minimal')}
+                                        onPreview={() => handlePreview('invoice', template.value as 'classic' | 'modern' | 'minimal' | 'formal')}
                                         color="blue"
                                     />
                                 ))}
@@ -297,14 +355,14 @@ export default function TemplatesPage({
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {templateOptions.map((template) => (
                                     <TemplateCard
                                         key={template.value}
                                         template={template}
                                         isSelected={data.offer_template === template.value}
                                         onSelect={() => selectOfferTemplate(template.value)}
-                                        onPreview={() => handlePreview('offer', template.value as 'classic' | 'modern' | 'minimal')}
+                                        onPreview={() => handlePreview('offer', template.value as 'classic' | 'modern' | 'minimal' | 'formal')}
                                         color="orange"
                                     />
                                 ))}

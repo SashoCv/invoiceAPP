@@ -33,6 +33,10 @@ class TemplateController extends Controller implements HasMiddleware
             'name' => 'Minimal',
             'description' => 'Simple and elegant style',
         ],
+        'formal' => [
+            'name' => 'Formal',
+            'description' => 'Traditional Macedonian invoice format',
+        ],
     ];
 
     public function index(Request $request): Response
@@ -49,7 +53,7 @@ class TemplateController extends Controller implements HasMiddleware
     public function preview(Request $request): View
     {
         $request->validate([
-            'template' => ['required', 'in:classic,modern,minimal'],
+            'template' => ['required', 'in:classic,modern,minimal,formal'],
             'type' => ['required', 'in:invoice,offer'],
         ]);
 
@@ -72,9 +76,9 @@ class TemplateController extends Controller implements HasMiddleware
         ];
 
         $sampleItems = collect([
-            (object) ['description' => 'Веб дизајн услуги', 'quantity' => 1, 'unit_price' => 30000, 'tax_rate' => 18],
-            (object) ['description' => 'Хостинг (годишен)', 'quantity' => 1, 'unit_price' => 12000, 'tax_rate' => 18],
-            (object) ['description' => 'Одржување на веб страна', 'quantity' => 2, 'unit_price' => 4000, 'tax_rate' => 18],
+            (object) ['description' => 'Веб дизајн услуги', 'quantity' => 1, 'unit_price' => 30000, 'tax_rate' => 18, 'discount' => 0],
+            (object) ['description' => 'Хостинг (годишен)', 'quantity' => 1, 'unit_price' => 12000, 'tax_rate' => 18, 'discount' => 0],
+            (object) ['description' => 'Одржување на веб страна', 'quantity' => 2, 'unit_price' => 4000, 'tax_rate' => 18, 'discount' => 0],
         ]);
 
         $sampleBankAccount = (object) [
