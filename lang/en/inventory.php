@@ -150,4 +150,5 @@ return [
     'dashboard_recent_movements_desc' => 'Latest stock changes',
     'dashboard_reference' => 'Invoice',
     'go_to_warehouse' => 'Go to Warehouse',
+    'per_page' => 'Per page',
 ];

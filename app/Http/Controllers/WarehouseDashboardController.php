@@ -57,15 +57,18 @@ class WarehouseDashboardController extends Controller
             ->limit(10)
             ->get();
 
-        // Recent movements (last 15)
+        // Recent movements (paginated)
+        $perPage = (int) $request->input('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
+
         $recentMovements = $user->stockMovements()
             ->with('article:id,name')
             ->orderByDesc('created_at')
-            ->limit(15)
-            ->get();
+            ->paginate($perPage, ['*'], 'movements_page')
+            ->withQueryString();
 
         // Attach invoice numbers for invoice deductions
-        $invoiceIds = $recentMovements
+        $invoiceIds = $recentMovements->getCollection()
             ->where('reference_type', 'invoice')
             ->pluck('reference_id')
             ->filter()
@@ -75,7 +78,7 @@ class WarehouseDashboardController extends Controller
             $invoices = \App\Models\Invoice::whereIn('id', $invoiceIds)
                 ->pluck('invoice_number', 'id');
 
-            $recentMovements->each(function ($movement) use ($invoices) {
+            $recentMovements->getCollection()->each(function ($movement) use ($invoices) {
                 if ($movement->reference_type === 'invoice' && isset($invoices[$movement->reference_id])) {
                     $movement->invoice_number = $invoices[$movement->reference_id];
                     $movement->invoice_id = $movement->reference_id;

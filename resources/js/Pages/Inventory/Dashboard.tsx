@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
@@ -11,8 +11,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/Components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import Pagination from '@/Components/Pagination';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
+import type { PaginatedData } from '@/types';
 import {
     Package,
     Warehouse,
@@ -71,7 +74,7 @@ interface Props {
     stockDistribution: StockDistribution;
     topItemsByValue: Article[];
     lowStockItems: Article[];
-    recentMovements: Movement[];
+    recentMovements: PaginatedData<Movement>;
     monthlyMovements: MonthlyMovement[];
 }
 
@@ -454,72 +457,106 @@ export default function WarehouseDashboard({
                                 <CardTitle>{t('inventory.dashboard_recent_movements')}</CardTitle>
                                 <CardDescription>{t('inventory.dashboard_recent_movements_desc')}</CardDescription>
                             </div>
-                            <Button variant="secondary" asChild>
-                                <Link href="/inventory" className="flex items-center gap-1.5">
-                                    {t('dashboard.view_all')}
-                                    <ChevronRight className="w-4 h-4" />
-                                </Link>
-                            </Button>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-500">{t('inventory.per_page')}:</span>
+                                    <Select
+                                        value={String(recentMovements.per_page)}
+                                        onValueChange={(value) => {
+                                            router.get('/warehouse', { per_page: value }, { preserveState: true, preserveScroll: true });
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-[75px] h-8">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="10">10</SelectItem>
+                                            <SelectItem value="25">25</SelectItem>
+                                            <SelectItem value="50">50</SelectItem>
+                                            <SelectItem value="100">100</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button variant="secondary" asChild>
+                                    <Link href="/inventory" className="flex items-center gap-1.5">
+                                        {t('dashboard.view_all')}
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                        {recentMovements.length === 0 ? (
+                        {recentMovements.data.length === 0 ? (
                             <div className="py-8 text-center">
                                 <Warehouse className="mx-auto h-10 w-10 text-gray-400" />
                                 <p className="mt-3 text-sm text-gray-500">{t('inventory.no_movements')}</p>
                             </div>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>{t('inventory.movement_date')}</TableHead>
-                                        <TableHead>{t('inventory.movement_item')}</TableHead>
-                                        <TableHead>{t('inventory.movement_type')}</TableHead>
-                                        <TableHead>{t('inventory.dashboard_reference')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.movement_quantity')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.movement_after')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {recentMovements.map((movement) => (
-                                        <TableRow key={movement.id}>
-                                            <TableCell className="text-sm text-gray-900">
-                                                {formatDate(movement.created_at)}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="font-medium text-gray-900">
-                                                    {movement.article?.name || '-'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant={movementTypeVariants[movement.type] || 'gray'}>
-                                                    {t(`inventory.type_${movement.type}`)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {movement.invoice_number ? (
-                                                    <Link
-                                                        href={`/invoices/${movement.invoice_id}`}
-                                                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                                    >
-                                                        {movement.invoice_number}
-                                                    </Link>
-                                                ) : (
-                                                    <span className="text-sm text-gray-400">-</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <span className={`font-bold ${Number(movement.quantity) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                    {Number(movement.quantity) >= 0 ? '+' : ''}{formatNumber(movement.quantity)}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right text-gray-500">
-                                                {formatNumber(movement.quantity_after)}
-                                            </TableCell>
+                            <>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('inventory.movement_date')}</TableHead>
+                                            <TableHead>{t('inventory.movement_item')}</TableHead>
+                                            <TableHead>{t('inventory.movement_type')}</TableHead>
+                                            <TableHead>{t('inventory.dashboard_reference')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.movement_quantity')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.movement_after')}</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {recentMovements.data.map((movement) => (
+                                            <TableRow key={movement.id}>
+                                                <TableCell className="text-sm text-gray-900">
+                                                    {formatDate(movement.created_at)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="font-medium text-gray-900">
+                                                        {movement.article?.name || '-'}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={movementTypeVariants[movement.type] || 'gray'}>
+                                                        {t(`inventory.type_${movement.type}`)}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {movement.invoice_number ? (
+                                                        <Link
+                                                            href={`/invoices/${movement.invoice_id}`}
+                                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                                        >
+                                                            {movement.invoice_number}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">-</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <span className={`font-bold ${Number(movement.quantity) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                        {Number(movement.quantity) >= 0 ? '+' : ''}{formatNumber(movement.quantity)}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-right text-gray-500">
+                                                    {formatNumber(movement.quantity_after)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+
+                                {recentMovements.last_page > 1 && (
+                                    <div className="px-6 py-4 border-t">
+                                        <Pagination
+                                            links={recentMovements.links}
+                                            from={recentMovements.from}
+                                            to={recentMovements.to}
+                                            total={recentMovements.total}
+                                        />
+                                    </div>
+                                )}
+                            </>
                         )}
                     </CardContent>
                 </Card>

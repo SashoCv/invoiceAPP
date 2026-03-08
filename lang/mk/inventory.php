@@ -150,4 +150,5 @@ return [
     'dashboard_recent_movements_desc' => 'Најнови промени на залихи',
     'dashboard_reference' => 'Фактура',
     'go_to_warehouse' => 'Кон магацин',
+    'per_page' => 'По страна',
 ];
