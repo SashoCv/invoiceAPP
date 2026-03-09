@@ -18,15 +18,15 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
     const { t } = useTranslation();
     const { data, setData, put, processing, errors } = useForm({
         name: client.name || '',
-        company: '',
+        company: client.company || '',
         email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
         city: client.city || '',
-        postal_code: client.zip_code || '',
+        postal_code: client.postal_code || '',
         country: client.country || 'Македонија',
         tax_number: client.tax_number || '',
-        registration_number: '',
+        registration_number: client.registration_number || '',
         discount: client.discount ?? 0,
     });
 
