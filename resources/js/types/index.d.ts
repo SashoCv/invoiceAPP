@@ -31,14 +31,13 @@ export interface Agency {
     name: string;
     address: string;
     city: string;
-    zip_code: string;
+    postal_code: string;
     country: string;
     phone: string;
     email: string;
     website: string;
     tax_number: string;
-    bank_name: string;
-    bank_account: string;
+    registration_number: string;
     logo: string | null;
     display_currency: string;
     created_at: string;
