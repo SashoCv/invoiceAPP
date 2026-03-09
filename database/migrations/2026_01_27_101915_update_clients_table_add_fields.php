@@ -22,6 +22,13 @@ return new class extends Migration
             }
         });
 
+        // Add user_id if it doesn't exist (may already exist from create migration)
+        if (!Schema::hasColumn('clients', 'user_id')) {
+            Schema::table('clients', function (Blueprint $table) {
+                $table->foreignId('user_id')->after('id')->constrained()->cascadeOnDelete();
+            });
+        }
+
         // Set existing clients to first user
         $firstUser = DB::table('users')->first();
         if ($firstUser) {
@@ -30,7 +37,9 @@ return new class extends Migration
 
         // Now make user_id required and add foreign key
         Schema::table('clients', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable(false)->change();
+            if (Schema::hasColumn('clients', 'user_id')) {
+                $table->unsignedBigInteger('user_id')->nullable(false)->change();
+            }
 
             // Check if foreign key exists
             $foreignKeys = collect(DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_NAME = 'clients' AND CONSTRAINT_TYPE = 'FOREIGN KEY'"))->pluck('CONSTRAINT_NAME')->toArray();
