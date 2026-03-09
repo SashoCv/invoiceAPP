@@ -175,10 +175,12 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                             {t('offers.print_pdf')}
                         </a>
                     </Button>
+                    {/* TODO: Enable when email sending is implemented
                     <Button onClick={openSendDialog} disabled={!isActive} className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         {t('offers.send_offer')}
                     </Button>
+                    */}
                     {offer.status === 'sent' && (
                         <>
                             <Button onClick={handleAccept} disabled={!isActive} variant="outline" className="flex items-center gap-2 text-green-600 hover:text-green-700">
@@ -327,60 +329,7 @@ export default function ShowOffer({ offer }: ShowOfferProps) {
                 )}
             </div>
 
-            {/* Send Email Dialog */}
-            <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('offers.send_offer')}</DialogTitle>
-                        <DialogDescription>
-                            {t('offers.offer')} {offer.offer_number}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_to')}</Label>
-                            <Input
-                                type="email"
-                                value={sendForm.to}
-                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
-                            />
-                            {sendErrors.to && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_subject')}</Label>
-                            <Input
-                                value={sendForm.subject}
-                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
-                            />
-                            {sendErrors.subject && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_body')}</Label>
-                            <Textarea
-                                rows={6}
-                                value={sendForm.body}
-                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
-                            />
-                            {sendErrors.body && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
-                            )}
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setSendDialogOpen(false)} disabled={sendLoading}>
-                            {t('general.cancel')}
-                        </Button>
-                        <Button onClick={submitSend} loading={sendLoading}>
-                            <Send className="w-4 h-4 mr-2" />
-                            {t('offers.send_email')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* TODO: Send Email Dialog - Enable when email sending is implemented */}
         </AppLayout>
     );
 }

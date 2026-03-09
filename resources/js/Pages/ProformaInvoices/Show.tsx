@@ -180,10 +180,12 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                             {t('proforma.print_pdf')}
                         </a>
                     </Button>
+                    {/* TODO: Enable when email sending is implemented
                     <Button onClick={openSendDialog} disabled={!isActive} className="flex items-center gap-2">
                         <Send className="w-4 h-4" />
                         {t('proforma.send_proforma')}
                     </Button>
+                    */}
                 </div>
 
                 {/* Preview Dialog */}
@@ -356,60 +358,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                 )}
             </div>
 
-            {/* Send Email Dialog */}
-            <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('proforma.send_proforma')}</DialogTitle>
-                        <DialogDescription>
-                            {t('proforma.proforma')} {proforma.proforma_number}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="mb-2 block">{t('proforma.email_to')}</Label>
-                            <Input
-                                type="email"
-                                value={sendForm.to}
-                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
-                            />
-                            {sendErrors.to && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('proforma.email_subject')}</Label>
-                            <Input
-                                value={sendForm.subject}
-                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
-                            />
-                            {sendErrors.subject && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('proforma.email_body')}</Label>
-                            <Textarea
-                                rows={6}
-                                value={sendForm.body}
-                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
-                            />
-                            {sendErrors.body && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
-                            )}
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setSendDialogOpen(false)} disabled={sendLoading}>
-                            {t('general.cancel')}
-                        </Button>
-                        <Button onClick={submitSend} loading={sendLoading}>
-                            <Send className="w-4 h-4 mr-2" />
-                            {t('proforma.send_email')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* TODO: Send Email Dialog - Enable when email sending is implemented */}
         </AppLayout>
     );
 }

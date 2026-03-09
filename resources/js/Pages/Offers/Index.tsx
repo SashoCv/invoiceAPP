@@ -431,12 +431,13 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                                                 onClick: () => openStatusDialog(offer),
                                                                 disabled: !isActive,
                                                             },
-                                                            {
-                                                                label: t('offers.send_offer'),
-                                                                icon: Send,
-                                                                onClick: () => openSendDialog(offer),
-                                                                disabled: !isActive,
-                                                            },
+                                                            // TODO: Enable when email sending is implemented
+                                                            // {
+                                                            //     label: t('offers.send_offer'),
+                                                            //     icon: Send,
+                                                            //     onClick: () => openSendDialog(offer),
+                                                            //     disabled: !isActive,
+                                                            // },
                                                             {
                                                                 label: t('offers.delete'),
                                                                 icon: Trash2,
@@ -518,60 +519,7 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                 </DialogContent>
             </Dialog>
 
-            {/* Send Email Dialog */}
-            <Dialog open={!!sendOffer} onOpenChange={() => setSendOffer(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('offers.send_offer')}</DialogTitle>
-                        <DialogDescription>
-                            {sendOffer?.offer_number}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_to')}</Label>
-                            <Input
-                                type="email"
-                                value={sendForm.to}
-                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
-                            />
-                            {sendErrors.to && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_subject')}</Label>
-                            <Input
-                                value={sendForm.subject}
-                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
-                            />
-                            {sendErrors.subject && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('offers.email_body')}</Label>
-                            <Textarea
-                                rows={6}
-                                value={sendForm.body}
-                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
-                            />
-                            {sendErrors.body && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
-                            )}
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setSendOffer(null)} disabled={sendLoading}>
-                            {t('general.cancel')}
-                        </Button>
-                        <Button onClick={submitSend} loading={sendLoading}>
-                            <Send className="w-4 h-4 mr-2" />
-                            {t('offers.send_email')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* TODO: Send Email Dialog - Enable when email sending is implemented */}
         </AppLayout>
     );
 }

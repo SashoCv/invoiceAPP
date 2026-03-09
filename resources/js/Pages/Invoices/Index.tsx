@@ -409,12 +409,13 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                                 onClick: () => openStatusDialog(invoice),
                                                                 disabled: !isActive,
                                                             },
-                                                            {
-                                                                label: t('invoices.send_invoice'),
-                                                                icon: Send,
-                                                                onClick: () => openSendDialog(invoice),
-                                                                disabled: !isActive,
-                                                            },
+                                                            // TODO: Enable when email sending is implemented
+                                                            // {
+                                                            //     label: t('invoices.send_invoice'),
+                                                            //     icon: Send,
+                                                            //     onClick: () => openSendDialog(invoice),
+                                                            //     disabled: !isActive,
+                                                            // },
                                                             {
                                                                 label: t('invoices.delete'),
                                                                 icon: Trash2,
@@ -498,60 +499,7 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                 </DialogContent>
             </Dialog>
 
-            {/* Send Email Dialog */}
-            <Dialog open={!!sendInvoice} onOpenChange={() => setSendInvoice(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{t('invoices.send_invoice')}</DialogTitle>
-                        <DialogDescription>
-                            {sendInvoice?.invoice_number}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label className="mb-2 block">{t('invoices.email_to')}</Label>
-                            <Input
-                                type="email"
-                                value={sendForm.to}
-                                onChange={(e) => setSendForm({ ...sendForm, to: e.target.value })}
-                            />
-                            {sendErrors.to && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.to}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('invoices.email_subject')}</Label>
-                            <Input
-                                value={sendForm.subject}
-                                onChange={(e) => setSendForm({ ...sendForm, subject: e.target.value })}
-                            />
-                            {sendErrors.subject && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.subject}</p>
-                            )}
-                        </div>
-                        <div>
-                            <Label className="mb-2 block">{t('invoices.email_body')}</Label>
-                            <Textarea
-                                rows={6}
-                                value={sendForm.body}
-                                onChange={(e) => setSendForm({ ...sendForm, body: e.target.value })}
-                            />
-                            {sendErrors.body && (
-                                <p className="text-sm text-red-600 mt-1">{sendErrors.body}</p>
-                            )}
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setSendInvoice(null)} disabled={sendLoading}>
-                            {t('general.cancel')}
-                        </Button>
-                        <Button onClick={submitSend} loading={sendLoading}>
-                            <Send className="w-4 h-4 mr-2" />
-                            {t('invoices.send_email')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* TODO: Send Email Dialog - Enable when email sending is implemented */}
         </AppLayout>
     );
 }
