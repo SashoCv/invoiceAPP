@@ -1,4 +1,4 @@
-import { useState, useEffect, PropsWithChildren } from 'react';
+import { useState, useEffect, useRef, PropsWithChildren } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
@@ -48,7 +48,17 @@ export default function AppLayout({ children }: PropsWithChildren) {
     const { toast } = useToast();
     const currentPath = usePage().url;
 
+    const shownFlashRef = useRef<string | null>(null);
+
     useEffect(() => {
+        const flashMsg = flash?.success || flash?.error || null;
+        if (!flashMsg) {
+            shownFlashRef.current = null;
+            return;
+        }
+        if (flashMsg === shownFlashRef.current) return;
+        shownFlashRef.current = flashMsg;
+
         if (flash?.success) {
             toast({
                 title: t('toast.success'),
