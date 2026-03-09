@@ -54,21 +54,22 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
             ],
             'locale' => app()->getLocale(),
-            'translations' => $this->getTranslations(),
+            'translations' => fn () => $this->getTranslations(),
         ];
     }
 
     protected function getTranslations(): array
     {
         $locale = app()->getLocale();
-        $path = lang_path($locale);
 
-        $translations = [];
-        foreach (glob($path . '/*.php') as $file) {
-            $key = basename($file, '.php');
-            $translations[$key] = require $file;
-        }
-
-        return $translations;
+        return cache()->rememberForever("translations_{$locale}", function () use ($locale) {
+            $path = lang_path($locale);
+            $translations = [];
+            foreach (glob($path . '/*.php') as $file) {
+                $key = basename($file, '.php');
+                $translations[$key] = require $file;
+            }
+            return $translations;
+        });
     }
 }
