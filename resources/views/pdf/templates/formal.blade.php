@@ -48,7 +48,9 @@
 {{-- Header --}}
 <div class="header">
     <div class="header-left">
-        &nbsp;
+        @if($agency && $agency->logo)
+            <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" style="max-height: 60px; margin-bottom: 5px;">
+        @endif
     </div>
     <div class="header-right" style="text-align: right; font-size: 9pt;">
         @if($agency)
@@ -56,7 +58,7 @@
             @if($agency->address){{ $agency->address }} {{ $agency->city ?? '' }}@endif
             @if($agency->phone) Телефон: {{ $agency->phone }}@endif
             @if($agency->email)<br>email: {{ $agency->email }}@endif
-            @if($agency->tax_number)<br>ЕДБС:{{ $agency->tax_number }}@endif
+            @if($agency->tax_number)<br>ЕДБ:{{ $agency->tax_number }}@endif
             @if($bankAccount)<br>Жиро сметка: {{ $bankAccount->account_number }} {{ $bankAccount->bank_name }}@endif
         @endif
     </div>

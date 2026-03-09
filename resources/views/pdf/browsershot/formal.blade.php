@@ -53,8 +53,8 @@
     <div class="flex justify-between items-start mb-6">
         <div class="w-1/3">
             {{-- Logo placeholder --}}
-            @if($agency && isset($agency->logo) && $agency->logo)
-                <img src="{{ asset('storage/' . $agency->logo) }}" alt="Logo" class="max-h-16 mb-2">
+            @if($agency && $agency->logo)
+                <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" class="max-h-16 mb-2">
             @endif
         </div>
         <div class="text-right text-[10px] leading-snug">
@@ -63,7 +63,7 @@
                 @if($agency->address){{ $agency->address }} {{ $agency->city ?? '' }}@endif
                 @if($agency->phone) Телефон: {{ $agency->phone }}@endif
                 @if($agency->email)<br>email: {{ $agency->email }}@endif
-                @if($agency->tax_number)<br>ЕДБС:{{ $agency->tax_number }}@endif
+                @if($agency->tax_number)<br>ЕДБ:{{ $agency->tax_number }}@endif
                 @if($bankAccount)<br>Жиро сметка: {{ $bankAccount->account_number }} {{ $bankAccount->bank_name }}@endif
             @endif
         </div>

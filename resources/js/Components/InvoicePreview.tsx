@@ -660,7 +660,11 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
         <div className="p-8 text-[11px] leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
             {/* Header: Company info top-right */}
             <div className="flex justify-between items-start mb-6">
-                <div className="w-1/3" />
+                <div className="w-1/3">
+                    {agency?.logo && (
+                        <img src={`/storage/${agency.logo}`} alt="Logo" className="max-h-16 mb-2" />
+                    )}
+                </div>
                 <div className="text-right text-[10px] leading-snug">
                     {agency && (
                         <>
@@ -668,7 +672,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                             {agency.address && <span>{agency.address} {agency.city || ''}</span>}
                             {agency.phone && <span> Телефон: {agency.phone}</span>}
                             {agency.email && <><br />email: {agency.email}</>}
-                            {agency.tax_number && <><br />ЕДБС:{agency.tax_number}</>}
+                            {agency.tax_number && <><br />ЕДБ:{agency.tax_number}</>}
                             {bankAccount && <><br />Жиро сметка: {bankAccount.account_number} {bankAccount.bank_name}</>}
                         </>
                     )}
