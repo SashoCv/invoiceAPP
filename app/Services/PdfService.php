@@ -179,7 +179,14 @@ class PdfService
             ->waitUntilNetworkIdle()
             ->timeout(60);
 
-        // Set npm path if available (important for macOS)
+        // Set node/npm paths (important for servers where node isn't in PHP's PATH)
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
         $npmPath = base_path('node_modules');
         if (is_dir($npmPath)) {
             $browsershot->setNodeModulePath($npmPath);

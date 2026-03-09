@@ -123,4 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'node_binary' => env('NODE_BINARY'),
+    'npm_binary' => env('NPM_BINARY'),
+
 ];
