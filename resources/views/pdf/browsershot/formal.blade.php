@@ -54,7 +54,7 @@
         <div class="w-1/3">
             {{-- Logo placeholder --}}
             @if($agency && $agency->logo)
-                <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" class="max-h-16 mb-2">
+                <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" style="max-height: 100px; max-width: 180px; margin-bottom: 8px;">
             @endif
         </div>
         <div class="text-right text-[10px] leading-snug">

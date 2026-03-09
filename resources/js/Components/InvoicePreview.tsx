@@ -662,7 +662,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             <div className="flex justify-between items-start mb-6">
                 <div className="w-1/3">
                     {agency?.logo && (
-                        <img src={`/storage/${agency.logo}`} alt="Logo" className="max-h-16 mb-2" />
+                        <img src={`/storage/${agency.logo}`} alt="Logo" className="mb-2" style={{ maxHeight: '100px', maxWidth: '180px' }} />
                     )}
                 </div>
                 <div className="text-right text-[10px] leading-snug">

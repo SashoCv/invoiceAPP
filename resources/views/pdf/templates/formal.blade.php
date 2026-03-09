@@ -49,7 +49,7 @@
 <div class="header">
     <div class="header-left">
         @if($agency && $agency->logo)
-            <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" style="max-height: 60px; margin-bottom: 5px;">
+            <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" style="max-height: 100px; max-width: 180px; margin-bottom: 5px;">
         @endif
     </div>
     <div class="header-right" style="text-align: right; font-size: 9pt;">
