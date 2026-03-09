@@ -14,10 +14,5 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@invoice.mk',
             'password' => bcrypt('password'),
         ]);
-
-        $this->call([
-            ClientSeeder::class,
-            InvoiceSeeder::class,
-        ]);
     }
 }
