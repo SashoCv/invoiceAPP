@@ -123,6 +123,7 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'pdf_engine' => env('PDF_ENGINE', 'browsershot'),
     'node_binary' => env('NODE_BINARY'),
     'npm_binary' => env('NPM_BINARY'),
 

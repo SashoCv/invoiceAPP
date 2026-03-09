@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Models\Offer;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Str;
 
@@ -156,11 +157,10 @@ class PdfService
     }
 
     /**
-     * Generate PDF using Browsershot (Puppeteer)
+     * Generate PDF using configured engine (browsershot or dompdf)
      */
     protected function generatePdf(array $data, string $filename): string
     {
-        // Create temp directory if it doesn't exist
         $tempDir = storage_path('app/temp');
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
@@ -168,10 +168,35 @@ class PdfService
 
         $pdfFile = $tempDir . '/' . $filename . '_' . Str::random(8) . '.pdf';
 
-        // Render the Blade template to HTML
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            return $this->generateWithDompdf($data, $pdfFile);
+        }
+
+        return $this->generateWithBrowsershot($data, $pdfFile);
+    }
+
+    /**
+     * Generate PDF using DomPDF
+     */
+    protected function generateWithDompdf(array $data, string $pdfFile): string
+    {
+        $pdf = Pdf::loadView('pdf.invoice', $data)
+            ->setPaper('a4');
+
+        file_put_contents($pdfFile, $pdf->output());
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate PDF using Browsershot (Puppeteer)
+     */
+    protected function generateWithBrowsershot(array $data, string $pdfFile): string
+    {
         $html = view('pdf.browsershot', $data)->render();
 
-        // Generate PDF using Browsershot
         $browsershot = Browsershot::html($html)
             ->format('A4')
             ->margins(0, 0, 0, 0)
@@ -179,7 +204,6 @@ class PdfService
             ->waitUntilNetworkIdle()
             ->timeout(60);
 
-        // Set node/npm paths (important for servers where node isn't in PHP's PATH)
         if ($nodeBinary = config('app.node_binary')) {
             $browsershot->setNodeBinary($nodeBinary);
         }
