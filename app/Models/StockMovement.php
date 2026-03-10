@@ -16,6 +16,7 @@ class StockMovement extends Model
         'quantity',
         'quantity_before',
         'quantity_after',
+        'cost_price',
         'reference_type',
         'reference_id',
         'notes',
@@ -25,6 +26,7 @@ class StockMovement extends Model
         'quantity' => 'decimal:2',
         'quantity_before' => 'decimal:2',
         'quantity_after' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'created_at' => 'datetime',
     ];
 
@@ -36,5 +38,11 @@ class StockMovement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function goodsReceipt(): BelongsTo
+    {
+        return $this->belongsTo(GoodsReceipt::class, 'reference_id')
+            ->where('reference_type', 'goods_receipt');
     }
 }

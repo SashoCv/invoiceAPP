@@ -71,6 +71,7 @@ return [
     'bundle_created' => 'Пакетот е успешно креиран',
     'bundle_updated' => 'Пакетот е успешно ажуриран',
     'bundle_deleted' => 'Пакетот е избришан',
+    'goods_receipt_created' => 'Приемницата е успешно креирана',
 
     // Bank Transactions
     'bank_transaction_created' => 'Плаќањето е успешно евидентирано',

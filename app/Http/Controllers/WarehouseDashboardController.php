@@ -111,9 +111,13 @@ class WarehouseDashboardController extends Controller
             ];
         }
 
+        // Total goods receipts value
+        $totalReceiptsValue = (float) ($user->goodsReceipts()->sum('total_cost') ?? 0);
+
         return Inertia::render('Inventory/Dashboard', [
             'totalItems' => $totalItems,
             'totalStockValue' => round($totalStockValue, 2),
+            'totalReceiptsValue' => round($totalReceiptsValue, 2),
             'lowStockCount' => $lowStockCount,
             'outOfStockCount' => $outOfStockCount,
             'stockDistribution' => $stockDistribution,

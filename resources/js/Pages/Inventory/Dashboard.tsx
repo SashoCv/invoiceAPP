@@ -26,6 +26,7 @@ import {
     ArrowDownRight,
     ChevronRight,
     TrendingUp,
+    ClipboardList,
 } from 'lucide-react';
 
 interface Article {
@@ -69,6 +70,7 @@ interface StockDistribution {
 interface Props {
     totalItems: number;
     totalStockValue: number;
+    totalReceiptsValue: number;
     lowStockCount: number;
     outOfStockCount: number;
     stockDistribution: StockDistribution;
@@ -94,6 +96,7 @@ const stockStatusVariants: Record<string, 'success' | 'warning' | 'destructive'>
 export default function WarehouseDashboard({
     totalItems,
     totalStockValue,
+    totalReceiptsValue,
     lowStockCount,
     outOfStockCount,
     stockDistribution,
@@ -118,16 +121,24 @@ export default function WarehouseDashboard({
                         <h1 className="text-2xl font-bold text-gray-900">{t('inventory.dashboard_title')}</h1>
                         <p className="text-sm text-gray-500 mt-1">{t('inventory.dashboard_subtitle')}</p>
                     </div>
-                    <Button variant="secondary" asChild>
-                        <Link href="/inventory" className="flex items-center gap-1.5">
-                            {t('inventory.go_to_warehouse')}
-                            <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button asChild>
+                            <Link href="/goods-receipts/create" className="flex items-center gap-1.5">
+                                <ClipboardList className="w-4 h-4" />
+                                {t('inventory.new_goods_receipt')}
+                            </Link>
+                        </Button>
+                        <Button variant="secondary" asChild>
+                            <Link href="/inventory" className="flex items-center gap-1.5">
+                                {t('inventory.go_to_warehouse')}
+                                <ChevronRight className="w-4 h-4" />
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     {/* Total Items */}
                     <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
                         <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full" />
@@ -168,6 +179,29 @@ export default function WarehouseDashboard({
                             </div>
                         </div>
                     </div>
+
+                    {/* Total Receipts Value */}
+                    <Link href="/goods-receipts" className="block">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg p-6 text-white hover:shadow-xl transition-shadow">
+                            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full" />
+                            <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-16 h-16 bg-white/10 rounded-full" />
+                            <div className="relative">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-indigo-100 text-sm font-medium">{t('inventory.total_receipts_value')}</p>
+                                        <p className="text-3xl font-bold mt-2">{formatNumber(totalReceiptsValue, 0)}</p>
+                                        <p className="text-indigo-200 text-sm">MKD</p>
+                                    </div>
+                                    <div className="bg-white/20 rounded-xl p-3">
+                                        <ClipboardList className="h-8 w-8" />
+                                    </div>
+                                </div>
+                                <div className="mt-4 flex items-center text-indigo-100 text-sm">
+                                    <span className="font-medium">{t('inventory.total_receipts_value_desc')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
 
                     {/* Low Stock */}
                     <div className="relative overflow-hidden bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-6 text-white">
