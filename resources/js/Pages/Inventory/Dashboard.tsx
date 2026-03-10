@@ -22,8 +22,6 @@ import {
     AlertTriangle,
     XCircle,
     CheckCircle,
-    ArrowUpRight,
-    ArrowDownRight,
     ChevronRight,
     TrendingUp,
     ClipboardList,
@@ -120,20 +118,6 @@ export default function WarehouseDashboard({
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t('inventory.dashboard_title')}</h1>
                         <p className="text-sm text-gray-500 mt-1">{t('inventory.dashboard_subtitle')}</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button asChild>
-                            <Link href="/goods-receipts/create" className="flex items-center gap-1.5">
-                                <ClipboardList className="w-4 h-4" />
-                                {t('inventory.new_goods_receipt')}
-                            </Link>
-                        </Button>
-                        <Button variant="secondary" asChild>
-                            <Link href="/inventory" className="flex items-center gap-1.5">
-                                {t('inventory.go_to_warehouse')}
-                                <ChevronRight className="w-4 h-4" />
-                            </Link>
-                        </Button>
                     </div>
                 </div>
 

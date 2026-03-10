@@ -36,4 +36,5 @@ return [
     'section_finance' => 'Finance',
     'section_settings' => 'Settings',
     'bank_transactions' => 'Bank Statements',
+    'goods_receipts' => 'Goods Receipts',
 ];

@@ -22,7 +22,18 @@ class GoodsReceiptController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $receipts = $request->user()->goodsReceipts()
+        $query = $request->user()->goodsReceipts();
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->input('date_to'));
+        }
+
+        $totalFiltered = (clone $query)->sum('total_cost');
+
+        $receipts = $query
             ->orderByDesc('date')
             ->orderByDesc('created_at')
             ->paginate(15)
@@ -30,6 +41,11 @@ class GoodsReceiptController extends Controller implements HasMiddleware
 
         return Inertia::render('Inventory/GoodsReceipts/Index', [
             'receipts' => $receipts,
+            'totalCost' => round((float) $totalFiltered, 2),
+            'filters' => [
+                'date_from' => $request->input('date_from', ''),
+                'date_to' => $request->input('date_to', ''),
+            ],
         ]);
     }
 

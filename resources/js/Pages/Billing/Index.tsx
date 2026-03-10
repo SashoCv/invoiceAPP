@@ -110,7 +110,7 @@ export default function BillingIndex({ subscriptionStatus, expiresAt, trialEndsA
                                 <CardHeader>
                                     <CardTitle className="text-lg">{t('subscription.monthly')}</CardTitle>
                                     <div className="flex items-baseline gap-1 mt-2">
-                                        <span className="text-3xl font-bold text-gray-900">10&euro;</span>
+                                        <span className="text-3xl font-bold text-gray-900">25&euro;</span>
                                         <span className="text-sm text-gray-500">{t('subscription.per_month')}</span>
                                     </div>
                                 </CardHeader>
@@ -134,7 +134,7 @@ export default function BillingIndex({ subscriptionStatus, expiresAt, trialEndsA
                                 <CardHeader>
                                     <CardTitle className="text-lg">{t('subscription.yearly')}</CardTitle>
                                     <div className="flex items-baseline gap-1 mt-2">
-                                        <span className="text-3xl font-bold text-gray-900">100&euro;</span>
+                                        <span className="text-3xl font-bold text-gray-900">250&euro;</span>
                                         <span className="text-sm text-gray-500">{t('subscription.per_year')}</span>
                                     </div>
                                 </CardHeader>

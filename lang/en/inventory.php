@@ -178,4 +178,7 @@ return [
     'total_receipts_value' => 'Total Received',
     'total_receipts_value_desc' => 'Purchase value of received goods',
     'select_article_placeholder' => 'Select article...',
+    'date_from' => 'From',
+    'date_to' => 'To',
+    'filter' => 'Filter',
 ];

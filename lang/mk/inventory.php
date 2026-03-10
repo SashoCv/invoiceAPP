@@ -178,4 +178,7 @@ return [
     'total_receipts_value' => 'Вкупен прием',
     'total_receipts_value_desc' => 'Набавна вредност на примена роба',
     'select_article_placeholder' => 'Избери артикл...',
+    'date_from' => 'Од датум',
+    'date_to' => 'До датум',
+    'filter' => 'Филтрирај',
 ];

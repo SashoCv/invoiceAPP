@@ -36,4 +36,5 @@ return [
     'section_finance' => 'Финансии',
     'section_settings' => 'Подесувања',
     'bank_transactions' => 'Изводи',
+    'goods_receipts' => 'Приемници',
 ];
