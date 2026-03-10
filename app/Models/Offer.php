@@ -97,7 +97,7 @@ class Offer extends Model
      */
     public static function formatOfferNumber(?string $prefix, int $year, int $sequence): string
     {
-        $number = $year . '-' . $sequence;
+        $number = $sequence . '-' . $year;
         if ($prefix) {
             return trim($prefix) . ' ' . $number;
         }

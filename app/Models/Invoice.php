@@ -109,7 +109,7 @@ class Invoice extends Model
      */
     public static function formatInvoiceNumber(?string $prefix, int $year, int $sequence): string
     {
-        $number = $year . '-' . $sequence;
+        $number = $sequence . '-' . $year;
         if ($prefix) {
             return trim($prefix) . ' ' . $number;
         }
