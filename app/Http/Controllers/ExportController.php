@@ -123,6 +123,80 @@ class ExportController extends Controller
         });
     }
 
+    public function exportIncomingInvoices(Request $request): StreamedResponse
+    {
+        $month = $request->get('month', now()->format('Y-m'));
+        $startOfMonth = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
+
+        $invoices = $request->user()->incomingInvoices()
+            ->with('client')
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $statusLabels = [
+            'paid' => __('expenses.status_paid'),
+            'unpaid' => __('expenses.status_unpaid'),
+        ];
+
+        $headers = [
+            __('expenses.date'),
+            __('expenses.supplier_name'),
+            __('expenses.invoice_number'),
+            __('expenses.amount'),
+            __('expenses.currency'),
+            __('expenses.due_date'),
+            __('expenses.status'),
+            __('expenses.paid_date'),
+            __('expenses.notes'),
+        ];
+
+        return $this->streamCsv("incoming_invoices_{$month}.csv", $headers, $invoices, function ($invoice) use ($statusLabels) {
+            return [
+                $invoice->date?->format('d.m.Y') ?? '',
+                $invoice->supplier_name,
+                $invoice->invoice_number ?? '',
+                $invoice->amount,
+                $invoice->currency,
+                $invoice->due_date?->format('d.m.Y') ?? '',
+                $statusLabels[$invoice->status] ?? $invoice->status,
+                $invoice->paid_date?->format('d.m.Y') ?? '',
+                $invoice->notes ?? '',
+            ];
+        });
+    }
+
+    public function exportRecurringExpenses(Request $request): StreamedResponse
+    {
+        $expenses = $request->user()->recurringExpenses()
+            ->with('category')
+            ->orderBy('name')
+            ->get();
+
+        $headers = [
+            __('expenses.name'),
+            __('expenses.category'),
+            __('expenses.amount'),
+            __('expenses.day_of_month'),
+            __('expenses.start_date'),
+            __('expenses.end_date'),
+            __('expenses.status'),
+        ];
+
+        return $this->streamCsv('recurring_expenses.csv', $headers, $expenses, function ($expense) {
+            return [
+                $expense->name,
+                $expense->category?->name ?? '',
+                $expense->amount,
+                $expense->day_of_month,
+                $expense->start_date?->format('d.m.Y') ?? '',
+                $expense->end_date?->format('d.m.Y') ?? '',
+                $expense->is_active ? __('expenses.active') : __('expenses.inactive'),
+            ];
+        });
+    }
+
     public function exportClients(Request $request): StreamedResponse
     {
         $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();

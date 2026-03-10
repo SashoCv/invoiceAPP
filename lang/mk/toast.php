@@ -62,6 +62,9 @@ return [
     'recurring_expense_created' => 'Рекурентниот трошок е успешно додаден',
     'recurring_expense_updated' => 'Рекурентниот трошок е успешно ажуриран',
     'recurring_expense_deleted' => 'Рекурентниот трошок е избришан',
+    'incoming_invoice_created' => 'Влезната фактура е успешно додадена',
+    'incoming_invoice_updated' => 'Влезната фактура е успешно ажурирана',
+    'incoming_invoice_deleted' => 'Влезната фактура е избришана',
 
     // Inventory
     'inventory_tracking_enabled' => 'Магацинското следење е вклучено',

@@ -62,6 +62,9 @@ return [
     'recurring_expense_created' => 'Recurring expense added successfully',
     'recurring_expense_updated' => 'Recurring expense updated successfully',
     'recurring_expense_deleted' => 'Recurring expense deleted',
+    'incoming_invoice_created' => 'Incoming invoice added successfully',
+    'incoming_invoice_updated' => 'Incoming invoice updated successfully',
+    'incoming_invoice_deleted' => 'Incoming invoice deleted',
 
     // Inventory
     'inventory_tracking_enabled' => 'Inventory tracking enabled',

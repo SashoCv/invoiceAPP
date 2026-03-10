@@ -310,6 +310,24 @@ export interface Expense {
     updated_at: string;
 }
 
+export interface IncomingInvoice {
+    id: number;
+    user_id: number;
+    client_id: number | null;
+    supplier_name: string;
+    invoice_number: string | null;
+    amount: number;
+    currency: string;
+    date: string;
+    due_date: string | null;
+    status: 'unpaid' | 'paid';
+    paid_date: string | null;
+    notes: string | null;
+    client?: Client;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface BankTransaction {
     id: number;
     user_id: number;

@@ -48,13 +48,21 @@ import {
     PowerOff,
     CalendarRange,
     Download,
+    FileText,
+    Check,
+    X,
 } from 'lucide-react';
-import type { Expense, ExpenseCategory, RecurringExpense } from '@/types';
+import { Textarea } from '@/Components/ui/textarea';
+import type { Expense, ExpenseCategory, RecurringExpense, IncomingInvoice, Client } from '@/types';
 
 interface ExpensesIndexProps {
     expenses: Expense[];
     recurringExpenses: RecurringExpense[];
     categories: ExpenseCategory[];
+    incomingInvoices: IncomingInvoice[];
+    clients: Pick<Client, 'id' | 'name'>[];
+    unpaidIncomingTotal: number;
+    paidIncomingTotal: number;
     month: string;
     tab: string;
     monthlyTotal: number;
@@ -104,6 +112,10 @@ export default function ExpensesIndex({
     expenses,
     recurringExpenses,
     categories,
+    incomingInvoices,
+    clients,
+    unpaidIncomingTotal,
+    paidIncomingTotal,
     month,
     tab,
     monthlyTotal,
@@ -149,10 +161,29 @@ export default function ExpensesIndex({
     const [editingCategory, setEditingCategory] = useState<ExpenseCategory | null>(null);
     const [categoryLoading, setCategoryLoading] = useState(false);
 
+    // Incoming invoice dialog state
+    const [incomingDialogOpen, setIncomingDialogOpen] = useState(false);
+    const [editingIncoming, setEditingIncoming] = useState<IncomingInvoice | null>(null);
+    const [incomingForm, setIncomingForm] = useState({
+        supplier_name: '',
+        client_id: '',
+        invoice_number: '',
+        amount: '',
+        currency: 'MKD',
+        date: '',
+        due_date: '',
+        status: 'unpaid' as 'unpaid' | 'paid',
+        paid_date: '',
+        notes: '',
+    });
+    const [incomingErrors, setIncomingErrors] = useState<Record<string, string>>({});
+    const [incomingLoading, setIncomingLoading] = useState(false);
+
     // Delete state
     const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
     const [deleteRecurring, setDeleteRecurring] = useState<RecurringExpense | null>(null);
     const [deleteCategory, setDeleteCategory] = useState<ExpenseCategory | null>(null);
+    const [deleteIncoming, setDeleteIncoming] = useState<IncomingInvoice | null>(null);
 
     const handleMonthChange = (newMonth: string) => {
         router.get('/expenses', { month: newMonth, tab: activeTab }, { preserveState: true });
@@ -305,6 +336,79 @@ export default function ExpensesIndex({
         });
     };
 
+    // --- Incoming Invoice CRUD ---
+    const openIncomingDialog = (incoming?: IncomingInvoice) => {
+        if (incoming) {
+            setEditingIncoming(incoming);
+            setIncomingForm({
+                supplier_name: incoming.supplier_name,
+                client_id: incoming.client_id ? String(incoming.client_id) : '',
+                invoice_number: incoming.invoice_number || '',
+                amount: String(incoming.amount),
+                currency: incoming.currency,
+                date: incoming.date,
+                due_date: incoming.due_date || '',
+                status: incoming.status,
+                paid_date: incoming.paid_date || '',
+                notes: incoming.notes || '',
+            });
+        } else {
+            setEditingIncoming(null);
+            const today = new Date();
+            const [y, m] = month.split('-');
+            const defaultDate = `${y}-${m}-${String(today.getDate()).padStart(2, '0')}`;
+            setIncomingForm({
+                supplier_name: '',
+                client_id: '',
+                invoice_number: '',
+                amount: '',
+                currency: 'MKD',
+                date: defaultDate,
+                due_date: '',
+                status: 'unpaid',
+                paid_date: '',
+                notes: '',
+            });
+        }
+        setIncomingErrors({});
+        setIncomingDialogOpen(true);
+    };
+
+    const submitIncoming = () => {
+        setIncomingLoading(true);
+        const data = {
+            ...incomingForm,
+            client_id: incomingForm.client_id || null,
+            due_date: incomingForm.due_date || null,
+            paid_date: incomingForm.paid_date || null,
+            notes: incomingForm.notes || null,
+            invoice_number: incomingForm.invoice_number || null,
+        };
+
+        const url = editingIncoming
+            ? `/expenses/incoming/${editingIncoming.id}`
+            : '/expenses/incoming';
+        const method = editingIncoming ? 'put' : 'post';
+
+        router[method](url, data, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIncomingDialogOpen(false);
+                setIncomingLoading(false);
+            },
+            onError: (errors) => {
+                setIncomingErrors(errors);
+                setIncomingLoading(false);
+            },
+        });
+    };
+
+    const toggleIncomingStatus = (incoming: IncomingInvoice) => {
+        router.post(`/expenses/incoming/${incoming.id}/toggle-status`, {}, {
+            preserveScroll: true,
+        });
+    };
+
     const getCategoryBadge = (category?: ExpenseCategory | null) => {
         if (!category) return null;
         return (
@@ -330,22 +434,31 @@ export default function ExpensesIndex({
                         <p className="mt-1 text-sm text-gray-500">{t('expenses.subtitle')}</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm" asChild>
-                            <a
-                                href={`/expenses/export/csv?month=${month}`}
-                                className="flex items-center gap-2"
-                            >
-                                <Download className="w-4 h-4" />
-                                {t('general.export_csv')}
-                            </a>
-                        </Button>
-                        <MonthPicker month={month} onChange={handleMonthChange} />
+                        {activeTab !== 'categories' && activeTab !== 'recurring' && (
+                            <Button variant="outline" size="sm" asChild>
+                                <a
+                                    href={
+                                        activeTab === 'incoming'
+                                            ? `/expenses/export/incoming/csv?month=${month}`
+                                            : `/expenses/export/csv?month=${month}`
+                                    }
+                                    className="flex items-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    {t('general.export_csv')}
+                                </a>
+                            </Button>
+                        )}
+                        {activeTab !== 'categories' && (
+                            <MonthPicker month={month} onChange={handleMonthChange} />
+                        )}
                     </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange}>
                     <TabsList>
                         <TabsTrigger value="monthly">{t('expenses.tab_monthly')}</TabsTrigger>
+                        <TabsTrigger value="incoming">{t('expenses.tab_incoming')}</TabsTrigger>
                         <TabsTrigger value="recurring">{t('expenses.tab_recurring')}</TabsTrigger>
                         <TabsTrigger value="categories">{t('expenses.tab_categories')}</TabsTrigger>
                     </TabsList>
@@ -662,6 +775,155 @@ export default function ExpensesIndex({
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+                    {/* Tab 4: Incoming invoices */}
+                    <TabsContent value="incoming">
+                        {/* Summary */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-sm text-gray-500">{t('expenses.unpaid_total')}</div>
+                                    <div className="text-2xl font-bold text-red-600">
+                                        {formatNumber(unpaidIncomingTotal, 2)} ден.
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-sm text-gray-500">{t('expenses.paid_total')}</div>
+                                    <div className="text-2xl font-bold text-green-600">
+                                        {formatNumber(paidIncomingTotal, 2)} ден.
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-sm text-gray-500">{t('expenses.unpaid_count')}</div>
+                                    <div className="text-2xl font-bold text-gray-900">
+                                        {incomingInvoices.filter(i => i.status === 'unpaid').length}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-sm text-gray-500">{t('expenses.paid_count')}</div>
+                                    <div className="text-2xl font-bold text-green-600">
+                                        {incomingInvoices.filter(i => i.status === 'paid').length}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        <Card>
+                            <div className="flex items-center justify-between p-4 border-b">
+                                <h3 className="font-semibold text-gray-900">{t('expenses.tab_incoming')}</h3>
+                                <Button size="sm" onClick={() => openIncomingDialog()} disabled={!isActive} className="gap-1.5">
+                                    <Plus className="w-4 h-4" />
+                                    {t('expenses.add_incoming')}
+                                </Button>
+                            </div>
+                            {incomingInvoices.length === 0 ? (
+                                <CardContent className="p-0">
+                                    <EmptyState
+                                        icon={FileText}
+                                        title={t('expenses.no_incoming')}
+                                        description={t('expenses.no_incoming_description')}
+                                        action={{
+                                            label: t('expenses.add_incoming'),
+                                            onClick: () => openIncomingDialog(),
+                                        }}
+                                    />
+                                </CardContent>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('expenses.supplier_name')}</TableHead>
+                                            <TableHead>{t('expenses.invoice_number')}</TableHead>
+                                            <TableHead className="text-right">{t('expenses.amount')}</TableHead>
+                                            <TableHead>{t('expenses.date')}</TableHead>
+                                            <TableHead>{t('expenses.due_date')}</TableHead>
+                                            <TableHead className="text-center">{t('expenses.status')}</TableHead>
+                                            <TableHead className="text-right">{t('expenses.actions')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {incomingInvoices.map((incoming) => (
+                                            <TableRow key={incoming.id}>
+                                                <TableCell>
+                                                    <div>
+                                                        <span className="font-medium text-gray-900">
+                                                            {incoming.supplier_name}
+                                                        </span>
+                                                        {incoming.client && (
+                                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                                {incoming.client.name}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-sm text-gray-600">
+                                                    {incoming.invoice_number || '—'}
+                                                </TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {formatNumber(incoming.amount, 2)} {incoming.currency === 'MKD' ? 'ден.' : incoming.currency}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-gray-600">
+                                                    {formatDate(incoming.date)}
+                                                </TableCell>
+                                                <TableCell className="text-sm text-gray-600">
+                                                    {incoming.due_date ? formatDate(incoming.due_date) : '—'}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => toggleIncomingStatus(incoming)}
+                                                        disabled={!isActive}
+                                                        className="gap-1"
+                                                    >
+                                                        {incoming.status === 'paid' ? (
+                                                            <Badge className="bg-green-100 text-green-700 hover:bg-green-200 gap-1">
+                                                                <Check className="w-3 h-3" />
+                                                                {t('expenses.status_paid')}
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="destructive" className="gap-1">
+                                                                <X className="w-3 h-3" />
+                                                                {t('expenses.status_unpaid')}
+                                                            </Badge>
+                                                        )}
+                                                    </Button>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                            onClick={() => openIncomingDialog(incoming)}
+                                                            disabled={!isActive}
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-red-600 hover:text-red-700"
+                                                            onClick={() => setDeleteIncoming(incoming)}
+                                                            disabled={!isActive}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </Card>
+                    </TabsContent>
                 </Tabs>
             </div>
 
@@ -886,6 +1148,167 @@ export default function ExpensesIndex({
                 title={t('expenses.delete_category')}
                 description={t('expenses.delete_category_confirm')}
                 deleteUrl={deleteCategory ? `/expenses/categories/${deleteCategory.id}` : ''}
+            />
+
+            {/* Incoming Invoice Dialog */}
+            <Dialog open={incomingDialogOpen} onOpenChange={setIncomingDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editingIncoming ? t('expenses.edit_incoming') : t('expenses.add_incoming')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {editingIncoming ? t('expenses.edit_incoming_description') : t('expenses.add_incoming_description')}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label className="mb-2 block">{t('expenses.supplier_name')}</Label>
+                            <Input
+                                value={incomingForm.supplier_name}
+                                onChange={(e) => setIncomingForm({ ...incomingForm, supplier_name: e.target.value })}
+                            />
+                            {incomingErrors.supplier_name && (
+                                <p className="text-sm text-red-600 mt-1">{incomingErrors.supplier_name}</p>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('expenses.select_client')}</Label>
+                            <Select
+                                value={incomingForm.client_id}
+                                onValueChange={(val) => setIncomingForm({ ...incomingForm, client_id: val === '__none__' ? '' : val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t('expenses.no_client')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__none__">{t('expenses.no_client')}</SelectItem>
+                                    {clients.map((client) => (
+                                        <SelectItem key={client.id} value={String(client.id)}>
+                                            {client.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('expenses.invoice_number')}</Label>
+                            <Input
+                                value={incomingForm.invoice_number}
+                                onChange={(e) => setIncomingForm({ ...incomingForm, invoice_number: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label className="mb-2 block">{t('expenses.amount')}</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={incomingForm.amount}
+                                    onChange={(e) => setIncomingForm({ ...incomingForm, amount: e.target.value })}
+                                />
+                                {incomingErrors.amount && (
+                                    <p className="text-sm text-red-600 mt-1">{incomingErrors.amount}</p>
+                                )}
+                            </div>
+                            <div>
+                                <Label className="mb-2 block">{t('expenses.currency')}</Label>
+                                <Select
+                                    value={incomingForm.currency}
+                                    onValueChange={(val) => setIncomingForm({ ...incomingForm, currency: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="MKD">MKD</SelectItem>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label className="mb-2 block">{t('expenses.date')}</Label>
+                                <Input
+                                    type="date"
+                                    value={incomingForm.date}
+                                    onChange={(e) => setIncomingForm({ ...incomingForm, date: e.target.value })}
+                                />
+                                {incomingErrors.date && (
+                                    <p className="text-sm text-red-600 mt-1">{incomingErrors.date}</p>
+                                )}
+                            </div>
+                            <div>
+                                <Label className="mb-2 block">{t('expenses.due_date')}</Label>
+                                <Input
+                                    type="date"
+                                    value={incomingForm.due_date}
+                                    onChange={(e) => setIncomingForm({ ...incomingForm, due_date: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label className="mb-2 block">{t('expenses.status')}</Label>
+                                <Select
+                                    value={incomingForm.status}
+                                    onValueChange={(val) => setIncomingForm({
+                                        ...incomingForm,
+                                        status: val as 'unpaid' | 'paid',
+                                        paid_date: val === 'paid' && !incomingForm.paid_date
+                                            ? new Date().toISOString().split('T')[0]
+                                            : val === 'unpaid' ? '' : incomingForm.paid_date,
+                                    })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unpaid">{t('expenses.status_unpaid')}</SelectItem>
+                                        <SelectItem value="paid">{t('expenses.status_paid')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {incomingForm.status === 'paid' && (
+                                <div>
+                                    <Label className="mb-2 block">{t('expenses.paid_date')}</Label>
+                                    <Input
+                                        type="date"
+                                        value={incomingForm.paid_date}
+                                        onChange={(e) => setIncomingForm({ ...incomingForm, paid_date: e.target.value })}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('expenses.notes')}</Label>
+                            <Textarea
+                                value={incomingForm.notes}
+                                onChange={(e) => setIncomingForm({ ...incomingForm, notes: e.target.value })}
+                                rows={3}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setIncomingDialogOpen(false)} disabled={incomingLoading}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={submitIncoming} loading={incomingLoading}>
+                            {editingIncoming ? t('general.save') : t('general.create')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <DeleteConfirmDialog
+                open={!!deleteIncoming}
+                onOpenChange={() => setDeleteIncoming(null)}
+                title={t('expenses.delete_incoming')}
+                description={t('expenses.delete_incoming_confirm')}
+                deleteUrl={deleteIncoming ? `/expenses/incoming/${deleteIncoming.id}` : ''}
             />
         </AppLayout>
     );

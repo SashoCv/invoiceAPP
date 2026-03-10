@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\IncomingInvoice;
 use App\Models\RecurringExpense;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -25,6 +26,7 @@ class ExpenseController extends Controller implements HasMiddleware
                 'store', 'update', 'destroy',
                 'storeCategory', 'updateCategory', 'destroyCategory',
                 'storeRecurring', 'updateRecurring', 'destroyRecurring', 'toggleRecurring',
+                'storeIncoming', 'updateIncoming', 'destroyIncoming', 'toggleIncomingStatus',
             ]),
         ];
     }
@@ -54,10 +56,34 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $monthlyTotal = $expenses->sum('amount');
 
+        $incomingInvoices = $request->user()->incomingInvoices()
+            ->with('client')
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $unpaidIncomingTotal = $request->user()->incomingInvoices()
+            ->where('status', 'unpaid')
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->sum('amount');
+
+        $paidIncomingTotal = $request->user()->incomingInvoices()
+            ->where('status', 'paid')
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->sum('amount');
+
+        $clients = $request->user()->clients()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Expenses/Index', [
             'expenses' => $expenses,
             'recurringExpenses' => $recurringExpenses,
             'categories' => $categories,
+            'incomingInvoices' => $incomingInvoices,
+            'clients' => $clients,
+            'unpaidIncomingTotal' => (float) $unpaidIncomingTotal,
+            'paidIncomingTotal' => (float) $paidIncomingTotal,
             'month' => $month,
             'tab' => $tab,
             'monthlyTotal' => (float) $monthlyTotal,
@@ -231,5 +257,82 @@ class ExpenseController extends Controller implements HasMiddleware
 
         return redirect()->route('expenses.index', ['tab' => 'recurring'])
             ->with('success', __('toast.recurring_expense_updated'));
+    }
+
+    // --- Incoming Invoices ---
+
+    public function storeIncoming(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'supplier_name' => ['required', 'string', 'max:255'],
+            'client_id' => ['nullable', 'exists:clients,id'],
+            'invoice_number' => ['nullable', 'string', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'currency' => ['required', 'string', 'max:3'],
+            'date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'status' => ['required', 'in:unpaid,paid'],
+            'paid_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $request->user()->incomingInvoices()->create($validated);
+
+        $month = Carbon::parse($validated['date'])->format('Y-m');
+
+        return redirect()->route('expenses.index', ['month' => $month, 'tab' => 'incoming'])
+            ->with('success', __('toast.incoming_invoice_created'));
+    }
+
+    public function updateIncoming(Request $request, IncomingInvoice $incomingInvoice): RedirectResponse
+    {
+        $this->authorize('update', $incomingInvoice);
+
+        $validated = $request->validate([
+            'supplier_name' => ['required', 'string', 'max:255'],
+            'client_id' => ['nullable', 'exists:clients,id'],
+            'invoice_number' => ['nullable', 'string', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'currency' => ['required', 'string', 'max:3'],
+            'date' => ['required', 'date'],
+            'due_date' => ['nullable', 'date'],
+            'status' => ['required', 'in:unpaid,paid'],
+            'paid_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $incomingInvoice->update($validated);
+
+        $month = Carbon::parse($validated['date'])->format('Y-m');
+
+        return redirect()->route('expenses.index', ['month' => $month, 'tab' => 'incoming'])
+            ->with('success', __('toast.incoming_invoice_updated'));
+    }
+
+    public function destroyIncoming(IncomingInvoice $incomingInvoice): RedirectResponse
+    {
+        $this->authorize('delete', $incomingInvoice);
+
+        $month = $incomingInvoice->date->format('Y-m');
+        $incomingInvoice->delete();
+
+        return redirect()->route('expenses.index', ['month' => $month, 'tab' => 'incoming'])
+            ->with('success', __('toast.incoming_invoice_deleted'));
+    }
+
+    public function toggleIncomingStatus(IncomingInvoice $incomingInvoice): RedirectResponse
+    {
+        $this->authorize('update', $incomingInvoice);
+
+        $newStatus = $incomingInvoice->status === 'paid' ? 'unpaid' : 'paid';
+        $incomingInvoice->update([
+            'status' => $newStatus,
+            'paid_date' => $newStatus === 'paid' ? now()->toDateString() : null,
+        ]);
+
+        $month = $incomingInvoice->date->format('Y-m');
+
+        return redirect()->route('expenses.index', ['month' => $month, 'tab' => 'incoming'])
+            ->with('success', __('toast.incoming_invoice_updated'));
     }
 }

@@ -246,7 +246,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                             </div>
                         ))}
 
-                        {/* Tools */}
+                        {/* Tools - hidden until ready
                         <div className="mt-4 pt-4 border-t border-gray-100">
                             <button
                                 onClick={() => setCalcOpen(true)}
@@ -256,6 +256,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                                 {t('navigation.currency_calculator')}
                             </button>
                         </div>
+                        */}
 
                         {isAdmin && (
                             <div className="mt-4 pt-4 border-t border-gray-100">

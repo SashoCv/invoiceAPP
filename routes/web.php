@@ -103,6 +103,10 @@ Route::middleware('auth')->group(function () {
     Route::put('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'updateRecurring'])->name('expenses.recurring.update');
     Route::delete('expenses/recurring/{recurringExpense}', [ExpenseController::class, 'destroyRecurring'])->name('expenses.recurring.destroy');
     Route::post('expenses/recurring/{recurringExpense}/toggle', [ExpenseController::class, 'toggleRecurring'])->name('expenses.recurring.toggle');
+    Route::post('expenses/incoming', [ExpenseController::class, 'storeIncoming'])->name('expenses.incoming.store');
+    Route::put('expenses/incoming/{incomingInvoice}', [ExpenseController::class, 'updateIncoming'])->name('expenses.incoming.update');
+    Route::delete('expenses/incoming/{incomingInvoice}', [ExpenseController::class, 'destroyIncoming'])->name('expenses.incoming.destroy');
+    Route::post('expenses/incoming/{incomingInvoice}/toggle-status', [ExpenseController::class, 'toggleIncomingStatus'])->name('expenses.incoming.toggle-status');
 
     // Bank Transactions
     Route::get('bank-transactions/export/csv', [ExportController::class, 'exportBankTransactions'])->name('bank-transactions.export.csv');
@@ -114,6 +118,8 @@ Route::middleware('auth')->group(function () {
     // CSV Exports
     Route::get('invoices/export/csv', [ExportController::class, 'exportInvoices'])->name('invoices.export.csv');
     Route::get('expenses/export/csv', [ExportController::class, 'exportExpenses'])->name('expenses.export.csv');
+    Route::get('expenses/export/recurring/csv', [ExportController::class, 'exportRecurringExpenses'])->name('expenses.export.recurring.csv');
+    Route::get('expenses/export/incoming/csv', [ExportController::class, 'exportIncomingInvoices'])->name('expenses.export.incoming.csv');
     Route::get('clients/export/csv', [ExportController::class, 'exportClients'])->name('clients.export.csv');
 
     // Invoices
