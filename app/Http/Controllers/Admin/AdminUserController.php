@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -129,6 +130,31 @@ class AdminUserController extends Controller
                 'agency' => $user->agency?->name,
             ],
         ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8'],
+            'subscription_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'email_verified_at' => now(),
+        ]);
+
+        if (!empty($validated['subscription_days']) && $validated['subscription_days'] > 0) {
+            $user->update([
+                'subscription_expires_at' => now()->addDays($validated['subscription_days']),
+            ]);
+        }
+
+        return back()->with('success', __('admin.user_created'));
     }
 
     public function extend(Request $request, User $user): RedirectResponse

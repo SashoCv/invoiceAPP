@@ -53,6 +53,12 @@ return [
     'delete_user_confirm' => 'Are you sure you want to delete this user? All their data (invoices, clients, etc.) will be permanently removed. This action cannot be undone.',
     'cannot_delete_self' => 'You cannot delete your own account.',
     'user_deleted' => 'User deleted successfully.',
+    'create_user' => 'Add User',
+    'create_user_description' => 'Create a new user account.',
+    'password' => 'Password',
+    'subscription_days' => 'Subscription (days)',
+    'subscription_days_hint' => 'Leave 0 for no subscription',
+    'user_created' => 'User created successfully.',
 
     // Calendar
     'expiry_calendar' => 'Expiry Calendar',

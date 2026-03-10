@@ -16,7 +16,9 @@ import Pagination from '@/Components/Pagination';
 import ActionDropdown from '@/Components/ActionDropdown';
 import { formatDate } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
-import { Search, Eye, CalendarPlus, Ban, Shield, Trash2 } from 'lucide-react';
+import { Search, Eye, CalendarPlus, Ban, Shield, Trash2, Plus } from 'lucide-react';
+import { Label } from '@/Components/ui/label';
+import { DialogDescription } from '@/Components/ui/dialog';
 import {
     Dialog,
     DialogContent,
@@ -63,6 +65,10 @@ export default function UsersIndex({ users, filters }: Props) {
     const [extendDays, setExtendDays] = useState('30');
     const [revokeDialogUser, setRevokeDialogUser] = useState<AdminUser | null>(null);
     const [deleteDialogUser, setDeleteDialogUser] = useState<AdminUser | null>(null);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', subscription_days: '30' });
+    const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+    const [createLoading, setCreateLoading] = useState(false);
 
     const handleSearch = (value: string) => {
         setSearch(value);
@@ -99,6 +105,22 @@ export default function UsersIndex({ users, filters }: Props) {
         router.post(`/admin/users/${user.id}/toggle-admin`);
     };
 
+    const handleCreate = () => {
+        setCreateLoading(true);
+        router.post('/admin/users', createForm, {
+            onSuccess: () => {
+                setCreateDialogOpen(false);
+                setCreateForm({ name: '', email: '', password: '', subscription_days: '30' });
+                setCreateErrors({});
+                setCreateLoading(false);
+            },
+            onError: (errors) => {
+                setCreateErrors(errors);
+                setCreateLoading(false);
+            },
+        });
+    };
+
     const handleDelete = () => {
         if (!deleteDialogUser) return;
         router.delete(`/admin/users/${deleteDialogUser.id}`, {
@@ -108,7 +130,13 @@ export default function UsersIndex({ users, filters }: Props) {
 
     return (
         <AdminLayout>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('admin.users')}</h1>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">{t('admin.users')}</h1>
+                <Button size="sm" onClick={() => setCreateDialogOpen(true)} className="gap-1.5">
+                    <Plus className="w-4 h-4" />
+                    {t('admin.create_user')}
+                </Button>
+            </div>
 
             <Card>
                 <CardHeader>
@@ -304,6 +332,62 @@ export default function UsersIndex({ users, filters }: Props) {
                         </Button>
                         <Button variant="destructive" onClick={handleDelete}>
                             {t('admin.delete_user')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Create User Dialog */}
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('admin.create_user')}</DialogTitle>
+                        <DialogDescription>{t('admin.create_user_description')}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label className="mb-2 block">{t('admin.name')}</Label>
+                            <Input
+                                value={createForm.name}
+                                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                            />
+                            {createErrors.name && <p className="text-sm text-red-600 mt-1">{createErrors.name}</p>}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('admin.email')}</Label>
+                            <Input
+                                type="email"
+                                value={createForm.email}
+                                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                            />
+                            {createErrors.email && <p className="text-sm text-red-600 mt-1">{createErrors.email}</p>}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('admin.password')}</Label>
+                            <Input
+                                type="password"
+                                value={createForm.password}
+                                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                            />
+                            {createErrors.password && <p className="text-sm text-red-600 mt-1">{createErrors.password}</p>}
+                        </div>
+                        <div>
+                            <Label className="mb-2 block">{t('admin.subscription_days')}</Label>
+                            <Input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={createForm.subscription_days}
+                                onChange={(e) => setCreateForm({ ...createForm, subscription_days: e.target.value })}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">{t('admin.subscription_days_hint')}</p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={createLoading}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={handleCreate} loading={createLoading}>
+                            {t('general.create')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
