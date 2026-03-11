@@ -27,7 +27,7 @@ export default function Profile({ user }: ProfileProps) {
         _method: 'PATCH',
     });
 
-    const { data: passwordData, setData: setPasswordData, post: postPassword, processing: processingPassword, errors: passwordErrors, reset: resetPassword } = useForm({
+    const { data: passwordData, setData: setPasswordData, put: putPassword, processing: processingPassword, errors: passwordErrors, reset: resetPassword } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
@@ -56,7 +56,7 @@ export default function Profile({ user }: ProfileProps) {
 
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();
-        postPassword('/password', {
+        putPassword('/password', {
             onSuccess: () => resetPassword(),
         });
     };
