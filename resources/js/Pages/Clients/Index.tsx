@@ -203,8 +203,9 @@ export default function ClientsIndex({ clients, archivedCount, cities, filters }
                                                         href={`/clients/${client.id}`}
                                                         className="text-sm font-medium text-gray-900 hover:text-blue-600"
                                                     >
-                                                        {client.name}
+                                                        {client.company || client.name}
                                                     </Link>
+                                                    <p className="text-xs text-gray-500">{client.name}</p>
                                                     {client.city && (
                                                         <p className="text-xs text-gray-400">{client.city}, {client.country}</p>
                                                     )}
