@@ -98,6 +98,7 @@ class TemplateController extends Controller implements HasMiddleware
             'email' => 'info@agencija.mk',
             'tax_number' => 'MK9876543210',
             'website' => null,
+            'logo' => null,
         ];
 
         if ($isOffer) {
