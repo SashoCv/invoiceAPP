@@ -78,6 +78,8 @@ export interface Client {
     country: string;
     tax_number: string;
     registration_number?: string;
+    bank_name?: string;
+    bank_account?: string;
     discount?: number;
     notes: string | null;
     created_at: string;

@@ -22,6 +22,8 @@ class Client extends Model
         'country',
         'tax_number',
         'registration_number',
+        'bank_name',
+        'bank_account',
         'discount',
     ];
 

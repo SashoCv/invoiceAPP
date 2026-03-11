@@ -21,6 +21,8 @@ export default function ClientCreate() {
         country: 'Македонија',
         tax_number: '',
         registration_number: '',
+        bank_name: '',
+        bank_account: '',
         discount: 0,
     });
 
@@ -100,6 +102,30 @@ export default function ClientCreate() {
                                         onChange={(e) => setData('registration_number', e.target.value)}
                                         className="mt-1"
                                         error={errors.registration_number}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Bank Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="bank_name">{t('clients.bank_name')}</Label>
+                                    <Input
+                                        id="bank_name"
+                                        value={data.bank_name}
+                                        onChange={(e) => setData('bank_name', e.target.value)}
+                                        className="mt-1"
+                                        error={errors.bank_name}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="bank_account">{t('clients.bank_account')}</Label>
+                                    <Input
+                                        id="bank_account"
+                                        value={data.bank_account}
+                                        onChange={(e) => setData('bank_account', e.target.value)}
+                                        className="mt-1"
+                                        error={errors.bank_account}
                                     />
                                 </div>
                             </div>

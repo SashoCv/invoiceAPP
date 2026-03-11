@@ -113,6 +113,8 @@ class ClientController extends Controller implements HasMiddleware
                 }),
             ],
             'registration_number' => ['nullable', 'string', 'max:50'],
+            'bank_name' => ['nullable', 'string', 'max:255'],
+            'bank_account' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
@@ -206,6 +208,8 @@ class ClientController extends Controller implements HasMiddleware
                 })->ignore($client->id),
             ],
             'registration_number' => ['nullable', 'string', 'max:50'],
+            'bank_name' => ['nullable', 'string', 'max:255'],
+            'bank_account' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 

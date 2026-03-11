@@ -33,6 +33,8 @@ return [
     'tax_number' => 'ЕДБ',
     'tax_number_placeholder' => 'MK1234567890123',
     'registration_number' => 'ЕМБС (Матичен број)',
+    'bank_name' => 'Банка',
+    'bank_account' => 'Жиро сметка',
     'email' => 'Е-пошта',
     'phone' => 'Телефон',
     'address' => 'Адреса',

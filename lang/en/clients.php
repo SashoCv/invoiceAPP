@@ -33,6 +33,8 @@ return [
     'tax_number' => 'Tax No.',
     'tax_number_placeholder' => 'MK1234567890123',
     'registration_number' => 'Registration Number (EMBS)',
+    'bank_name' => 'Bank Name',
+    'bank_account' => 'Bank Account',
     'email' => 'Email',
     'phone' => 'Phone',
     'address' => 'Address',
