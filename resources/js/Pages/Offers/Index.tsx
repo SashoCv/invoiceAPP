@@ -226,7 +226,7 @@ export default function OffersIndex({ offers, clients, showDeleted, filters }: O
                                             <SelectItem value="__all__">{t('offers.all_clients')}</SelectItem>
                                             {clients.map((c) => (
                                                 <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name}
+                                                    {c.company || c.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

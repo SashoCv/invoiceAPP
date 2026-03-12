@@ -83,7 +83,7 @@ export default function CreateOffer({ clients, currentYear, nextSequence, offer,
                                         <SelectContent>
                                             {clients.map((c) => (
                                                 <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name}
+                                                    {c.company || c.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

@@ -217,7 +217,7 @@ export default function ProformaInvoicesIndex({ proformas, clients, showDeleted,
                                             <SelectItem value="__all__">{t('proforma.all_clients')}</SelectItem>
                                             {clients.map((c) => (
                                                 <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name}
+                                                    {c.company || c.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

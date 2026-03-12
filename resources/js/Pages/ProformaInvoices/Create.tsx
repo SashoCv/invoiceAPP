@@ -213,7 +213,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                         <SelectContent>
                                             {clients.map((c) => (
                                                 <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name}
+                                                    {c.company || c.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

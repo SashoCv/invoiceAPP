@@ -231,7 +231,7 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                             <SelectItem value="__all__">{t('invoices.all_clients')}</SelectItem>
                                             {clients.map((c) => (
                                                 <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name}
+                                                    {c.company || c.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
