@@ -857,7 +857,7 @@ export default function ExpensesIndex({
                                                         </span>
                                                         {incoming.client && (
                                                             <p className="text-xs text-gray-500 mt-0.5">
-                                                                {incoming.client.name}
+                                                                {incoming.client.company || incoming.client.name}
                                                             </p>
                                                         )}
                                                     </div>
@@ -1185,7 +1185,7 @@ export default function ExpensesIndex({
                                     <SelectItem value="__none__">{t('expenses.no_client')}</SelectItem>
                                     {clients.map((client) => (
                                         <SelectItem key={client.id} value={String(client.id)}>
-                                            {client.name}
+                                            {client.company || client.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
