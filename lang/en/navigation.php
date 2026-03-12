@@ -37,4 +37,5 @@ return [
     'section_settings' => 'Settings',
     'bank_transactions' => 'Bank Statements',
     'goods_receipts' => 'Goods Receipts',
+    'goods_issues' => 'Dispatch Notes',
 ];

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\GoodsReceipt;
+use App\Models\GoodsIssue;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -11,7 +11,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class GoodsReceiptController extends Controller implements HasMiddleware
+class GoodsIssueController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
@@ -22,7 +22,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = $request->user()->goodsReceipts();
+        $query = $request->user()->goodsIssues();
 
         if ($request->filled('date_from')) {
             $query->where('date', '>=', $request->input('date_from'));
@@ -31,17 +31,16 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             $query->where('date', '<=', $request->input('date_to'));
         }
 
-        $totalFiltered = (clone $query)->sum('total_cost');
-
         $receipts = $query
+            ->with('client:id,name,company')
+            ->withCount('movements')
             ->orderByDesc('date')
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 
-        return Inertia::render('Inventory/GoodsReceipts/Index', [
-            'receipts' => $receipts,
-            'totalCost' => round((float) $totalFiltered, 2),
+        return Inertia::render('Inventory/GoodsIssues/Index', [
+            'issues' => $receipts,
             'filters' => [
                 'date_from' => $request->input('date_from', ''),
                 'date_to' => $request->input('date_to', ''),
@@ -57,8 +56,13 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             ->orderBy('name')
             ->get(['id', 'name', 'unit', 'price', 'stock_quantity']);
 
-        return Inertia::render('Inventory/GoodsReceipts/Create', [
+        $clients = $request->user()->clients()
+            ->orderBy('name')
+            ->get(['id', 'name', 'company']);
+
+        return Inertia::render('Inventory/GoodsIssues/Create', [
             'articles' => $articles,
+            'clients' => $clients,
         ]);
     }
 
@@ -67,64 +71,63 @@ class GoodsReceiptController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'client_id' => ['nullable', 'exists:clients,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $user = $request->user();
 
-        // Generate receipt number
-        $lastReceipt = $user->goodsReceipts()->orderByDesc('id')->first();
-        $nextSeq = $lastReceipt ? ((int) str_replace('PR-', '', $lastReceipt->receipt_number)) + 1 : 1;
-        $receiptNumber = 'PR-' . $nextSeq;
-
-        $totalCost = 0;
-
-        $receipt = $user->goodsReceipts()->create([
-            'receipt_number' => $receiptNumber,
+        $issue = $user->goodsIssues()->create([
+            'issue_number' => GoodsIssue::generateIssueNumber($user->id),
             'date' => $validated['date'],
             'notes' => $validated['notes'] ?? null,
-            'total_cost' => 0,
+            'client_id' => $validated['client_id'] ?? null,
         ]);
 
         foreach ($validated['items'] as $item) {
             $article = Article::where('user_id', $user->id)->findOrFail($item['article_id']);
 
-            $taxRate = $item['tax_rate'] ?? 0;
-            $subtotal = $item['quantity'] * $item['cost_price'];
-            $lineCost = $subtotal + $subtotal * ($taxRate / 100);
-            $totalCost += $lineCost;
-
             $before = $article->stock_quantity;
-            $article->stock_quantity += $item['quantity'];
+            $article->stock_quantity -= $item['quantity'];
             $article->save();
 
             $article->stockMovements()->create([
                 'user_id' => $user->id,
-                'type' => 'receipt',
+                'type' => 'issue',
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => $item['cost_price'],
-                'tax_rate' => $taxRate,
-                'reference_type' => 'goods_receipt',
-                'reference_id' => $receipt->id,
+                'cost_price' => 0,
+                'reference_type' => 'goods_issue',
+                'reference_id' => $issue->id,
                 'notes' => $validated['notes'] ?? null,
             ]);
         }
 
-        $receipt->update(['total_cost' => $totalCost]);
-
-        return redirect()->route('goods-receipts.index')
-            ->with('success', __('toast.goods_receipt_created'));
+        return redirect()->route('goods-issues.index')
+            ->with('success', __('toast.goods_issue_created'));
     }
 
-    public function edit(Request $request, GoodsReceipt $goodsReceipt): Response
+    public function show(GoodsIssue $goodsIssue): Response
     {
-        if ($goodsReceipt->user_id !== auth()->id()) {
+        if ($goodsIssue->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $goodsIssue->load('client:id,name,company');
+        $movements = $goodsIssue->movements()->with('article:id,name,unit')->get();
+
+        return Inertia::render('Inventory/GoodsIssues/Show', [
+            'issue' => $goodsIssue,
+            'movements' => $movements,
+        ]);
+    }
+
+    public function edit(Request $request, GoodsIssue $goodsIssue): Response
+    {
+        if ($goodsIssue->user_id !== auth()->id()) {
             abort(403);
         }
 
@@ -134,93 +137,76 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             ->orderBy('name')
             ->get(['id', 'name', 'unit', 'price', 'stock_quantity']);
 
-        $movements = $goodsReceipt->movements()->with('article:id,name,unit')->get();
+        $clients = $request->user()->clients()
+            ->orderBy('name')
+            ->get(['id', 'name', 'company']);
 
-        return Inertia::render('Inventory/GoodsReceipts/Edit', [
-            'receipt' => $goodsReceipt,
+        $movements = $goodsIssue->movements()->with('article:id,name,unit')->get();
+
+        return Inertia::render('Inventory/GoodsIssues/Edit', [
+            'issue' => $goodsIssue,
             'articles' => $articles,
+            'clients' => $clients,
             'movements' => $movements,
         ]);
     }
 
-    public function update(Request $request, GoodsReceipt $goodsReceipt): RedirectResponse
+    public function update(Request $request, GoodsIssue $goodsIssue): RedirectResponse
     {
-        if ($goodsReceipt->user_id !== auth()->id()) {
+        if ($goodsIssue->user_id !== auth()->id()) {
             abort(403);
         }
 
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'client_id' => ['nullable', 'exists:clients,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $user = $request->user();
 
-        // Reverse old movements
-        $oldMovements = $goodsReceipt->movements;
+        // Reverse old movements (add stock back)
+        $oldMovements = $goodsIssue->movements;
         foreach ($oldMovements as $movement) {
             $article = Article::where('user_id', $user->id)->find($movement->article_id);
             if ($article) {
-                $article->stock_quantity -= $movement->quantity;
+                $article->stock_quantity += $movement->quantity;
                 $article->save();
             }
         }
-        $goodsReceipt->movements()->delete();
+        $goodsIssue->movements()->delete();
 
-        // Create new movements
-        $totalCost = 0;
+        // Create new movements (deduct stock)
         foreach ($validated['items'] as $item) {
             $article = Article::where('user_id', $user->id)->findOrFail($item['article_id']);
 
-            $taxRate = $item['tax_rate'] ?? 0;
-            $subtotal = $item['quantity'] * $item['cost_price'];
-            $lineCost = $subtotal + $subtotal * ($taxRate / 100);
-            $totalCost += $lineCost;
-
             $before = $article->stock_quantity;
-            $article->stock_quantity += $item['quantity'];
+            $article->stock_quantity -= $item['quantity'];
             $article->save();
 
             $article->stockMovements()->create([
                 'user_id' => $user->id,
-                'type' => 'receipt',
+                'type' => 'issue',
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => $item['cost_price'],
-                'tax_rate' => $taxRate,
-                'reference_type' => 'goods_receipt',
-                'reference_id' => $goodsReceipt->id,
+                'cost_price' => 0,
+                'reference_type' => 'goods_issue',
+                'reference_id' => $goodsIssue->id,
                 'notes' => $validated['notes'] ?? null,
             ]);
         }
 
-        $goodsReceipt->update([
+        $goodsIssue->update([
             'date' => $validated['date'],
             'notes' => $validated['notes'] ?? null,
-            'total_cost' => $totalCost,
+            'client_id' => $validated['client_id'] ?? null,
         ]);
 
-        return redirect()->route('goods-receipts.show', $goodsReceipt)
-            ->with('success', __('toast.goods_receipt_updated'));
-    }
-
-    public function show(GoodsReceipt $goodsReceipt): Response
-    {
-        if ($goodsReceipt->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $movements = $goodsReceipt->movements()->with('article:id,name,unit')->get();
-
-        return Inertia::render('Inventory/GoodsReceipts/Show', [
-            'receipt' => $goodsReceipt,
-            'movements' => $movements,
-        ]);
+        return redirect()->route('goods-issues.show', $goodsIssue)
+            ->with('success', __('toast.goods_issue_updated'));
     }
 }

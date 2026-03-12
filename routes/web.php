@@ -86,7 +86,8 @@ Route::middleware('auth')->group(function () {
     Route::get('warehouse', [\App\Http\Controllers\WarehouseDashboardController::class, 'index'])->name('warehouse.dashboard');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
-    Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show']);
+    Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+    Route::resource('goods-issues', \App\Http\Controllers\GoodsIssueController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
 
     // Bundles
     Route::resource('bundles', BundleController::class)->except(['index', 'show']);

@@ -37,4 +37,5 @@ return [
     'section_settings' => 'Подесувања',
     'bank_transactions' => 'Изводи',
     'goods_receipts' => 'Приемници',
+    'goods_issues' => 'Испратници',
 ];

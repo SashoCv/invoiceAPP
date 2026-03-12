@@ -552,8 +552,8 @@ export default function WarehouseDashboard({
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <span className={`font-bold ${Number(movement.quantity) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                        {Number(movement.quantity) >= 0 ? '+' : ''}{formatNumber(movement.quantity)}
+                                                    <span className={`font-bold ${movement.type === 'issue' || movement.type === 'invoice_deduction' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                        {movement.type === 'issue' || movement.type === 'invoice_deduction' ? '-' : '+'}{formatNumber(movement.quantity)}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right text-gray-500">

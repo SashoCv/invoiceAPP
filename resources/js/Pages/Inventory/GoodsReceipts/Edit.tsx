@@ -31,19 +31,42 @@ interface ReceiptItem {
     tax_rate: string;
 }
 
-interface Props {
-    articles: ArticleOption[];
+interface Movement {
+    id: number;
+    quantity: number;
+    cost_price: number | null;
+    article_id: number;
+    article: { id: number; name: string; unit: string } | null;
 }
 
-export default function CreateGoodsReceipt({ articles }: Props) {
-    const { t } = useTranslation();
-    const [items, setItems] = useState<ReceiptItem[]>([
-        { article_id: '', quantity: '', cost_price: '', tax_rate: '18' },
-    ]);
+interface GoodsReceipt {
+    id: number;
+    receipt_number: string;
+    date: string;
+    notes: string | null;
+    total_cost: number;
+}
 
-    const { data, setData, processing, errors, setError, clearErrors } = useForm({
-        date: new Date().toISOString().split('T')[0],
-        notes: '',
+interface Props {
+    receipt: GoodsReceipt;
+    articles: ArticleOption[];
+    movements: Movement[];
+}
+
+export default function EditGoodsReceipt({ receipt, articles, movements }: Props) {
+    const { t } = useTranslation();
+    const [items, setItems] = useState<ReceiptItem[]>(
+        movements.map((m) => ({
+            article_id: String(m.article_id),
+            quantity: String(m.quantity),
+            cost_price: String(m.cost_price ?? ''),
+            tax_rate: String((m as any).tax_rate ?? '18'),
+        })),
+    );
+
+    const { data, setData, processing, errors, setError } = useForm({
+        date: receipt.date,
+        notes: receipt.notes || '',
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -61,7 +84,6 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         const updated = [...items];
         updated[index] = { ...updated[index], [field]: value };
 
-        // Auto-fill cost_price with selling price when selecting article
         if (field === 'article_id' && value) {
             const article = articles.find((a) => a.id === Number(value));
             if (article && !updated[index].cost_price) {
@@ -101,7 +123,7 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         }
 
         setSubmitting(true);
-        router.post('/goods-receipts', {
+        router.put(`/goods-receipts/${receipt.id}`, {
             date: data.date,
             notes: data.notes,
             items: formItems,
@@ -114,21 +136,20 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         });
     };
 
-    // Get used article IDs to filter from selects
     const usedArticleIds = items.map((item) => Number(item.article_id)).filter(Boolean);
 
     return (
         <AppLayout>
-            <Head title={t('inventory.create_goods_receipt')} />
+            <Head title={`${t('inventory.edit_goods_receipt')} ${receipt.receipt_number}`} />
 
             <div className="max-w-4xl mx-auto">
                 <div className="mb-6">
                     <Link
-                        href="/goods-receipts"
+                        href={`/goods-receipts/${receipt.id}`}
                         className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
-                        {t('inventory.back_to_receipts')}
+                        {t('inventory.back_to_receipt')}
                     </Link>
                 </div>
 
@@ -137,9 +158,9 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Package className="w-5 h-5" />
-                                {t('inventory.create_goods_receipt')}
+                                {t('inventory.edit_goods_receipt')} — {receipt.receipt_number}
                             </CardTitle>
-                            <CardDescription>{t('inventory.create_goods_receipt_subtitle')}</CardDescription>
+                            <CardDescription>{t('inventory.edit_goods_receipt_subtitle')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -180,7 +201,6 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {/* Header */}
                                 <div className="hidden md:grid md:grid-cols-[3fr_1fr_2fr_1fr_2fr_2fr_auto] gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
                                     <div>{t('inventory.name')}</div>
                                     <div>{t('inventory.quantity')}</div>
@@ -288,7 +308,6 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                                 )}
                             </div>
 
-                            {/* Total */}
                             <div className="mt-6 pt-4 border-t flex items-center justify-between">
                                 <span className="text-lg font-semibold text-gray-900">{t('inventory.total_cost')}</span>
                                 <span className="text-2xl font-bold text-gray-900">{formatNumber(totalCost)} MKD</span>
@@ -298,7 +317,7 @@ export default function CreateGoodsReceipt({ articles }: Props) {
 
                     <div className="flex justify-end">
                         <Button type="submit" disabled={submitting} loading={submitting} size="lg">
-                            {t('inventory.save_receipt')}
+                            {t('inventory.update_receipt')}
                         </Button>
                     </div>
                 </form>

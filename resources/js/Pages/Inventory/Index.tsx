@@ -460,8 +460,8 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                                     <MovementTypeBadge type={movement.type} t={t} />
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <span className={Number(movement.quantity) >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                        {Number(movement.quantity) >= 0 ? '+' : ''}{formatNumber(movement.quantity, 0)}
+                                                    <span className={movement.type === 'issue' || movement.type === 'invoice_deduction' ? 'text-red-600' : 'text-green-600'}>
+                                                        {movement.type === 'issue' || movement.type === 'invoice_deduction' ? '-' : '+'}{formatNumber(movement.quantity, 0)}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right hidden md:table-cell text-gray-500">

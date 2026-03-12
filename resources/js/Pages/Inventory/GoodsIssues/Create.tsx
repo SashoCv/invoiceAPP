@@ -14,7 +14,7 @@ import {
 } from '@/Components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber } from '@/lib/utils';
-import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, PackageMinus } from 'lucide-react';
 
 interface ArticleOption {
     id: number;
@@ -24,31 +24,37 @@ interface ArticleOption {
     stock_quantity: number;
 }
 
-interface ReceiptItem {
+interface IssueItem {
     article_id: string;
     quantity: string;
-    cost_price: string;
-    tax_rate: string;
+}
+
+interface ClientOption {
+    id: number;
+    name: string;
+    company: string | null;
 }
 
 interface Props {
     articles: ArticleOption[];
+    clients: ClientOption[];
 }
 
-export default function CreateGoodsReceipt({ articles }: Props) {
+export default function CreateGoodsIssue({ articles, clients }: Props) {
     const { t } = useTranslation();
-    const [items, setItems] = useState<ReceiptItem[]>([
-        { article_id: '', quantity: '', cost_price: '', tax_rate: '18' },
+    const [items, setItems] = useState<IssueItem[]>([
+        { article_id: '', quantity: '' },
     ]);
 
-    const { data, setData, processing, errors, setError, clearErrors } = useForm({
+    const { data, setData, errors, setError } = useForm({
         date: new Date().toISOString().split('T')[0],
         notes: '',
+        client_id: '' as string,
     });
     const [submitting, setSubmitting] = useState(false);
 
     const addItem = () => {
-        setItems([...items, { article_id: '', quantity: '', cost_price: '', tax_rate: '18' }]);
+        setItems([...items, { article_id: '', quantity: '' }]);
     };
 
     const removeItem = (index: number) => {
@@ -57,43 +63,22 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         }
     };
 
-    const updateItem = (index: number, field: keyof ReceiptItem, value: string) => {
+    const updateItem = (index: number, field: keyof IssueItem, value: string) => {
         const updated = [...items];
         updated[index] = { ...updated[index], [field]: value };
-
-        // Auto-fill cost_price with selling price when selecting article
-        if (field === 'article_id' && value) {
-            const article = articles.find((a) => a.id === Number(value));
-            if (article && !updated[index].cost_price) {
-                updated[index].cost_price = String(article.price);
-            }
-        }
-
         setItems(updated);
     };
 
     const getArticle = (articleId: string) => articles.find((a) => a.id === Number(articleId));
 
-    const getLineTotal = (item: ReceiptItem) => {
-        const qty = parseFloat(item.quantity) || 0;
-        const price = parseFloat(item.cost_price) || 0;
-        const tax = parseFloat(item.tax_rate) || 0;
-        const subtotal = qty * price;
-        return subtotal + subtotal * (tax / 100);
-    };
-
-    const totalCost = items.reduce((sum, item) => sum + getLineTotal(item), 0);
-
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
         const formItems = items
-            .filter((item) => item.article_id && item.quantity && item.cost_price)
+            .filter((item) => item.article_id && item.quantity)
             .map((item) => ({
                 article_id: Number(item.article_id),
                 quantity: parseFloat(item.quantity),
-                cost_price: parseFloat(item.cost_price),
-                tax_rate: parseFloat(item.tax_rate) || 0,
             }));
 
         if (formItems.length === 0) {
@@ -101,9 +86,10 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         }
 
         setSubmitting(true);
-        router.post('/goods-receipts', {
+        router.post('/goods-issues', {
             date: data.date,
             notes: data.notes,
+            client_id: data.client_id ? Number(data.client_id) : null,
             items: formItems,
         }, {
             onError: (errs) => {
@@ -114,21 +100,20 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         });
     };
 
-    // Get used article IDs to filter from selects
     const usedArticleIds = items.map((item) => Number(item.article_id)).filter(Boolean);
 
     return (
         <AppLayout>
-            <Head title={t('inventory.create_goods_receipt')} />
+            <Head title={t('inventory.create_goods_issue')} />
 
             <div className="max-w-4xl mx-auto">
                 <div className="mb-6">
                     <Link
-                        href="/goods-receipts"
+                        href="/goods-issues"
                         className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
-                        {t('inventory.back_to_receipts')}
+                        {t('inventory.back_to_issues')}
                     </Link>
                 </div>
 
@@ -136,13 +121,13 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                     <Card className="mb-6">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Package className="w-5 h-5" />
-                                {t('inventory.create_goods_receipt')}
+                                <PackageMinus className="w-5 h-5" />
+                                {t('inventory.create_goods_issue')}
                             </CardTitle>
-                            <CardDescription>{t('inventory.create_goods_receipt_subtitle')}</CardDescription>
+                            <CardDescription>{t('inventory.create_goods_issue_subtitle')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <Label htmlFor="date">{t('inventory.receipt_date')} *</Label>
                                     <Input
@@ -155,13 +140,32 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                                     />
                                 </div>
                                 <div>
+                                    <Label>{t('inventory.issue_client')}</Label>
+                                    <Select
+                                        value={data.client_id}
+                                        onValueChange={(value) => setData('client_id', value === '_none' ? '' : value)}
+                                    >
+                                        <SelectTrigger className="mt-1">
+                                            <SelectValue placeholder={t('inventory.issue_client_placeholder')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="_none">{t('inventory.no_client')}</SelectItem>
+                                            {clients.map((c) => (
+                                                <SelectItem key={c.id} value={String(c.id)}>
+                                                    {c.company || c.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
                                     <Label htmlFor="notes">{t('inventory.receipt_notes')}</Label>
                                     <Input
                                         id="notes"
                                         value={data.notes}
                                         onChange={(e) => setData('notes', e.target.value)}
                                         className="mt-1"
-                                        placeholder={t('inventory.receipt_notes_placeholder')}
+                                        placeholder={t('inventory.issue_notes_placeholder')}
                                     />
                                 </div>
                             </div>
@@ -181,22 +185,18 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                         <CardContent>
                             <div className="space-y-4">
                                 {/* Header */}
-                                <div className="hidden md:grid md:grid-cols-[3fr_1fr_2fr_1fr_2fr_2fr_auto] gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
+                                <div className="hidden md:grid md:grid-cols-[4fr_2fr_2fr_auto] gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
                                     <div>{t('inventory.name')}</div>
                                     <div>{t('inventory.quantity')}</div>
-                                    <div>{t('inventory.cost_price')}</div>
-                                    <div>{t('expenses.tax_rate')}</div>
-                                    <div>{t('inventory.selling_price')}</div>
-                                    <div className="text-right">{t('inventory.line_total')}</div>
+                                    <div>{t('inventory.current_stock')}</div>
                                     <div className="w-8" />
                                 </div>
 
                                 {items.map((item, index) => {
                                     const article = getArticle(item.article_id);
-                                    const lineTotal = getLineTotal(item);
 
                                     return (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-[3fr_1fr_2fr_1fr_2fr_2fr_auto] gap-3 items-start p-3 bg-gray-50 rounded-lg">
+                                        <div key={index} className="grid grid-cols-1 md:grid-cols-[4fr_2fr_2fr_auto] gap-3 items-start p-3 bg-gray-50 rounded-lg">
                                             <div>
                                                 <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.name')}</Label>
                                                 <Select
@@ -232,39 +232,9 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.cost_price')}</Label>
-                                                <Input
-                                                    type="number"
-                                                    step="any"
-                                                    min="0"
-                                                    value={item.cost_price}
-                                                    onChange={(e) => updateItem(index, 'cost_price', e.target.value)}
-                                                    placeholder="0.00"
-                                                    error={errors[`items.${index}.cost_price`]}
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="md:hidden text-xs text-gray-500 mb-1">{t('expenses.tax_rate')}</Label>
-                                                <Input
-                                                    type="number"
-                                                    step="1"
-                                                    min="0"
-                                                    max="100"
-                                                    value={item.tax_rate}
-                                                    onChange={(e) => updateItem(index, 'tax_rate', e.target.value)}
-                                                    placeholder="18"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.selling_price')}</Label>
+                                                <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.current_stock')}</Label>
                                                 <div className="h-9 flex items-center text-sm text-gray-500 px-3 bg-gray-100 rounded-md">
-                                                    {article ? formatNumber(article.price) : '-'}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.line_total')}</Label>
-                                                <div className="h-9 flex items-center justify-end text-sm font-bold text-gray-900">
-                                                    {formatNumber(lineTotal)}
+                                                    {article ? `${formatNumber(article.stock_quantity)} ${article.unit}` : '-'}
                                                 </div>
                                             </div>
                                             <div className="flex items-start justify-end w-8">
@@ -287,18 +257,12 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                                     <p className="text-sm text-red-600">{errors.items}</p>
                                 )}
                             </div>
-
-                            {/* Total */}
-                            <div className="mt-6 pt-4 border-t flex items-center justify-between">
-                                <span className="text-lg font-semibold text-gray-900">{t('inventory.total_cost')}</span>
-                                <span className="text-2xl font-bold text-gray-900">{formatNumber(totalCost)} MKD</span>
-                            </div>
                         </CardContent>
                     </Card>
 
                     <div className="flex justify-end">
                         <Button type="submit" disabled={submitting} loading={submitting} size="lg">
-                            {t('inventory.save_receipt')}
+                            {t('inventory.save_issue')}
                         </Button>
                     </div>
                 </form>

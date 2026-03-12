@@ -75,6 +75,9 @@ return [
     'bundle_updated' => 'Bundle updated successfully',
     'bundle_deleted' => 'Bundle deleted',
     'goods_receipt_created' => 'Goods receipt created successfully',
+    'goods_receipt_updated' => 'Goods receipt updated successfully',
+    'goods_issue_created' => 'Dispatch note created successfully',
+    'goods_issue_updated' => 'Dispatch note updated successfully',
 
     // Bank Transactions
     'bank_transaction_created' => 'Payment recorded successfully',

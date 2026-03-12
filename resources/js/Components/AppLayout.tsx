@@ -18,6 +18,7 @@ import {
     Landmark,
     Warehouse,
     ClipboardCheck,
+    PackageMinus,
     Settings,
     LogOut,
     Menu,
@@ -142,6 +143,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/goods-receipts',
                     icon: ClipboardCheck,
                     active: currentPath.startsWith('/goods-receipts'),
+                },
+                {
+                    name: t('navigation.goods_issues'),
+                    href: '/goods-issues',
+                    icon: PackageMinus,
+                    active: currentPath.startsWith('/goods-issues'),
                 },
                 {
                     name: t('navigation.expenses'),
