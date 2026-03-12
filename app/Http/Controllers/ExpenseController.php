@@ -74,7 +74,7 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $clients = $request->user()->clients()
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'company']);
 
         return Inertia::render('Expenses/Index', [
             'expenses' => $expenses,
