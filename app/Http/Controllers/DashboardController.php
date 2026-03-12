@@ -60,6 +60,7 @@ class DashboardController extends Controller
             $converter->convert($exp->amount, 'MKD', $displayCurrency, $exp->date)
         );
 
+
         $totalClients = $user->clients()->count();
 
         // Monthly revenue + expenses for chart
@@ -85,6 +86,7 @@ class DashboardController extends Controller
             $expenses = $monthExpenses->sum(fn ($exp) =>
                 $converter->convert($exp->amount, 'MKD', $displayCurrency, $exp->date)
             );
+
 
             $monthlyData[] = [
                 'month' => $current->translatedFormat('M Y'),

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ExpenseCategory extends Model
 {
     protected $fillable = [
+        'user_id',
         'name',
         'color',
         'sort_order',

@@ -53,16 +53,17 @@ import {
     X,
 } from 'lucide-react';
 import { Textarea } from '@/Components/ui/textarea';
-import type { Expense, ExpenseCategory, RecurringExpense, IncomingInvoice, Client } from '@/types';
+import type { Expense, ExpenseCategory, RecurringExpense, IncomingInvoice, SpendingAnalysisItem, Client } from '@/types';
 
 interface ExpensesIndexProps {
     expenses: Expense[];
     recurringExpenses: RecurringExpense[];
     categories: ExpenseCategory[];
     incomingInvoices: IncomingInvoice[];
-    clients: Pick<Client, 'id' | 'name'>[];
+    clients: Pick<Client, 'id' | 'name' | 'company'>[];
     unpaidIncomingTotal: number;
     paidIncomingTotal: number;
+    spendingAnalysis: SpendingAnalysisItem[];
     month: string;
     tab: string;
     monthlyTotal: number;
@@ -116,6 +117,7 @@ export default function ExpensesIndex({
     clients,
     unpaidIncomingTotal,
     paidIncomingTotal,
+    spendingAnalysis,
     month,
     tab,
     monthlyTotal,
@@ -175,6 +177,7 @@ export default function ExpensesIndex({
         status: 'unpaid' as 'unpaid' | 'paid',
         paid_date: '',
         notes: '',
+        items: [] as Array<{ description: string; quantity: string; unit_price: string; tax_rate: string }>,
     });
     const [incomingErrors, setIncomingErrors] = useState<Record<string, string>>({});
     const [incomingLoading, setIncomingLoading] = useState(false);
@@ -351,6 +354,12 @@ export default function ExpensesIndex({
                 status: incoming.status,
                 paid_date: incoming.paid_date || '',
                 notes: incoming.notes || '',
+                items: incoming.items?.map(item => ({
+                    description: item.description,
+                    quantity: String(item.quantity),
+                    unit_price: String(item.unit_price),
+                    tax_rate: String(item.tax_rate),
+                })) || [],
             });
         } else {
             setEditingIncoming(null);
@@ -368,21 +377,53 @@ export default function ExpensesIndex({
                 status: 'unpaid',
                 paid_date: '',
                 notes: '',
+                items: [] as Array<{ description: string; quantity: string; unit_price: string; tax_rate: string }>,
             });
         }
         setIncomingErrors({});
         setIncomingDialogOpen(true);
     };
 
+    const incomingItemsTotal = incomingForm.items.reduce((sum, item) => {
+        const subtotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
+        const tax = subtotal * ((parseFloat(item.tax_rate) || 0) / 100);
+        return sum + subtotal + tax;
+    }, 0);
+
+    const addIncomingItem = () => {
+        setIncomingForm(prev => ({
+            ...prev,
+            items: [...prev.items, { description: '', quantity: '1', unit_price: '', tax_rate: '18' }],
+        }));
+    };
+
+    const removeIncomingItem = (index: number) => {
+        setIncomingForm(prev => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index),
+        }));
+    };
+
+    const updateIncomingItem = (index: number, field: string, value: string) => {
+        setIncomingForm(prev => {
+            const newItems = [...prev.items];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return { ...prev, items: newItems };
+        });
+    };
+
     const submitIncoming = () => {
         setIncomingLoading(true);
+        const hasItems = incomingForm.items.length > 0;
         const data = {
             ...incomingForm,
+            amount: hasItems ? incomingItemsTotal.toFixed(2) : incomingForm.amount,
             client_id: incomingForm.client_id || null,
             due_date: incomingForm.due_date || null,
             paid_date: incomingForm.paid_date || null,
             notes: incomingForm.notes || null,
             invoice_number: incomingForm.invoice_number || null,
+            items: hasItems ? incomingForm.items : null,
         };
 
         const url = editingIncoming
@@ -814,6 +855,34 @@ export default function ExpensesIndex({
                             </Card>
                         </div>
 
+                        {spendingAnalysis.length > 0 && (
+                            <Card className="mb-6">
+                                <div className="p-4 border-b">
+                                    <h3 className="font-semibold text-gray-900">{t('expenses.spending_analysis')}</h3>
+                                </div>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('expenses.item_description')}</TableHead>
+                                            <TableHead className="text-center">{t('expenses.occurrence_count')}</TableHead>
+                                            <TableHead className="text-right">{t('expenses.total_spent')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {spendingAnalysis.map((item, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell className="font-medium capitalize">{item.description}</TableCell>
+                                                <TableCell className="text-center">{item.count}</TableCell>
+                                                <TableCell className="text-right font-medium">
+                                                    {formatNumber(item.total_amount, 2)} ден.
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </Card>
+                        )}
+
                         <Card>
                             <div className="flex items-center justify-between p-4 border-b">
                                 <h3 className="font-semibold text-gray-900">{t('expenses.tab_incoming')}</h3>
@@ -1152,7 +1221,7 @@ export default function ExpensesIndex({
 
             {/* Incoming Invoice Dialog */}
             <Dialog open={incomingDialogOpen} onOpenChange={setIncomingDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             {editingIncoming ? t('expenses.edit_incoming') : t('expenses.add_incoming')}
@@ -1198,16 +1267,105 @@ export default function ExpensesIndex({
                                 onChange={(e) => setIncomingForm({ ...incomingForm, invoice_number: e.target.value })}
                             />
                         </div>
+                        {/* Line Items */}
+                        <div className="border rounded-lg p-3 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">{t('expenses.line_items')}</Label>
+                                <Button type="button" variant="outline" size="sm" onClick={addIncomingItem} className="gap-1 h-7 text-xs">
+                                    <Plus className="w-3 h-3" />
+                                    {t('expenses.add_item')}
+                                </Button>
+                            </div>
+                            {incomingForm.items.length > 0 && (
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-[2fr_1fr_1fr_80px_1fr_32px] gap-2 text-xs text-gray-500 font-medium px-1">
+                                        <span>{t('expenses.item_description')}</span>
+                                        <span>{t('expenses.quantity')}</span>
+                                        <span>{t('expenses.unit_price')}</span>
+                                        <span>{t('expenses.tax_rate')}</span>
+                                        <span className="text-right">{t('expenses.item_total')}</span>
+                                        <span></span>
+                                    </div>
+                                    {incomingForm.items.map((item, index) => {
+                                        const subtotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
+                                        const tax = subtotal * ((parseFloat(item.tax_rate) || 0) / 100);
+                                        return (
+                                        <div key={index} className="grid grid-cols-[2fr_1fr_1fr_80px_1fr_32px] gap-2 items-center">
+                                            <Input
+                                                value={item.description}
+                                                onChange={(e) => updateIncomingItem(index, 'description', e.target.value)}
+                                                placeholder={t('expenses.item_description')}
+                                                className="h-8 text-sm"
+                                            />
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                value={item.quantity}
+                                                onChange={(e) => updateIncomingItem(index, 'quantity', e.target.value)}
+                                                className="h-8 text-sm"
+                                            />
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={item.unit_price}
+                                                onChange={(e) => updateIncomingItem(index, 'unit_price', e.target.value)}
+                                                className="h-8 text-sm"
+                                            />
+                                            <Input
+                                                type="number"
+                                                step="1"
+                                                min="0"
+                                                max="100"
+                                                value={item.tax_rate}
+                                                onChange={(e) => updateIncomingItem(index, 'tax_rate', e.target.value)}
+                                                className="h-8 text-sm"
+                                            />
+                                            <div className="text-sm text-right font-medium text-gray-700">
+                                                {formatNumber(subtotal + tax, 2)}
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-red-500 hover:text-red-700"
+                                                onClick={() => removeIncomingItem(index)}
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+                                        );
+                                    })}
+                                    <div className="flex justify-end pt-2 border-t text-sm font-semibold text-gray-900 pr-12">
+                                        {t('expenses.items_total')}: {formatNumber(incomingItemsTotal, 2)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <Label className="mb-2 block">{t('expenses.amount')}</Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    value={incomingForm.amount}
-                                    onChange={(e) => setIncomingForm({ ...incomingForm, amount: e.target.value })}
-                                />
+                                {incomingForm.items.length > 0 ? (
+                                    <div>
+                                        <Input
+                                            type="number"
+                                            value={incomingItemsTotal.toFixed(2)}
+                                            disabled
+                                            className="mt-0"
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">{t('expenses.auto_calculated')}</p>
+                                    </div>
+                                ) : (
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0.01"
+                                        value={incomingForm.amount}
+                                        onChange={(e) => setIncomingForm({ ...incomingForm, amount: e.target.value })}
+                                    />
+                                )}
                                 {incomingErrors.amount && (
                                     <p className="text-sm text-red-600 mt-1">{incomingErrors.amount}</p>
                                 )}

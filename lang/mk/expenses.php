@@ -81,6 +81,22 @@ return [
     'mark_as_paid' => 'Означи платена',
     'mark_as_unpaid' => 'Означи неплатена',
 
+    // Line items
+    'line_items' => 'Ставки (опционално)',
+    'add_item' => 'Додај ставка',
+    'item_description' => 'Опис',
+    'quantity' => 'Кол.',
+    'unit_price' => 'Цена',
+    'tax_rate' => 'ДДВ %',
+    'item_total' => 'Вкупно',
+    'items_total' => 'Вкупен износ',
+    'auto_calculated' => 'Автоматски пресметано од ставки',
+
+    // Spending analysis
+    'spending_analysis' => 'Анализа на потрошувачка',
+    'occurrence_count' => 'Пати',
+    'total_spent' => 'Вкупно потрошено',
+
     // Empty states
     'no_expenses' => 'Нема трошоци',
     'no_expenses_description' => 'Додајте го вашиот прв трошок за овој месец.',

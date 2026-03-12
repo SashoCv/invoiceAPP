@@ -12,6 +12,7 @@ class Expense extends Model
         'category_id',
         'recurring_expense_id',
         'bank_transaction_id',
+        'incoming_invoice_id',
         'name',
         'description',
         'amount',

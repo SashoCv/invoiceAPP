@@ -312,6 +312,23 @@ export interface Expense {
     updated_at: string;
 }
 
+export interface IncomingInvoiceItem {
+    id?: number;
+    incoming_invoice_id?: number;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    tax_rate: number;
+    tax_amount: number;
+    total: number;
+}
+
+export interface SpendingAnalysisItem {
+    description: string;
+    total_amount: number;
+    count: number;
+}
+
 export interface IncomingInvoice {
     id: number;
     user_id: number;
@@ -326,6 +343,7 @@ export interface IncomingInvoice {
     paid_date: string | null;
     notes: string | null;
     client?: Client;
+    items?: IncomingInvoiceItem[];
     created_at: string;
     updated_at: string;
 }

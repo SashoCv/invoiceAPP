@@ -81,6 +81,22 @@ return [
     'mark_as_paid' => 'Mark as paid',
     'mark_as_unpaid' => 'Mark as unpaid',
 
+    // Line items
+    'line_items' => 'Line Items (optional)',
+    'add_item' => 'Add Item',
+    'item_description' => 'Description',
+    'quantity' => 'Qty',
+    'unit_price' => 'Price',
+    'tax_rate' => 'VAT %',
+    'item_total' => 'Total',
+    'items_total' => 'Total Amount',
+    'auto_calculated' => 'Auto-calculated from items',
+
+    // Spending analysis
+    'spending_analysis' => 'Spending Analysis',
+    'occurrence_count' => 'Times',
+    'total_spent' => 'Total Spent',
+
     // Empty states
     'no_expenses' => 'No expenses',
     'no_expenses_description' => 'Add your first expense for this month.',

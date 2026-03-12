@@ -8,6 +8,7 @@ use App\Models\IncomingInvoice;
 use App\Models\RecurringExpense;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -57,9 +58,18 @@ class ExpenseController extends Controller implements HasMiddleware
         $monthlyTotal = $expenses->sum('amount');
 
         $incomingInvoices = $request->user()->incomingInvoices()
-            ->with('client')
+            ->with(['client', 'items'])
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->orderBy('date', 'desc')
+            ->get();
+
+        $spendingAnalysis = DB::table('incoming_invoice_items')
+            ->join('incoming_invoices', 'incoming_invoices.id', '=', 'incoming_invoice_items.incoming_invoice_id')
+            ->where('incoming_invoices.user_id', $request->user()->id)
+            ->whereBetween('incoming_invoices.date', [$startOfMonth, $endOfMonth])
+            ->selectRaw('LOWER(incoming_invoice_items.description) as description, SUM(incoming_invoice_items.total) as total_amount, COUNT(*) as count')
+            ->groupByRaw('LOWER(incoming_invoice_items.description)')
+            ->orderByDesc('total_amount')
             ->get();
 
         $unpaidIncomingTotal = $request->user()->incomingInvoices()
@@ -84,6 +94,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'clients' => $clients,
             'unpaidIncomingTotal' => (float) $unpaidIncomingTotal,
             'paidIncomingTotal' => (float) $paidIncomingTotal,
+            'spendingAnalysis' => $spendingAnalysis,
             'month' => $month,
             'tab' => $tab,
             'monthlyTotal' => (float) $monthlyTotal,
@@ -261,22 +272,66 @@ class ExpenseController extends Controller implements HasMiddleware
 
     // --- Incoming Invoices ---
 
+    private function syncIncomingExpense(IncomingInvoice $invoice): void
+    {
+        $category = ExpenseCategory::firstOrCreate(
+            ['user_id' => $invoice->user_id, 'name' => 'Влезни фактури'],
+            ['user_id' => $invoice->user_id, 'color' => '#f59e0b'],
+        );
+
+        $name = $invoice->supplier_name;
+        if ($invoice->invoice_number) {
+            $name .= ' #' . $invoice->invoice_number;
+        }
+        if ($invoice->client_id) {
+            $client = $invoice->client;
+            if ($client) {
+                $name .= ' - ' . ($client->company ?: $client->name);
+            }
+        }
+
+        Expense::updateOrCreate(
+            ['incoming_invoice_id' => $invoice->id],
+            [
+                'user_id' => $invoice->user_id,
+                'category_id' => $category->id,
+                'name' => $name,
+                'amount' => $invoice->amount,
+                'date' => $invoice->date,
+            ],
+        );
+    }
+
     public function storeIncoming(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'supplier_name' => ['required', 'string', 'max:255'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required_without:items', 'nullable', 'numeric', 'min:0.01'],
             'currency' => ['required', 'string', 'max:3'],
             'date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['required', 'in:unpaid,paid'],
             'paid_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
+            'items' => ['nullable', 'array'],
+            'items.*.description' => ['required_with:items', 'string', 'max:255'],
+            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0.01'],
+            'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        $request->user()->incomingInvoices()->create($validated);
+        $invoice = $request->user()->incomingInvoices()->create($validated);
+
+        if (!empty($validated['items'])) {
+            foreach ($validated['items'] as $item) {
+                $invoice->items()->create($item);
+            }
+            $invoice->update(['amount' => $invoice->items()->sum('total')]);
+        }
+
+        $this->syncIncomingExpense($invoice);
 
         $month = Carbon::parse($validated['date'])->format('Y-m');
 
@@ -292,16 +347,31 @@ class ExpenseController extends Controller implements HasMiddleware
             'supplier_name' => ['required', 'string', 'max:255'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => ['required_without:items', 'nullable', 'numeric', 'min:0.01'],
             'currency' => ['required', 'string', 'max:3'],
             'date' => ['required', 'date'],
             'due_date' => ['nullable', 'date'],
             'status' => ['required', 'in:unpaid,paid'],
             'paid_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
+            'items' => ['nullable', 'array'],
+            'items.*.description' => ['required_with:items', 'string', 'max:255'],
+            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0.01'],
+            'items.*.unit_price' => ['required_with:items', 'numeric', 'min:0'],
+            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $incomingInvoice->update($validated);
+
+        $incomingInvoice->items()->delete();
+        if (!empty($validated['items'])) {
+            foreach ($validated['items'] as $item) {
+                $incomingInvoice->items()->create($item);
+            }
+            $incomingInvoice->update(['amount' => $incomingInvoice->items()->sum('total')]);
+        }
+
+        $this->syncIncomingExpense($incomingInvoice);
 
         $month = Carbon::parse($validated['date'])->format('Y-m');
 
@@ -314,6 +384,7 @@ class ExpenseController extends Controller implements HasMiddleware
         $this->authorize('delete', $incomingInvoice);
 
         $month = $incomingInvoice->date->format('Y-m');
+        Expense::where('incoming_invoice_id', $incomingInvoice->id)->delete();
         $incomingInvoice->delete();
 
         return redirect()->route('expenses.index', ['month' => $month, 'tab' => 'incoming'])
