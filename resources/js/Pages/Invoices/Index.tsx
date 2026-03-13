@@ -345,7 +345,7 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <span className="text-sm font-medium text-gray-900">
-                                                    {formatNumber(invoice.total, 2)} {invoice.currency || 'MKD'}
+                                                    {formatNumber(invoice.total, (invoice.currency || 'MKD') === 'MKD' ? 0 : 2)} {invoice.currency || 'MKD'}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">

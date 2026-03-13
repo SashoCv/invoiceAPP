@@ -21,6 +21,8 @@ const getCurrencySymbol = (currency: string): string => {
     return symbols[currency] || currency;
 };
 
+const getCurrencyDecimals = (currency: string): number => currency === 'MKD' ? 0 : 2;
+
 const getStatusLabel = (status: string): string => {
     const labels: Record<string, string> = {
         draft: 'Нацрт',
@@ -196,7 +198,7 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                         <span>ДДВ:</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
                                     </div>
                                     <div className="flex justify-between text-lg font-bold text-blue-800 py-2 border-t-2 border-blue-800 mt-2">
-                                        <span>ВКУПНО:</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
+                                        <span>ВКУПНО:</span><span>{formatNumber(document.total, getCurrencyDecimals(document.currency))} {currencySymbol}</span>
                                     </div>
                                 </>
                             );
@@ -210,7 +212,7 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                 <div className="flex justify-end mb-8">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4">
                         <div className="text-sm text-blue-600 mb-1">Вкупна вредност</div>
-                        <div className="text-2xl font-bold text-blue-800">{formatNumber(document.total, 2)} {currencySymbol}</div>
+                        <div className="text-2xl font-bold text-blue-800">{formatNumber(document.total, getCurrencyDecimals(document.currency))} {currencySymbol}</div>
                     </div>
                 </div>
             )}
@@ -306,7 +308,7 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                     </div>
                     <div className="bg-white rounded-xl shadow-lg p-5">
                         <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">Износ</div>
-                        <div className="font-bold text-2xl text-gray-900">{formatNumber(document.total, 2)}</div>
+                        <div className="font-bold text-2xl text-gray-900">{formatNumber(document.total, getCurrencyDecimals(document.currency))}</div>
                         <div className="text-sm text-gray-500">{currencySymbol}</div>
                     </div>
                 </div>
@@ -385,7 +387,7 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                                     <span>ДДВ</span><span>{formatNumber(document.tax_amount, 2)} {currencySymbol}</span>
                                                 </div>
                                                 <div className="flex justify-between text-xl font-bold text-purple-600 pt-2 border-t border-purple-200">
-                                                    <span>Вкупно</span><span>{formatNumber(document.total, 2)} {currencySymbol}</span>
+                                                    <span>Вкупно</span><span>{formatNumber(document.total, getCurrencyDecimals(document.currency))} {currencySymbol}</span>
                                                 </div>
                                             </>
                                         );
@@ -561,7 +563,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                     </div>
                                     <div className="flex justify-between py-4 border-t border-gray-900 mt-2">
                                         <span className="text-xs uppercase tracking-[0.2em] text-gray-400">Вкупно</span>
-                                        <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, 2)} <span className="text-sm">{currencySymbol}</span></span>
+                                        <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, getCurrencyDecimals(document.currency))} <span className="text-sm">{currencySymbol}</span></span>
                                     </div>
                                 </>
                             );
@@ -575,7 +577,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                 <div className="flex justify-end mb-16">
                     <div className="border-t border-gray-900 pt-4">
                         <span className="text-xs uppercase tracking-[0.2em] text-gray-400 mr-8">Вкупна вредност</span>
-                        <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, 2)} <span className="text-sm">{currencySymbol}</span></span>
+                        <span className="text-2xl font-light text-gray-900">{formatNumber(document.total, getCurrencyDecimals(document.currency))} <span className="text-sm">{currencySymbol}</span></span>
                     </div>
                 </div>
             )}
@@ -774,7 +776,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <tr>
                                         <td colSpan={4}></td>
                                         <td className="py-2 px-2 font-bold text-[11px]">Вкупно за наплата денари:</td>
-                                        <td className="py-2 px-2 text-right font-bold text-[11px]">{formatNumber(totalWithVat, 2)}</td>
+                                        <td className="py-2 px-2 text-right font-bold text-[11px]">{formatNumber(totalWithVat, getCurrencyDecimals(document.currency))}</td>
                                     </tr>
                                 </tbody>
                             </table>

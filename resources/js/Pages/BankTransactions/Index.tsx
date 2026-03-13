@@ -463,7 +463,7 @@ export default function BankTransactionsIndex({
                                     <SelectItem value="none">{t('bank_transactions.no_invoice')}</SelectItem>
                                     {unpaidInvoices.map((invoice) => (
                                         <SelectItem key={invoice.id} value={String(invoice.id)}>
-                                            {invoice.invoice_number} - {invoice.client?.name} ({formatNumber(invoice.total)} {invoice.currency})
+                                            {invoice.invoice_number} - {invoice.client?.name} ({formatNumber(invoice.total, invoice.currency === 'MKD' ? 0 : 2)} {invoice.currency})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

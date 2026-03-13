@@ -77,6 +77,11 @@ class Invoice extends Model
         });
         $this->tax_amount = $this->items->sum('tax_amount');
         $this->total = $this->subtotal + $this->tax_amount;
+
+        if ($this->currency === 'MKD') {
+            $this->total = round($this->total);
+        }
+
         $this->save();
     }
 

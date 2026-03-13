@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\InvoiceMail;
+use Illuminate\Database\UniqueConstraintViolationException;
 use App\Models\Article;
 use App\Models\Bundle;
 use App\Models\Invoice;
@@ -157,22 +158,28 @@ class InvoiceController extends Controller implements HasMiddleware
             ]);
         }
 
-        $invoice = $request->user()->invoices()->create([
-            'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
-            'invoice_prefix' => $validated['invoice_prefix'],
-            'invoice_sequence' => $validated['invoice_sequence'],
-            'invoice_year' => $invoiceYear,
-            'client_id' => $validated['client_id'],
-            'currency' => $validated['currency'],
-            'issue_date' => $validated['issue_date'],
-            'due_date' => $validated['due_date'],
-            'tax_rate' => 0,
-            'notes' => $validated['notes'],
-            'status' => 'draft',
-            'subtotal' => 0,
-            'tax_amount' => 0,
-            'total' => 0,
-        ]);
+        try {
+            $invoice = $request->user()->invoices()->create([
+                'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
+                'invoice_prefix' => $validated['invoice_prefix'],
+                'invoice_sequence' => $validated['invoice_sequence'],
+                'invoice_year' => $invoiceYear,
+                'client_id' => $validated['client_id'],
+                'currency' => $validated['currency'],
+                'issue_date' => $validated['issue_date'],
+                'due_date' => $validated['due_date'],
+                'tax_rate' => 0,
+                'notes' => $validated['notes'],
+                'status' => 'draft',
+                'subtotal' => 0,
+                'tax_amount' => 0,
+                'total' => 0,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return back()->withInput()->withErrors([
+                'invoice_sequence' => __('invoices.duplicate_number_error'),
+            ]);
+        }
 
         foreach ($validated['items'] as $item) {
             $invoice->items()->create([

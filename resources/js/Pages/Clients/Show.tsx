@@ -227,7 +227,7 @@ export default function ShowClient({ client, invoices, stats, articleBreakdown }
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">
-                                                    {formatNumber(invoice.total, 2)} {invoice.currency}
+                                                    {formatNumber(invoice.total, invoice.currency === 'MKD' ? 0 : 2)} {invoice.currency}
                                                 </TableCell>
                                             </TableRow>
                                         ))}

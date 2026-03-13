@@ -304,7 +304,7 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                                         {t('invoices.total')}:
                                     </TableCell>
                                     <TableCell className="text-right text-lg font-bold whitespace-nowrap">
-                                        {formatNumber(invoice.total, 2)} {invoice.currency}
+                                        {formatNumber(invoice.total, invoice.currency === 'MKD' ? 0 : 2)} {invoice.currency}
                                     </TableCell>
                                 </TableRow>
                             </TableFooter>
