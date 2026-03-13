@@ -26,6 +26,7 @@ import {
     ArrowLeft,
     CalendarPlus,
     Ban,
+    Eye,
 } from 'lucide-react';
 
 interface UserData {
@@ -79,6 +80,10 @@ export default function UserShow({ userData }: Props) {
 
     const handleToggleAdmin = () => {
         router.post(`/admin/users/${userData.id}/toggle-admin`);
+    };
+
+    const handleImpersonate = () => {
+        router.post(`/admin/users/${userData.id}/impersonate`);
     };
 
     return (
@@ -161,6 +166,15 @@ export default function UserShow({ userData }: Props) {
 
                         {userData.role !== 'admin' && (
                             <div className="pt-4 space-y-2 border-t">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                                    onClick={handleImpersonate}
+                                >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    {t('admin.impersonate')}
+                                </Button>
                                 <Button
                                     size="sm"
                                     className="w-full"

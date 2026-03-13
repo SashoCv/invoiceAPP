@@ -408,6 +408,7 @@ export interface PageProps {
         isAdmin: boolean;
         subscription: SubscriptionInfo | null;
     };
+    impersonating: boolean;
     flash: FlashMessages;
     locale: string;
     translations: Record<string, Record<string, string>>;

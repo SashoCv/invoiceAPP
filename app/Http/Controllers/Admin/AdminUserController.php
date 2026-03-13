@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -211,5 +212,28 @@ class AdminUserController extends Controller
         $user->delete();
 
         return back()->with('success', __('admin.user_deleted'));
+    }
+
+    public function impersonate(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return back()->with('error', __('admin.cannot_impersonate_self'));
+        }
+
+        $request->session()->put('impersonating_from', $request->user()->id);
+        Auth::login($user);
+
+        return redirect()->route('dashboard');
+    }
+
+    public static function stopImpersonating(Request $request): RedirectResponse
+    {
+        $adminId = $request->session()->pull('impersonating_from');
+
+        if ($adminId) {
+            Auth::login(User::findOrFail($adminId));
+        }
+
+        return redirect()->route('admin.dashboard');
     }
 }

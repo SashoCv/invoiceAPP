@@ -44,7 +44,7 @@ interface NavSection {
 
 export default function AppLayout({ children }: PropsWithChildren) {
     const { t, locale } = useTranslation();
-    const { auth, flash } = usePage<PageProps>().props;
+    const { auth, flash, impersonating } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [calcOpen, setCalcOpen] = useState(false);
     const { toast } = useToast();
@@ -365,8 +365,26 @@ export default function AppLayout({ children }: PropsWithChildren) {
                         </span>
                     </header>
 
+                    {/* Impersonation banner */}
+                    {impersonating && (
+                        <div className="bg-indigo-600 px-6 py-2.5">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm text-white">
+                                    <Shield className="w-4 h-4 inline mr-2" />
+                                    {t('admin.impersonating_banner', { name: auth.user?.name ?? '' })}
+                                </p>
+                                <button
+                                    onClick={() => router.post('/admin/stop-impersonating')}
+                                    className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md bg-white text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                >
+                                    {t('admin.stop_impersonating')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Expired subscription banner */}
-                    {!subscriptionActive && !isAdmin && (
+                    {!subscriptionActive && !isAdmin && !impersonating && (
                         <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
                             <div className="flex items-center gap-3">
                                 <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />

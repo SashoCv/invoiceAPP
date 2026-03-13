@@ -92,4 +92,10 @@ return [
     'status_sent' => 'Испратена',
     'status_failed' => 'Неуспешна',
     'no_notifications' => 'Нема испратени нотификации.',
+
+    // Имперсонација
+    'impersonate' => 'Најави се како корисник',
+    'cannot_impersonate_self' => 'Не можете да се имперсонирате себеси.',
+    'impersonating_banner' => 'Најавени сте како :name.',
+    'stop_impersonating' => 'Назад кон Админ',
 ];

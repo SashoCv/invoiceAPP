@@ -182,9 +182,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/users/{user}/toggle-admin', [AdminUserController::class, 'toggleAdmin'])->name('users.toggle-admin');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
+    Route::post('/users/{user}/impersonate', [AdminUserController::class, 'impersonate'])->name('users.impersonate');
+
     Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/create', [AdminNotificationController::class, 'create'])->name('notifications.create');
     Route::post('/notifications', [AdminNotificationController::class, 'store'])->name('notifications.store');
 });
+
+// Stop impersonation (outside admin middleware - the impersonated user is not admin)
+Route::post('/admin/stop-impersonating', [AdminUserController::class, 'stopImpersonating'])
+    ->middleware('auth')
+    ->name('admin.stop-impersonating');
 
 require __DIR__.'/auth.php';

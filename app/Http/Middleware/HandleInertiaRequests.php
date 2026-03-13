@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'daysRemaining' => $user->daysRemaining(),
                 ] : null,
             ],
+            'impersonating' => $request->session()->has('impersonating_from'),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -92,4 +92,10 @@ return [
     'status_sent' => 'Sent',
     'status_failed' => 'Failed',
     'no_notifications' => 'No notifications sent yet.',
+
+    // Impersonation
+    'impersonate' => 'Login as User',
+    'cannot_impersonate_self' => 'You cannot impersonate yourself.',
+    'impersonating_banner' => 'You are logged in as :name.',
+    'stop_impersonating' => 'Back to Admin',
 ];
