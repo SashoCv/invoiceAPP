@@ -38,7 +38,7 @@ class AgencyController extends Controller implements HasMiddleware
             'country' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
-            'website' => ['nullable', 'url', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
             'tax_number' => ['nullable', 'string', 'max:50'],
             'registration_number' => ['nullable', 'string', 'max:50'],
             'display_currency' => ['nullable', 'string', 'in:MKD,EUR,USD'],
