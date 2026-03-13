@@ -305,7 +305,7 @@ class ExpenseController extends Controller implements HasMiddleware
     public function storeIncoming(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'supplier_name' => ['required', 'string', 'max:255'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
             'amount' => ['required_without:items', 'nullable', 'numeric', 'min:0.01'],
@@ -344,7 +344,7 @@ class ExpenseController extends Controller implements HasMiddleware
         $this->authorize('update', $incomingInvoice);
 
         $validated = $request->validate([
-            'supplier_name' => ['required', 'string', 'max:255'],
+            'supplier_name' => ['nullable', 'string', 'max:255'],
             'client_id' => ['nullable', 'exists:clients,id'],
             'invoice_number' => ['nullable', 'string', 'max:255'],
             'amount' => ['required_without:items', 'nullable', 'numeric', 'min:0.01'],
