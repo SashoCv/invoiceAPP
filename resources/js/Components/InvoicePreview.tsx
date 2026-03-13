@@ -659,7 +659,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
     const totalTax = tax5Amount + tax18Amount;
 
     return (
-        <div className="p-8 text-[11px] leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div className="p-8 text-[9px] leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
             {/* Header: Company info top-right */}
             <div className="flex justify-between items-start mb-6">
                 <div className="w-1/3">
@@ -667,10 +667,10 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                         <img src={`/storage/${agency.logo}`} alt="Logo" className="mb-2" style={{ maxHeight: '100px', maxWidth: '180px' }} />
                     )}
                 </div>
-                <div className="text-right text-[10px] leading-snug">
+                <div className="text-right text-[8px] leading-snug">
                     {agency && (
                         <>
-                            <div className="font-bold text-[12px] mb-1">{agency.name}</div>
+                            <div className="font-bold text-[10px] mb-1">{agency.name}</div>
                             {agency.address && <span>{agency.address} {agency.city || ''}</span>}
                             {agency.phone && <span> Телефон: {agency.phone}</span>}
                             {agency.email && <><br />email: {agency.email}</>}
@@ -690,8 +690,8 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                     {document.client?.city && <div>{document.client.postal_code && `${document.client.postal_code} `}{document.client.city}</div>}
                 </div>
                 <div className="text-right">
-                    <div className="text-[22px] font-bold mb-2">{titles[type]}</div>
-                    <table className="ml-auto text-[11px]">
+                    <div className="text-[20px] font-bold mb-2">{titles[type]}</div>
+                    <table className="ml-auto text-[9px]">
                         <tbody>
                             <tr><td className="pr-4 font-bold">Сериски број</td><td className="font-bold">{getDocumentNumber()}</td></tr>
                             <tr><td className="pr-4">Датум:</td><td className="font-bold">{formatDate(document.issue_date)}</td></tr>
@@ -704,7 +704,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             {/* Items Table */}
             {hasItems && itemsData.length > 0 && (
                 <>
-                    <table className="w-full text-[10px] mb-1">
+                    <table className="w-full text-[8px] mb-1">
                         <thead>
                             <tr className="border-t border-b border-black">
                                 <th className="text-left py-2 px-1 font-bold w-[4%]">Рб</th>
@@ -734,7 +734,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                     </table>
 
                     {/* Closing row number */}
-                    <div className="text-[10px] mb-4 mt-2 italic">
+                    <div className="text-[8px] mb-4 mt-2 italic">
                         Заклучно со реден број {itemsData.length}.
                     </div>
 
@@ -748,14 +748,14 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
 
                     {/* Tax breakdown and payment */}
                     <div className="flex justify-between items-end mt-4">
-                        <div className="text-[10px]">
+                        <div className="text-[8px]">
                             <div className="mb-1"><span className="font-bold">Рок за плаќање:</span></div>
                             <div className="font-bold">
                                 {getDueDate() && getDueDate() !== document.issue_date ? formatDate(getDueDate()) : 'Веднаш'}
                             </div>
                         </div>
                         <div>
-                            <table className="text-[10px] border-collapse">
+                            <table className="text-[8px] border-collapse">
                                 <tbody>
                                     <tr className="border-t border-b border-black">
                                         <td className="py-1 px-2">Осн. 5%:</td>
@@ -775,8 +775,8 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     </tr>
                                     <tr>
                                         <td colSpan={4}></td>
-                                        <td className="py-2 px-2 font-bold text-[11px]">Вкупно за наплата денари:</td>
-                                        <td className="py-2 px-2 text-right font-bold text-[11px]">{formatNumber(totalWithVat, getCurrencyDecimals(document.currency))}</td>
+                                        <td className="py-2 px-2 font-bold text-[9px]">Вкупно за наплата денари:</td>
+                                        <td className="py-2 px-2 text-right font-bold text-[9px]">{formatNumber(totalWithVat, getCurrencyDecimals(document.currency))}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -787,13 +787,13 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
 
             {/* Notes */}
             {document.notes && (
-                <div className="mt-4 mb-4 text-[10px]">
+                <div className="mt-4 mb-4 text-[8px]">
                     <span className="font-bold">Забелешка:</span> {document.notes}
                 </div>
             )}
 
             {/* Signatures */}
-            <div className="flex justify-between mt-16 pt-4 text-[10px]">
+            <div className="flex justify-between mt-16 pt-4 text-[8px]">
                 <div className="text-center">
                     <div className="border-t border-black w-40 mb-1" />
                     <div>Примил</div>

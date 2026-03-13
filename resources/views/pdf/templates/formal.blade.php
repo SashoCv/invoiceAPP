@@ -52,9 +52,9 @@
             <img src="{{ public_path('storage/' . $agency->logo) }}" alt="Logo" style="max-height: 100px; max-width: 180px; margin-bottom: 5px;">
         @endif
     </div>
-    <div class="header-right" style="text-align: right; font-size: 9pt;">
+    <div class="header-right" style="text-align: right; font-size: 7pt;">
         @if($agency)
-            <div style="font-weight: bold; font-size: 10pt; margin-bottom: 3px;">{{ $agency->name }}</div>
+            <div style="font-weight: bold; font-size: 8pt; margin-bottom: 3px;">{{ $agency->name }}</div>
             @if($agency->address){{ $agency->address }} {{ $agency->city ?? '' }}@endif
             @if($agency->phone) Телефон: {{ $agency->phone }}@endif
             @if($agency->email)<br>email: {{ $agency->email }}@endif
@@ -73,8 +73,8 @@
         @if($client->postal_code || $client->city)<div>{{ $client->postal_code }} {{ $client->city }}</div>@endif
     </div>
     <div style="display: table-cell; width: 50%; vertical-align: top; text-align: right;">
-        <div style="font-size: 18pt; font-weight: bold; margin-bottom: 8px;">{{ $docTitle }}</div>
-        <table style="margin-left: auto; font-size: 9pt;">
+        <div style="font-size: 16pt; font-weight: bold; margin-bottom: 8px;">{{ $docTitle }}</div>
+        <table style="margin-left: auto; font-size: 7pt;">
             <tr>
                 <td style="padding-right: 10px; font-weight: bold;">Сериски број</td>
                 <td style="font-weight: bold;">{{ $docNumber }}</td>
@@ -122,7 +122,7 @@
     </tbody>
 </table>
 
-<div style="font-size: 8pt; font-style: italic; margin-bottom: 10px;">
+<div style="font-size: 6pt; font-style: italic; margin-bottom: 10px;">
     Заклучно со реден број {{ count($itemsData) }}.
 </div>
 
@@ -134,7 +134,7 @@
 
 {{-- Tax breakdown --}}
 <div style="display: table; width: 100%; margin-top: 10px;">
-    <div style="display: table-cell; width: 40%; vertical-align: bottom; font-size: 9pt;">
+    <div style="display: table-cell; width: 40%; vertical-align: bottom; font-size: 7pt;">
         <div style="margin-bottom: 3px;">
             <span style="font-weight: bold;">Рок за плаќање:</span>
         </div>
@@ -147,7 +147,7 @@
         </div>
     </div>
     <div style="display: table-cell; width: 60%; vertical-align: top;">
-        <table style="width: 100%; font-size: 8pt; border-collapse: collapse;">
+        <table style="width: 100%; font-size: 6pt; border-collapse: collapse;">
             <tr style="border-top: 1px solid #000; border-bottom: 1px solid #000;">
                 <td style="padding: 4px;">Осн. 5%:</td>
                 <td style="padding: 4px; text-align: right;">{{ number_format($tax5Base, 2, ',', '.') }}</td>
@@ -166,8 +166,8 @@
             </tr>
             <tr>
                 <td colspan="4"></td>
-                <td style="padding: 6px 4px; font-weight: bold; font-size: 9pt;">Вкупно за наплата денари:</td>
-                <td style="padding: 6px 4px; text-align: right; font-weight: bold; font-size: 9pt;">{{ number_format($totalWithVat, $totalDecimals, ',', '.') }}</td>
+                <td style="padding: 6px 4px; font-weight: bold; font-size: 7pt;">Вкупно за наплата денари:</td>
+                <td style="padding: 6px 4px; text-align: right; font-weight: bold; font-size: 7pt;">{{ number_format($totalWithVat, $totalDecimals, ',', '.') }}</td>
             </tr>
         </table>
     </div>
@@ -176,13 +176,13 @@
 
 {{-- Notes --}}
 @if($notes)
-<div style="margin-top: 10px; font-size: 8pt;">
+<div style="margin-top: 10px; font-size: 6pt;">
     <span style="font-weight: bold;">Забелешка:</span> {{ $notes }}
 </div>
 @endif
 
 {{-- Signatures --}}
-<div style="display: table; width: 100%; margin-top: 60px; font-size: 9pt;">
+<div style="display: table; width: 100%; margin-top: 60px; font-size: 7pt;">
     <div style="display: table-cell; width: 33%; text-align: center;">
         <div style="border-top: 1px solid #000; width: 150px; margin: 0 auto 5px;"></div>
         <div>Примил</div>
