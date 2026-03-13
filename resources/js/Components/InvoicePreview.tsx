@@ -158,8 +158,8 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
                                 const discountAmount = subtotal * ((item.discount || 0) / 100);
-                                const afterDiscount = subtotal - discountAmount;
-                                const tax = afterDiscount * (item.tax_rate / 100);
+                                const afterDiscount = Math.round((subtotal - discountAmount) * 100) / 100;
+                                const tax = Math.round(afterDiscount * (item.tax_rate / 100) * 100) / 100;
                                 const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className={index % 2 === 1 ? 'bg-gray-50' : 'bg-white'}>
@@ -523,8 +523,8 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
                                 const discountAmount = subtotal * ((item.discount || 0) / 100);
-                                const afterDiscount = subtotal - discountAmount;
-                                const tax = afterDiscount * (item.tax_rate / 100);
+                                const afterDiscount = Math.round((subtotal - discountAmount) * 100) / 100;
+                                const tax = Math.round(afterDiscount * (item.tax_rate / 100) * 100) / 100;
                                 const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className="border-b border-gray-100">

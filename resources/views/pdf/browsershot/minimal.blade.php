@@ -77,8 +77,8 @@
                 @php
                     $itemSubtotal = $item->quantity * $item->unit_price;
                     $itemDiscount = $itemSubtotal * ($item->discount / 100);
-                    $afterDiscount = $itemSubtotal - $itemDiscount;
-                    $itemTax = $afterDiscount * ($item->tax_rate / 100);
+                    $afterDiscount = round($itemSubtotal - $itemDiscount, 2);
+                    $itemTax = round($afterDiscount * ($item->tax_rate / 100), 2);
                     $itemTotal = $afterDiscount + $itemTax;
                 @endphp
                 <tr class="border-b border-gray-100">
