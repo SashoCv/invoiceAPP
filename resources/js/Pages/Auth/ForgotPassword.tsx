@@ -22,12 +22,12 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
 
     return (
         <GuestLayout>
-            <Head title="Forgot Password" />
+            <Head title="Заборавена лозинка" />
 
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Reset password</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Ресетирај лозинка</h1>
                 <p className="mt-2 text-sm text-gray-500">
-                    Enter your email address and we&apos;ll send you a link to reset your password.
+                    Внесете ја вашата е-пошта и ќе ви испратиме линк за ресетирање на лозинката.
                 </p>
             </div>
 
@@ -39,7 +39,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
 
             <form onSubmit={submit} className="space-y-5">
                 <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Е-пошта</Label>
                     <div className="relative mt-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Mail className="h-4 w-4 text-gray-400" />
@@ -59,13 +59,13 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                 </div>
 
                 <Button className="w-full" size="lg" disabled={processing} loading={processing}>
-                    Send reset link
+                    Испрати линк за ресетирање
                 </Button>
 
                 <p className="text-center text-sm text-gray-500">
-                    Remember your password?{' '}
+                    Ја знаете лозинката?{' '}
                     <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
-                        Back to sign in
+                        Назад кон најава
                     </Link>
                 </p>
             </form>

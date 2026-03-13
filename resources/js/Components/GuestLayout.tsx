@@ -37,10 +37,10 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                     {/* Feature cards */}
                     <div className="space-y-6 max-w-md">
                         <h2 className="text-3xl font-bold text-white leading-tight">
-                            Manage your invoices with ease
+                            Управувајте со фактурите лесно
                         </h2>
                         <p className="text-blue-100/80 text-lg">
-                            Create, send, and track invoices, offers, and proforma invoices — all in one place.
+                            Креирајте, испраќајте и следете фактури, понуди и профактури — сè на едно место.
                         </p>
 
                         <div className="space-y-4 pt-4">
@@ -49,8 +49,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                                     <Receipt className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">Professional Invoices</p>
-                                    <p className="text-blue-200/70 text-sm">Beautiful templates, PDF export, email delivery</p>
+                                    <p className="text-white font-medium">Професионални фактури</p>
+                                    <p className="text-blue-200/70 text-sm">Убави шаблони, PDF извоз, испраќање по е-пошта</p>
                                 </div>
                             </div>
 
@@ -59,8 +59,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                                     <BarChart3 className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">Expense Tracking</p>
-                                    <p className="text-blue-200/70 text-sm">Track expenses, recurring costs, categories</p>
+                                    <p className="text-white font-medium">Следење на трошоци</p>
+                                    <p className="text-blue-200/70 text-sm">Следете трошоци, повторливи трошоци, категории</p>
                                 </div>
                             </div>
 
@@ -69,8 +69,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                                     <Warehouse className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">Inventory Management</p>
-                                    <p className="text-blue-200/70 text-sm">Stock tracking, bundles, warehouse dashboard</p>
+                                    <p className="text-white font-medium">Управување со залихи</p>
+                                    <p className="text-blue-200/70 text-sm">Следење на залихи, пакети, магацински преглед</p>
                                 </div>
                             </div>
 
@@ -79,8 +79,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                                     <TrendingUp className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">Dashboard Analytics</p>
-                                    <p className="text-blue-200/70 text-sm">Revenue insights, multi-currency support</p>
+                                    <p className="text-white font-medium">Аналитика</p>
+                                    <p className="text-blue-200/70 text-sm">Увид во приходи, поддршка за повеќе валути</p>
                                 </div>
                             </div>
                         </div>

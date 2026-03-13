@@ -28,18 +28,18 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
 
     return (
         <GuestLayout>
-            <Head title="Reset Password" />
+            <Head title="Ресетирај лозинка" />
 
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Поставете нова лозинка</h1>
                 <p className="mt-2 text-sm text-gray-500">
-                    Enter your new password below.
+                    Внесете ја вашата нова лозинка подолу.
                 </p>
             </div>
 
             <form onSubmit={submit} className="space-y-5">
                 <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Е-пошта</Label>
                     <div className="relative mt-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Mail className="h-4 w-4 text-gray-400" />
@@ -58,7 +58,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 </div>
 
                 <div>
-                    <Label htmlFor="password">New Password</Label>
+                    <Label htmlFor="password">Нова лозинка</Label>
                     <div className="relative mt-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Lock className="h-4 w-4 text-gray-400" />
@@ -69,7 +69,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             name="password"
                             value={data.password}
                             className="pl-10"
-                            placeholder="Enter new password"
+                            placeholder="Внесете нова лозинка"
                             autoComplete="new-password"
                             autoFocus
                             onChange={(e) => setData('password', e.target.value)}
@@ -79,7 +79,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 </div>
 
                 <div>
-                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                    <Label htmlFor="password_confirmation">Потврди лозинка</Label>
                     <div className="relative mt-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Lock className="h-4 w-4 text-gray-400" />
@@ -90,7 +90,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                             name="password_confirmation"
                             value={data.password_confirmation}
                             className="pl-10"
-                            placeholder="Confirm new password"
+                            placeholder="Потврдете ја новата лозинка"
                             autoComplete="new-password"
                             onChange={(e) =>
                                 setData('password_confirmation', e.target.value)
@@ -101,7 +101,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 </div>
 
                 <Button className="w-full" size="lg" disabled={processing} loading={processing}>
-                    Reset password
+                    Ресетирај лозинка
                 </Button>
             </form>
         </GuestLayout>

@@ -29,6 +29,7 @@ return [
     'filter_apply' => 'Filter',
     'filter_clear' => 'Clear',
     'total_income' => 'Total income',
+    'total' => 'Total',
     'select_invoice' => 'Select Invoice',
     'select_invoice_placeholder' => 'Link to invoice (optional)',
     'no_invoice' => 'No invoice',
@@ -39,4 +40,10 @@ return [
     'no_transactions' => 'No transactions',
     'no_transactions_description' => 'Start by recording your first bank transaction.',
     'export' => 'Export',
+    'add_item' => 'Add item',
+    'remove_item' => 'Remove item',
+    'item_number' => 'Item :number',
+    'batch_label' => 'Statement #:number',
+    'items_count' => ':count item|:count items',
+    'view_items' => 'View items',
 ];

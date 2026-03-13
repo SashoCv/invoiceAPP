@@ -360,11 +360,20 @@ export interface BankTransaction {
     date: string;
     description: string | null;
     reference: string | null;
+    batch_id: string;
     bank_account?: BankAccount;
     invoice?: Invoice;
     client?: Client;
     created_at: string;
     updated_at: string;
+}
+
+export interface BankTransactionBatch {
+    batch_id: string;
+    batch_number: number;
+    date: string;
+    bank_account: BankAccount | null;
+    items: BankTransaction[];
 }
 
 export interface ClientContract {

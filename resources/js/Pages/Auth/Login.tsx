@@ -28,12 +28,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Најава" />
 
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Добредојдовте</h1>
                 <p className="mt-2 text-sm text-gray-500">
-                    Sign in to your account to continue
+                    Најавете се на вашата сметка за да продолжите
                 </p>
             </div>
 
@@ -45,7 +45,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
             <form onSubmit={submit} className="space-y-5">
                 <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Е-пошта</Label>
                     <div className="relative mt-1">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Mail className="h-4 w-4 text-gray-400" />
@@ -67,13 +67,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                 <div>
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">Лозинка</Label>
                         {canResetPassword && (
                             <Link
                                 href="/forgot-password"
                                 className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                             >
-                                Forgot password?
+                                Заборавена лозинка?
                             </Link>
                         )}
                     </div>
@@ -87,7 +87,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             name="password"
                             value={data.password}
                             className="pl-10"
-                            placeholder="Enter your password"
+                            placeholder="Внесете ја лозинката"
                             autoComplete="current-password"
                             onChange={(e) => setData('password', e.target.value)}
                             error={errors.password}
@@ -104,18 +104,18 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         }
                     />
                     <Label htmlFor="remember" className="ml-2 cursor-pointer text-sm text-gray-600">
-                        Remember me
+                        Запомни ме
                     </Label>
                 </div>
 
                 <Button className="w-full" size="lg" disabled={processing} loading={processing}>
-                    Sign in
+                    Најави се
                 </Button>
 
                 <p className="text-center text-sm text-gray-500">
-                    Don&apos;t have an account?{' '}
+                    Немате сметка?{' '}
                     <Link href="/register" className="font-medium text-blue-600 hover:text-blue-700">
-                        Create one
+                        Креирајте една
                     </Link>
                 </p>
             </form>

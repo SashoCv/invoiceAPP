@@ -17,26 +17,26 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
 
     return (
         <GuestLayout>
-            <Head title="Email Verification" />
+            <Head title="Верификација на е-пошта" />
 
             <div className="mb-4 text-sm text-gray-600">
-                Thanks for signing up! Before getting started, could you verify
-                your email address by clicking on the link we just emailed to
-                you? If you didn't receive the email, we will gladly send you
-                another.
+                Ви благодариме за регистрацијата! Пред да започнете, ве молиме
+                верифицирајте ја вашата е-пошта со кликнување на линкот што ви
+                го испративме. Доколку не го добивте мејлот, со задоволство ќе
+                ви испратиме нов.
             </div>
 
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                    Нов линк за верификација е испратен на е-поштата што ја
+                    внесовте при регистрацијата.
                 </div>
             )}
 
             <form onSubmit={submit}>
                 <div className="mt-4 flex items-center justify-between">
                     <Button disabled={processing} loading={processing}>
-                        Resend Verification Email
+                        Испрати повторно
                     </Button>
 
                     <Link
@@ -45,7 +45,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
                         as="button"
                         className="text-sm text-gray-600 underline hover:text-gray-900"
                     >
-                        Log Out
+                        Одјави се
                     </Link>
                 </div>
             </form>

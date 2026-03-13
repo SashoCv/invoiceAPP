@@ -19,16 +19,16 @@ export default function ConfirmPassword() {
 
     return (
         <GuestLayout>
-            <Head title="Confirm Password" />
+            <Head title="Потврди лозинка" />
 
             <div className="mb-4 text-sm text-gray-600">
-                This is a secure area of the application. Please confirm your
-                password before continuing.
+                Ова е заштитен дел од апликацијата. Ве молиме потврдете ја
+                вашата лозинка пред да продолжите.
             </div>
 
             <form onSubmit={submit}>
                 <div>
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Лозинка</Label>
                     <Input
                         id="password"
                         type="password"
@@ -43,7 +43,7 @@ export default function ConfirmPassword() {
 
                 <div className="mt-4 flex items-center justify-end">
                     <Button disabled={processing} loading={processing}>
-                        Confirm
+                        Потврди
                     </Button>
                 </div>
             </form>

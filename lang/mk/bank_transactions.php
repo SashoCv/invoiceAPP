@@ -29,6 +29,7 @@ return [
     'filter_apply' => 'Филтрирај',
     'filter_clear' => 'Исчисти',
     'total_income' => 'Вкупен приход',
+    'total' => 'Вкупно',
     'select_invoice' => 'Избери фактура',
     'select_invoice_placeholder' => 'Поврзи со фактура (опционално)',
     'no_invoice' => 'Без фактура',
@@ -39,4 +40,10 @@ return [
     'no_transactions' => 'Нема трансакции',
     'no_transactions_description' => 'Започнете со евидентирање на првата банкарска трансакција.',
     'export' => 'Извези',
+    'add_item' => 'Додади ставка',
+    'remove_item' => 'Отстрани ставка',
+    'item_number' => 'Ставка :number',
+    'batch_label' => 'Извод #:number',
+    'items_count' => ':count ставка|:count ставки',
+    'view_items' => 'Прикажи ставки',
 ];

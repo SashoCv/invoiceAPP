@@ -8,8 +8,10 @@ use App\Models\Invoice;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,25 +28,24 @@ class BankTransactionController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = $request->user()->bankTransactions()
-            ->with(['bankAccount', 'invoice.client', 'client']);
+        $buildFilteredQuery = function () use ($request) {
+            $query = $request->user()->bankTransactions();
 
-        // Filters
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->date_from);
-        }
+            if ($request->filled('date_from')) {
+                $query->whereDate('date', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('date', '<=', $request->date_to);
+            }
+            if ($request->filled('bank_account')) {
+                $query->where('bank_account_id', $request->bank_account);
+            }
+            if ($request->filled('type')) {
+                $query->where('type', $request->type);
+            }
 
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->date_to);
-        }
-
-        if ($request->filled('bank_account')) {
-            $query->where('bank_account_id', $request->bank_account);
-        }
-
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
+            return $query;
+        };
 
         // Sorting
         $sortField = $request->get('sort', 'date');
@@ -53,9 +54,55 @@ class BankTransactionController extends Controller implements HasMiddleware
         if (!in_array($sortField, $allowedSorts)) {
             $sortField = 'date';
         }
-        $query->orderBy($sortField, $sortDirection === 'asc' ? 'asc' : 'desc');
 
-        $transactions = $query->paginate(20)->withQueryString();
+        // Count total batches
+        $totalBatches = $buildFilteredQuery()->distinct()->count('batch_id');
+
+        // Get paginated batch_ids
+        $page = max(1, (int) $request->get('page', 1));
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
+
+        $sortColumn = $sortField === 'amount' ? 'total_amount' : 'batch_date';
+        $paginatedBatchRows = $buildFilteredQuery()
+            ->selectRaw('batch_id, MAX(date) as batch_date, SUM(amount) as total_amount')
+            ->groupBy('batch_id')
+            ->orderBy($sortColumn, $sortDirection === 'asc' ? 'asc' : 'desc')
+            ->skip($offset)
+            ->take($perPage)
+            ->get();
+
+        $paginatedBatchIds = $paginatedBatchRows->pluck('batch_id');
+
+        // Fetch all transactions for these batches (unfiltered within batch)
+        $batchTransactions = $request->user()->bankTransactions()
+            ->with(['bankAccount', 'invoice.client', 'client'])
+            ->whereIn('batch_id', $paginatedBatchIds)
+            ->orderBy('id')
+            ->get()
+            ->groupBy('batch_id');
+
+        // Build batch data preserving sort order
+        $batchData = $paginatedBatchIds->map(function ($batchId) use ($batchTransactions) {
+            $items = $batchTransactions->get($batchId, collect());
+            $first = $items->first();
+            return [
+                'batch_id' => $batchId,
+                'batch_number' => $first?->batch_number,
+                'date' => $first?->date?->format('Y-m-d'),
+                'bank_account' => $first?->bankAccount,
+                'items' => $items->values(),
+            ];
+        })->values()->all();
+
+        // Create paginator
+        $batches = new LengthAwarePaginator(
+            $batchData,
+            $totalBatches,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         $bankAccounts = $request->user()->bankAccounts()->orderBy('bank_name')->get();
 
@@ -67,25 +114,30 @@ class BankTransactionController extends Controller implements HasMiddleware
 
         $clients = $request->user()->clients()->orderBy('name')->get();
 
-        // Calculate total income with same filters
-        $incomeQuery = $request->user()->bankTransactions()->where('type', 'income');
-        if ($request->filled('date_from')) {
-            $incomeQuery->whereDate('date', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $incomeQuery->whereDate('date', '<=', $request->date_to);
-        }
-        if ($request->filled('bank_account')) {
-            $incomeQuery->where('bank_account_id', $request->bank_account);
-        }
-        $totalIncome = (float) $incomeQuery->sum('amount');
+        // Calculate totals with same filters
+        $applyTotalFilters = function ($query) use ($request) {
+            if ($request->filled('date_from')) {
+                $query->whereDate('date', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('date', '<=', $request->date_to);
+            }
+            if ($request->filled('bank_account')) {
+                $query->where('bank_account_id', $request->bank_account);
+            }
+            return $query;
+        };
+
+        $totalIncome = (float) $applyTotalFilters($request->user()->bankTransactions()->where('type', 'income'))->sum('amount');
+        $totalExpense = (float) $applyTotalFilters($request->user()->bankTransactions()->where('type', 'expense'))->sum('amount');
 
         return Inertia::render('BankTransactions/Index', [
-            'transactions' => $transactions,
+            'batches' => $batches,
             'bankAccounts' => $bankAccounts,
             'unpaidInvoices' => $unpaidInvoices,
             'clients' => $clients,
             'totalIncome' => $totalIncome,
+            'totalExpense' => $totalExpense,
             'filters' => [
                 'date_from' => $request->get('date_from', ''),
                 'date_to' => $request->get('date_to', ''),
@@ -100,40 +152,32 @@ class BankTransactionController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'in:income,expense'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'currency' => ['required', 'in:MKD,EUR,USD'],
             'date' => ['required', 'date'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
-            'invoice_id' => ['nullable', 'exists:invoices,id'],
-            'client_id' => ['nullable', 'exists:clients,id'],
-            'description' => ['nullable', 'string'],
-            'reference' => ['nullable', 'string', 'max:255'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.type' => ['required', 'in:income,expense'],
+            'items.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'items.*.currency' => ['required', 'in:MKD,EUR,USD'],
+            'items.*.invoice_id' => ['nullable', 'exists:invoices,id'],
+            'items.*.client_id' => ['nullable', 'exists:clients,id'],
+            'items.*.description' => ['nullable', 'string'],
+            'items.*.reference' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $transaction = $request->user()->bankTransactions()->create($validated);
+        $batchId = (string) Str::uuid();
+        $batchNumber = ($request->user()->bankTransactions()->max('batch_number') ?? 0) + 1;
 
-        // Auto-mark invoice as paid
-        if ($transaction->invoice_id) {
-            $invoice = Invoice::find($transaction->invoice_id);
-            if ($invoice && in_array($invoice->status, ['draft', 'sent', 'unpaid', 'overdue'])) {
-                $invoice->update([
-                    'status' => 'paid',
-                    'paid_date' => $transaction->date,
-                ]);
-            }
-        }
-
-        // Auto-create expense for expense-type transactions
-        if ($transaction->type === 'expense') {
-            $expenseName = $transaction->description ?: $transaction->reference ?: __('bank_transactions.type_expense');
-            $request->user()->expenses()->create([
-                'bank_transaction_id' => $transaction->id,
-                'name' => $expenseName,
-                'description' => $transaction->reference ? $transaction->reference : null,
-                'amount' => $transaction->amount,
-                'date' => $transaction->date,
+        foreach ($validated['items'] as $item) {
+            $transaction = $request->user()->bankTransactions()->create([
+                'date' => $validated['date'],
+                'bank_account_id' => $validated['bank_account_id'],
+                'batch_id' => $batchId,
+                'batch_number' => $batchNumber,
+                ...$item,
             ]);
+
+            $this->handleInvoiceLink($transaction);
+            $this->handleExpenseSync($request->user(), $transaction);
         }
 
         return redirect()->route('bank-transactions.index')
@@ -144,77 +188,100 @@ class BankTransactionController extends Controller implements HasMiddleware
     {
         $this->authorize('update', $bankTransaction);
 
-        $oldInvoiceId = $bankTransaction->invoice_id;
-
         $validated = $request->validate([
-            'type' => ['required', 'in:income,expense'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'currency' => ['required', 'in:MKD,EUR,USD'],
             'date' => ['required', 'date'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
-            'invoice_id' => ['nullable', 'exists:invoices,id'],
-            'client_id' => ['nullable', 'exists:clients,id'],
-            'description' => ['nullable', 'string'],
-            'reference' => ['nullable', 'string', 'max:255'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.type' => ['required', 'in:income,expense'],
+            'items.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'items.*.currency' => ['required', 'in:MKD,EUR,USD'],
+            'items.*.invoice_id' => ['nullable', 'exists:invoices,id'],
+            'items.*.client_id' => ['nullable', 'exists:clients,id'],
+            'items.*.description' => ['nullable', 'string'],
+            'items.*.reference' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $bankTransaction->update($validated);
+        $batchId = $bankTransaction->batch_id;
+        $existingTransactions = BankTransaction::where('batch_id', $batchId)
+            ->where('user_id', $request->user()->id)
+            ->orderBy('id')
+            ->get();
 
-        // Handle invoice link changes
-        $newInvoiceId = $validated['invoice_id'] ?? null;
+        $items = $validated['items'];
 
-        // Revert old invoice if unlinked and no other transactions reference it
-        if ($oldInvoiceId && $oldInvoiceId !== $newInvoiceId) {
-            $otherTransactions = BankTransaction::where('invoice_id', $oldInvoiceId)
-                ->where('id', '!=', $bankTransaction->id)
-                ->exists();
+        // Update existing transactions or delete extras
+        foreach ($existingTransactions as $i => $existing) {
+            if (isset($items[$i])) {
+                $oldInvoiceId = $existing->invoice_id;
+                $newInvoiceId = $items[$i]['invoice_id'] ?? null;
 
-            if (!$otherTransactions) {
-                $oldInvoice = Invoice::find($oldInvoiceId);
-                if ($oldInvoice && $oldInvoice->status === 'paid') {
-                    $oldInvoice->update([
-                        'status' => 'unpaid',
-                        'paid_date' => null,
-                    ]);
+                $existing->update([
+                    'date' => $validated['date'],
+                    'bank_account_id' => $validated['bank_account_id'],
+                    ...$items[$i],
+                ]);
+
+                // Handle invoice unlink
+                if ($oldInvoiceId && $oldInvoiceId != $newInvoiceId) {
+                    $otherTransactions = BankTransaction::where('invoice_id', $oldInvoiceId)
+                        ->where('id', '!=', $existing->id)
+                        ->exists();
+                    if (!$otherTransactions) {
+                        $oldInvoice = Invoice::find($oldInvoiceId);
+                        if ($oldInvoice && $oldInvoice->status === 'paid') {
+                            $oldInvoice->update(['status' => 'unpaid', 'paid_date' => null]);
+                        }
+                    }
                 }
-            }
-        }
 
-        // Mark new invoice as paid
-        if ($newInvoiceId && $newInvoiceId !== $oldInvoiceId) {
-            $newInvoice = Invoice::find($newInvoiceId);
-            if ($newInvoice && in_array($newInvoice->status, ['draft', 'sent', 'unpaid', 'overdue'])) {
-                $newInvoice->update([
-                    'status' => 'paid',
-                    'paid_date' => $bankTransaction->date,
-                ]);
-            }
-        }
+                // Handle invoice link
+                if ($newInvoiceId && $newInvoiceId != $oldInvoiceId) {
+                    $this->handleInvoiceLink($existing);
+                }
 
-        // Sync linked expense
-        $linkedExpense = Expense::where('bank_transaction_id', $bankTransaction->id)->first();
-
-        if ($bankTransaction->type === 'expense') {
-            $expenseName = $bankTransaction->description ?: $bankTransaction->reference ?: __('bank_transactions.type_expense');
-            if ($linkedExpense) {
-                $linkedExpense->update([
-                    'name' => $expenseName,
-                    'description' => $bankTransaction->reference ?: null,
-                    'amount' => $bankTransaction->amount,
-                    'date' => $bankTransaction->date,
-                ]);
+                // Sync expense
+                $linkedExpense = Expense::where('bank_transaction_id', $existing->id)->first();
+                if ($existing->type === 'expense') {
+                    $expenseName = $existing->description ?: $existing->reference ?: __('bank_transactions.type_expense');
+                    if ($linkedExpense) {
+                        $linkedExpense->update([
+                            'name' => $expenseName,
+                            'description' => $existing->reference ?: null,
+                            'amount' => $existing->amount,
+                            'date' => $existing->date,
+                        ]);
+                    } else {
+                        $request->user()->expenses()->create([
+                            'bank_transaction_id' => $existing->id,
+                            'name' => $expenseName,
+                            'description' => $existing->reference ?: null,
+                            'amount' => $existing->amount,
+                            'date' => $existing->date,
+                        ]);
+                    }
+                } elseif ($linkedExpense) {
+                    $linkedExpense->delete();
+                }
             } else {
-                $request->user()->expenses()->create([
-                    'bank_transaction_id' => $bankTransaction->id,
-                    'name' => $expenseName,
-                    'description' => $bankTransaction->reference ?: null,
-                    'amount' => $bankTransaction->amount,
-                    'date' => $bankTransaction->date,
-                ]);
+                // Item was removed — delete this transaction
+                $this->revertInvoiceIfNeeded($existing);
+                $existing->delete();
             }
-        } elseif ($linkedExpense) {
-            // Type changed from expense to income — remove linked expense
-            $linkedExpense->delete();
+        }
+
+        // Create new items beyond existing count
+        $batchNumber = $bankTransaction->batch_number;
+        for ($i = count($existingTransactions); $i < count($items); $i++) {
+            $transaction = $request->user()->bankTransactions()->create([
+                'date' => $validated['date'],
+                'bank_account_id' => $validated['bank_account_id'],
+                'batch_id' => $batchId,
+                'batch_number' => $batchNumber,
+                ...$items[$i],
+            ]);
+
+            $this->handleInvoiceLink($transaction);
+            $this->handleExpenseSync($request->user(), $transaction);
         }
 
         return redirect()->route('bank-transactions.index')
@@ -225,25 +292,60 @@ class BankTransactionController extends Controller implements HasMiddleware
     {
         $this->authorize('delete', $bankTransaction);
 
-        $invoiceId = $bankTransaction->invoice_id;
-        $bankTransaction->delete();
+        // Delete all transactions in the batch
+        $batchTransactions = BankTransaction::where('batch_id', $bankTransaction->batch_id)
+            ->where('user_id', auth()->id())
+            ->get();
 
-        // Revert invoice if no other transactions reference it
-        if ($invoiceId) {
-            $otherTransactions = BankTransaction::where('invoice_id', $invoiceId)->exists();
-
-            if (!$otherTransactions) {
-                $invoice = Invoice::find($invoiceId);
-                if ($invoice && $invoice->status === 'paid') {
-                    $invoice->update([
-                        'status' => 'unpaid',
-                        'paid_date' => null,
-                    ]);
-                }
-            }
+        foreach ($batchTransactions as $transaction) {
+            $this->revertInvoiceIfNeeded($transaction);
+            $transaction->delete();
         }
 
         return redirect()->route('bank-transactions.index')
             ->with('success', __('toast.bank_transaction_deleted'));
+    }
+
+    private function handleInvoiceLink(BankTransaction $transaction): void
+    {
+        if ($transaction->invoice_id) {
+            $invoice = Invoice::find($transaction->invoice_id);
+            if ($invoice && in_array($invoice->status, ['draft', 'sent', 'unpaid', 'overdue'])) {
+                $invoice->update([
+                    'status' => 'paid',
+                    'paid_date' => $transaction->date,
+                ]);
+            }
+        }
+    }
+
+    private function handleExpenseSync($user, BankTransaction $transaction): void
+    {
+        if ($transaction->type === 'expense') {
+            $expenseName = $transaction->description ?: $transaction->reference ?: __('bank_transactions.type_expense');
+            $user->expenses()->create([
+                'bank_transaction_id' => $transaction->id,
+                'name' => $expenseName,
+                'description' => $transaction->reference ?: null,
+                'amount' => $transaction->amount,
+                'date' => $transaction->date,
+            ]);
+        }
+    }
+
+    private function revertInvoiceIfNeeded(BankTransaction $transaction): void
+    {
+        if ($transaction->invoice_id) {
+            $otherTransactions = BankTransaction::where('invoice_id', $transaction->invoice_id)
+                ->where('id', '!=', $transaction->id)
+                ->exists();
+
+            if (!$otherTransactions) {
+                $invoice = Invoice::find($transaction->invoice_id);
+                if ($invoice && $invoice->status === 'paid') {
+                    $invoice->update(['status' => 'unpaid', 'paid_date' => null]);
+                }
+            }
+        }
     }
 }
