@@ -20,6 +20,8 @@ export default {
         'bg-green-100', 'text-green-700',
         'bg-amber-100', 'text-amber-700',
         'bg-red-100', 'text-red-700',
+        // Formal template font sizes
+        'text-[7px]', 'text-[8px]', 'text-[9px]', 'text-[10px]', 'text-[11px]', 'text-[12px]', 'text-[20px]', 'text-[22px]',
     ],
 
     theme: {
