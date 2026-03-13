@@ -333,7 +333,7 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                 </Link>
                                             </TableCell>
                                             <TableCell className="hidden md:table-cell">
-                                                <span className="text-sm text-gray-900">{invoice.client?.name || '-'}</span>
+                                                <span className="text-sm text-gray-900">{invoice.client?.company || invoice.client?.name || '-'}</span>
                                             </TableCell>
                                             <TableCell className="hidden lg:table-cell">
                                                 <span className="text-sm text-gray-600">{formatDate(invoice.issue_date)}</span>

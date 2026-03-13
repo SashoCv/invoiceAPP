@@ -118,7 +118,7 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">{invoice.invoice_number}</h1>
-                                <p className="text-sm text-gray-500">{invoice.client?.name}</p>
+                                <p className="text-sm text-gray-500">{invoice.client?.company || invoice.client?.name}</p>
                             </div>
                         </div>
 
@@ -227,7 +227,7 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="text-sm">
-                                <span className="font-medium">{invoice.client?.name}</span>
+                                <span className="font-medium">{invoice.client?.company || invoice.client?.name}</span>
                             </div>
                             {invoice.client?.address && (
                                 <div className="text-sm text-gray-600">
