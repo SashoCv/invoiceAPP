@@ -825,7 +825,7 @@ export default function ExpensesIndex({
                                 <CardContent className="pt-6">
                                     <div className="text-sm text-gray-500">{t('expenses.unpaid_total')}</div>
                                     <div className="text-2xl font-bold text-red-600">
-                                        {formatNumber(unpaidIncomingTotal, 2)} ден.
+                                        {formatNumber(unpaidIncomingTotal, 0)} ден.
                                     </div>
                                 </CardContent>
                             </Card>
@@ -833,7 +833,7 @@ export default function ExpensesIndex({
                                 <CardContent className="pt-6">
                                     <div className="text-sm text-gray-500">{t('expenses.paid_total')}</div>
                                     <div className="text-2xl font-bold text-green-600">
-                                        {formatNumber(paidIncomingTotal, 2)} ден.
+                                        {formatNumber(paidIncomingTotal, 0)} ден.
                                     </div>
                                 </CardContent>
                             </Card>
@@ -874,7 +874,7 @@ export default function ExpensesIndex({
                                                 <TableCell className="font-medium capitalize">{item.description}</TableCell>
                                                 <TableCell className="text-center">{item.count}</TableCell>
                                                 <TableCell className="text-right font-medium">
-                                                    {formatNumber(item.total_amount, 2)} ден.
+                                                    {formatNumber(item.total_amount, 0)} ден.
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -935,7 +935,7 @@ export default function ExpensesIndex({
                                                     {incoming.invoice_number || '—'}
                                                 </TableCell>
                                                 <TableCell className="text-right font-medium">
-                                                    {formatNumber(incoming.amount, 2)} {incoming.currency === 'MKD' ? 'ден.' : incoming.currency}
+                                                    {formatNumber(incoming.amount, incoming.currency === 'MKD' ? 0 : 2)} {incoming.currency === 'MKD' ? 'ден.' : incoming.currency}
                                                 </TableCell>
                                                 <TableCell className="text-sm text-gray-600">
                                                     {formatDate(incoming.date)}
@@ -1338,7 +1338,7 @@ export default function ExpensesIndex({
                                         );
                                     })}
                                     <div className="flex justify-end pt-2 border-t text-sm font-semibold text-gray-900 pr-12">
-                                        {t('expenses.items_total')}: {formatNumber(incomingItemsTotal, 2)}
+                                        {t('expenses.items_total')}: {formatNumber(incomingItemsTotal, incomingForm.currency === 'MKD' ? 0 : 2)}
                                     </div>
                                 </div>
                             )}

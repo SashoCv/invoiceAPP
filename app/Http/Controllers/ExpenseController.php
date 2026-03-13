@@ -328,7 +328,11 @@ class ExpenseController extends Controller implements HasMiddleware
             foreach ($validated['items'] as $item) {
                 $invoice->items()->create($item);
             }
-            $invoice->update(['amount' => $invoice->items()->sum('total')]);
+            $amount = $invoice->items()->sum('total');
+            if ($invoice->currency === 'MKD') {
+                $amount = round($amount);
+            }
+            $invoice->update(['amount' => $amount]);
         }
 
         $this->syncIncomingExpense($invoice);
@@ -368,7 +372,11 @@ class ExpenseController extends Controller implements HasMiddleware
             foreach ($validated['items'] as $item) {
                 $incomingInvoice->items()->create($item);
             }
-            $incomingInvoice->update(['amount' => $incomingInvoice->items()->sum('total')]);
+            $amount = $incomingInvoice->items()->sum('total');
+            if ($incomingInvoice->currency === 'MKD') {
+                $amount = round($amount);
+            }
+            $incomingInvoice->update(['amount' => $amount]);
         }
 
         $this->syncIncomingExpense($incomingInvoice);
