@@ -86,7 +86,7 @@
     </div>
     <div class="totals-row total">
         <span class="label">Вкупно {{ $currencySymbol }}</span>
-        <span class="value">{{ number_format($total, 2, ',', ' ') }}</span>
+        <span class="value">{{ number_format($total, $totalDecimals, ',', ' ') }}</span>
     </div>
 </div>
 

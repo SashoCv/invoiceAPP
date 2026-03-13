@@ -115,7 +115,7 @@
             </div>
             <div class="flex justify-between py-4 border-t border-gray-900 mt-2">
                 <span class="text-xs uppercase tracking-[0.2em] text-gray-400">Вкупно</span>
-                <span class="text-2xl font-light text-gray-900">{{ number_format($total, 2, ',', ' ') }} <span class="text-sm">{{ $currencySymbol }}</span></span>
+                <span class="text-2xl font-light text-gray-900">{{ number_format($total, $totalDecimals, ',', ' ') }} <span class="text-sm">{{ $currencySymbol }}</span></span>
             </div>
         </div>
     </div>
@@ -126,7 +126,7 @@
     <div class="flex justify-end mb-16">
         <div class="border-t border-gray-900 pt-4">
             <span class="text-xs uppercase tracking-[0.2em] text-gray-400 mr-8">Вкупна вредност</span>
-            <span class="text-2xl font-light text-gray-900">{{ number_format($total, 2, ',', ' ') }} <span class="text-sm">{{ $currencySymbol }}</span></span>
+            <span class="text-2xl font-light text-gray-900">{{ number_format($total, $totalDecimals, ',', ' ') }} <span class="text-sm">{{ $currencySymbol }}</span></span>
         </div>
     </div>
     @endif

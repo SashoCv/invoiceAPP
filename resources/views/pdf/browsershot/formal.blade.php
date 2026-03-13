@@ -183,7 +183,7 @@
                 <tr>
                     <td colspan="4"></td>
                     <td class="py-2 px-2 font-bold text-[11px]">Вкупно за наплата денари:</td>
-                    <td class="py-2 px-2 text-right font-bold text-[11px]">{{ number_format($totalWithVat, 2, ',', '.') }}</td>
+                    <td class="py-2 px-2 text-right font-bold text-[11px]">{{ number_format($totalWithVat, $totalDecimals, ',', '.') }}</td>
                 </tr>
             </table>
         </div>

@@ -119,7 +119,7 @@
                 <span>ДДВ:</span><span>{{ number_format($taxAmount, 2, ',', ' ') }} {{ $currencySymbol }}</span>
             </div>
             <div class="flex justify-between text-lg font-bold text-blue-800 py-2 border-t-2 border-blue-800 mt-2">
-                <span>ВКУПНО:</span><span>{{ number_format($total, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+                <span>ВКУПНО:</span><span>{{ number_format($total, $totalDecimals, ',', ' ') }} {{ $currencySymbol }}</span>
             </div>
         </div>
     </div>
@@ -130,7 +130,7 @@
     <div class="flex justify-end mb-8">
         <div class="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4">
             <div class="text-sm text-blue-600 mb-1">Вкупна вредност</div>
-            <div class="text-2xl font-bold text-blue-800">{{ number_format($total, 2, ',', ' ') }} {{ $currencySymbol }}</div>
+            <div class="text-2xl font-bold text-blue-800">{{ number_format($total, $totalDecimals, ',', ' ') }} {{ $currencySymbol }}</div>
         </div>
     </div>
     @endif

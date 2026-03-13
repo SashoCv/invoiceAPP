@@ -48,7 +48,7 @@
             </div>
             <div class="bg-white rounded-xl shadow-lg p-5">
                 <div class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">Износ</div>
-                <div class="font-bold text-2xl text-gray-900">{{ number_format($total, 2, ',', ' ') }}</div>
+                <div class="font-bold text-2xl text-gray-900">{{ number_format($total, $totalDecimals, ',', ' ') }}</div>
                 <div class="text-sm text-gray-500">{{ $currencySymbol }}</div>
             </div>
         </div>
@@ -123,7 +123,7 @@
                             <span>ДДВ</span><span>{{ number_format($taxAmount, 2, ',', ' ') }} {{ $currencySymbol }}</span>
                         </div>
                         <div class="flex justify-between text-xl font-bold text-purple-600 pt-2 border-t border-purple-200">
-                            <span>Вкупно</span><span>{{ number_format($total, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+                            <span>Вкупно</span><span>{{ number_format($total, $totalDecimals, ',', ' ') }} {{ $currencySymbol }}</span>
                         </div>
                     </div>
                 </div>

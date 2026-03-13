@@ -41,7 +41,7 @@
     </div>
     <div class="card">
         <div class="card-label">Износ</div>
-        <div class="card-value card-amount">{{ number_format($total, 2, ',', ' ') }}</div>
+        <div class="card-value card-amount">{{ number_format($total, $totalDecimals, ',', ' ') }}</div>
         <div class="card-subvalue">{{ $currencySymbol }}</div>
     </div>
 </div>
@@ -95,7 +95,7 @@
         </div>
         <div class="totals-row total">
             <span class="label">Вкупно</span>
-            <span class="value">{{ number_format($total, 2, ',', ' ') }} {{ $currencySymbol }}</span>
+            <span class="value">{{ number_format($total, $totalDecimals, ',', ' ') }} {{ $currencySymbol }}</span>
         </div>
     </div>
 </div>
