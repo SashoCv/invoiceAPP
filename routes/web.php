@@ -15,6 +15,7 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\ProformaInvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\ProfitabilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\AgencyController;
 use App\Http\Controllers\Settings\BankAccountController;
@@ -84,6 +85,7 @@ Route::middleware('auth')->group(function () {
 
     // Inventory
     Route::get('warehouse', [\App\Http\Controllers\WarehouseDashboardController::class, 'index'])->name('warehouse.dashboard');
+    Route::get('profitability', [ProfitabilityController::class, 'index'])->name('profitability');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
