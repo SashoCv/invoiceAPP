@@ -638,8 +638,8 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
     const itemsData = (document.items || []).map((item: any) => {
         const lineSubtotal = item.quantity * item.unit_price;
         const lineDiscount = lineSubtotal * ((item.discount || 0) / 100);
-        const lineBase = lineSubtotal - lineDiscount;
-        const lineTax = lineBase * (item.tax_rate / 100);
+        const lineBase = Math.round((lineSubtotal - lineDiscount) * 100) / 100;
+        const lineTax = Math.round(lineBase * (item.tax_rate / 100) * 100) / 100;
         const lineTotal = lineBase + lineTax;
 
         totalBase += lineBase;

@@ -15,8 +15,8 @@
         foreach ($items as $item) {
             $lineSubtotal = $item->quantity * $item->unit_price;
             $lineDiscount = $lineSubtotal * (($item->discount ?? 0) / 100);
-            $lineBase = $lineSubtotal - $lineDiscount;
-            $lineTax = $lineBase * ($item->tax_rate / 100);
+            $lineBase = round($lineSubtotal - $lineDiscount, 2);
+            $lineTax = round($lineBase * ($item->tax_rate / 100), 2);
             $lineTotal = $lineBase + $lineTax;
 
             $totalBase += $lineBase;

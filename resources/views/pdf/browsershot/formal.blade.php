@@ -16,8 +16,8 @@
         foreach ($items as $item) {
             $lineSubtotal = $item->quantity * $item->unit_price;
             $lineDiscount = $lineSubtotal * (($item->discount ?? 0) / 100);
-            $lineBase = $lineSubtotal - $lineDiscount; // Износ (before VAT)
-            $lineTax = $lineBase * ($item->tax_rate / 100);
+            $lineBase = round($lineSubtotal - $lineDiscount, 2); // Износ (before VAT)
+            $lineTax = round($lineBase * ($item->tax_rate / 100), 2);
             $lineTotal = $lineBase + $lineTax; // Вкупно (with VAT)
 
             $totalBase += $lineBase;
