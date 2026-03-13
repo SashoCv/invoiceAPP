@@ -395,10 +395,10 @@ export default function Dashboard({
                                         </TableCell>
                                         <TableCell>
                                             <div>
-                                                <p className="text-sm font-medium text-gray-900">{invoice.client?.name}</p>
                                                 {invoice.client?.company && (
-                                                    <p className="text-xs text-gray-600">{invoice.client.company}</p>
+                                                    <p className="text-sm font-medium text-gray-900">{invoice.client.company}</p>
                                                 )}
+                                                <p className={invoice.client?.company ? 'text-xs text-gray-600' : 'text-sm font-medium text-gray-900'}>{invoice.client?.name}</p>
                                                 <p className="text-xs text-gray-500">{invoice.client?.email}</p>
                                             </div>
                                         </TableCell>
