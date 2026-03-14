@@ -371,6 +371,7 @@ export interface BankTransaction {
 export interface BankTransactionBatch {
     batch_id: string;
     batch_number: number;
+    batch_year: number;
     date: string;
     bank_account: BankAccount | null;
     items: BankTransaction[];

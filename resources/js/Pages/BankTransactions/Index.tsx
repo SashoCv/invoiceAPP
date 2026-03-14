@@ -124,6 +124,8 @@ export default function BankTransactionsIndex({
     const [formHeader, setFormHeader] = useState({
         date: new Date().toISOString().split('T')[0],
         bank_account_id: '',
+        batch_number: '',
+        batch_year: String(new Date().getFullYear()),
     });
     const [formItems, setFormItems] = useState<FormItem[]>([emptyItem()]);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -159,6 +161,8 @@ export default function BankTransactionsIndex({
             setFormHeader({
                 date: batch.date,
                 bank_account_id: batch.bank_account?.id ? String(batch.bank_account.id) : '',
+                batch_number: String(batch.batch_number),
+                batch_year: String(batch.batch_year),
             });
             setFormItems(batch.items.map(item => ({
                 type: item.type,
@@ -174,6 +178,8 @@ export default function BankTransactionsIndex({
             setFormHeader({
                 date: new Date().toISOString().split('T')[0],
                 bank_account_id: '',
+                batch_number: '',
+                batch_year: String(new Date().getFullYear()),
             });
             setFormItems([emptyItem()]);
         }
@@ -224,6 +230,8 @@ export default function BankTransactionsIndex({
         const data = {
             date: formHeader.date,
             bank_account_id: clean(formHeader.bank_account_id),
+            batch_number: formHeader.batch_number ? Number(formHeader.batch_number) : null,
+            batch_year: formHeader.batch_year ? Number(formHeader.batch_year) : null,
             items: formItems.map(item => ({
                 type: item.type,
                 amount: item.amount,
@@ -422,7 +430,7 @@ export default function BankTransactionsIndex({
                                                     className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                                                 />
                                                 <span className="font-semibold text-gray-900 whitespace-nowrap">
-                                                    {t('bank_transactions.batch_label', { number: String(batch.batch_number) })}
+                                                    {t('bank_transactions.batch_label', { number: String(batch.batch_number), year: String(batch.batch_year) })}
                                                 </span>
                                                 <span className="text-sm text-gray-500 whitespace-nowrap">
                                                     {formatDate(batch.date)}
@@ -582,7 +590,7 @@ export default function BankTransactionsIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-2">
-                        {/* Shared fields: Date + Bank Account */}
+                        {/* Shared fields: Date + Bank Account + Batch Number/Year */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label>{t('bank_transactions.date')}</Label>
@@ -609,6 +617,28 @@ export default function BankTransactionsIndex({
                                     </SelectContent>
                                 </Select>
                                 {errors.bank_account_id && <p className="text-xs text-red-500">{errors.bank_account_id}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>{t('bank_transactions.batch_number')}</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    placeholder="#"
+                                    value={formHeader.batch_number}
+                                    onChange={(e) => setFormHeader(prev => ({ ...prev, batch_number: e.target.value }))}
+                                />
+                                {errors.batch_number && <p className="text-xs text-red-500">{errors.batch_number}</p>}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>{t('bank_transactions.batch_year')}</Label>
+                                <Input
+                                    type="number"
+                                    min="2000"
+                                    max="2099"
+                                    value={formHeader.batch_year}
+                                    onChange={(e) => setFormHeader(prev => ({ ...prev, batch_year: e.target.value }))}
+                                />
+                                {errors.batch_year && <p className="text-xs text-red-500">{errors.batch_year}</p>}
                             </div>
                         </div>
 
@@ -689,7 +719,7 @@ export default function BankTransactionsIndex({
                                                     <SelectItem value="none">{t('bank_transactions.no_invoice')}</SelectItem>
                                                     {unpaidInvoices.map((invoice) => (
                                                         <SelectItem key={invoice.id} value={String(invoice.id)}>
-                                                            {invoice.invoice_number} - {invoice.client?.name} ({formatNumber(invoice.total, invoice.currency === 'MKD' ? 0 : 2)} {invoice.currency})
+                                                            {invoice.invoice_number} - {invoice.client?.company || invoice.client?.name} ({formatNumber(invoice.total, invoice.currency === 'MKD' ? 0 : 2)} {invoice.currency})
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -712,7 +742,7 @@ export default function BankTransactionsIndex({
                                                     <SelectItem value="none">{t('bank_transactions.no_client')}</SelectItem>
                                                     {clients.map((client) => (
                                                         <SelectItem key={client.id} value={String(client.id)}>
-                                                            {client.name}{client.company ? ` (${client.company})` : ''}
+                                                            {client.company || client.name}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -777,7 +807,7 @@ export default function BankTransactionsIndex({
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewBatch && t('bank_transactions.batch_label', { number: String(viewBatch.batch_number) })}
+                            {viewBatch && t('bank_transactions.batch_label', { number: String(viewBatch.batch_number), year: String(viewBatch.batch_year) })}
                         </DialogTitle>
                         <DialogDescription>
                             {t('bank_transactions.view_items')}

@@ -89,6 +89,7 @@ class BankTransactionController extends Controller implements HasMiddleware
             return [
                 'batch_id' => $batchId,
                 'batch_number' => $first?->batch_number,
+                'batch_year' => $first?->batch_year,
                 'date' => $first?->date?->format('Y-m-d'),
                 'bank_account' => $first?->bankAccount,
                 'items' => $items->values(),
@@ -154,6 +155,8 @@ class BankTransactionController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
+            'batch_number' => ['nullable', 'integer', 'min:1'],
+            'batch_year' => ['nullable', 'integer', 'min:2000', 'max:2099'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.type' => ['required', 'in:income,expense'],
             'items.*.amount' => ['required', 'numeric', 'min:0.01'],
@@ -165,7 +168,9 @@ class BankTransactionController extends Controller implements HasMiddleware
         ]);
 
         $batchId = (string) Str::uuid();
-        $batchNumber = ($request->user()->bankTransactions()->max('batch_number') ?? 0) + 1;
+        $batchYear = $validated['batch_year'] ?? (int) date('Y');
+        $batchNumber = $validated['batch_number']
+            ?? ($request->user()->bankTransactions()->where('batch_year', $batchYear)->max('batch_number') ?? 0) + 1;
 
         foreach ($validated['items'] as $item) {
             $transaction = $request->user()->bankTransactions()->create([
@@ -173,6 +178,7 @@ class BankTransactionController extends Controller implements HasMiddleware
                 'bank_account_id' => $validated['bank_account_id'],
                 'batch_id' => $batchId,
                 'batch_number' => $batchNumber,
+                'batch_year' => $batchYear,
                 ...$item,
             ]);
 
@@ -191,6 +197,8 @@ class BankTransactionController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'bank_account_id' => ['nullable', 'exists:bank_accounts,id'],
+            'batch_number' => ['nullable', 'integer', 'min:1'],
+            'batch_year' => ['nullable', 'integer', 'min:2000', 'max:2099'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.type' => ['required', 'in:income,expense'],
             'items.*.amount' => ['required', 'numeric', 'min:0.01'],
@@ -202,6 +210,21 @@ class BankTransactionController extends Controller implements HasMiddleware
         ]);
 
         $batchId = $bankTransaction->batch_id;
+
+        // Update batch_number and batch_year on all transactions in this batch
+        if (isset($validated['batch_number']) || isset($validated['batch_year'])) {
+            $batchUpdate = [];
+            if (isset($validated['batch_number'])) {
+                $batchUpdate['batch_number'] = $validated['batch_number'];
+            }
+            if (isset($validated['batch_year'])) {
+                $batchUpdate['batch_year'] = $validated['batch_year'];
+            }
+            BankTransaction::where('batch_id', $batchId)
+                ->where('user_id', $request->user()->id)
+                ->update($batchUpdate);
+        }
+
         $existingTransactions = BankTransaction::where('batch_id', $batchId)
             ->where('user_id', $request->user()->id)
             ->orderBy('id')
@@ -270,13 +293,15 @@ class BankTransactionController extends Controller implements HasMiddleware
         }
 
         // Create new items beyond existing count
-        $batchNumber = $bankTransaction->batch_number;
+        $batchNumber = $validated['batch_number'] ?? $bankTransaction->batch_number;
+        $batchYear = $validated['batch_year'] ?? $bankTransaction->batch_year;
         for ($i = count($existingTransactions); $i < count($items); $i++) {
             $transaction = $request->user()->bankTransactions()->create([
                 'date' => $validated['date'],
                 'bank_account_id' => $validated['bank_account_id'],
                 'batch_id' => $batchId,
                 'batch_number' => $batchNumber,
+                'batch_year' => $batchYear,
                 ...$items[$i],
             ]);
 

@@ -43,7 +43,9 @@ return [
     'add_item' => 'Add item',
     'remove_item' => 'Remove item',
     'item_number' => 'Item :number',
-    'batch_label' => 'Statement #:number',
+    'batch_label' => 'Statement #:number/:year',
+    'batch_number' => 'Statement number',
+    'batch_year' => 'Year',
     'items_count' => ':count item|:count items',
     'view_items' => 'View items',
 ];

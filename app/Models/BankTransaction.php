@@ -20,6 +20,7 @@ class BankTransaction extends Model
         'reference',
         'batch_id',
         'batch_number',
+        'batch_year',
     ];
 
     protected function casts(): array

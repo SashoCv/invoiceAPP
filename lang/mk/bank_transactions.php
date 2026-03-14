@@ -43,7 +43,9 @@ return [
     'add_item' => 'Додади ставка',
     'remove_item' => 'Отстрани ставка',
     'item_number' => 'Ставка :number',
-    'batch_label' => 'Извод #:number',
+    'batch_label' => 'Извод #:number/:year',
+    'batch_number' => 'Број на извод',
+    'batch_year' => 'Година',
     'items_count' => ':count ставка|:count ставки',
     'view_items' => 'Прикажи ставки',
 ];
