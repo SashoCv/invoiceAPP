@@ -39,4 +39,7 @@ return [
     'goods_receipts' => 'Приемници',
     'goods_issues' => 'Испратници',
     'profitability' => 'Профитабилност',
+    'shopify' => 'Shopify',
+    'shopify_sales' => 'Продажби',
+    'shopify_orders' => 'Нарачки',
 ];

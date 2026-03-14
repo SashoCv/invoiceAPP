@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
-import { User, Building2, CreditCard, FileCode, Wallet } from 'lucide-react';
+import { User, Building2, CreditCard, FileCode, Wallet, ShoppingBag } from 'lucide-react';
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { t } = useTranslation();
@@ -14,6 +14,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         { name: t('navigation.agency'), href: '/settings/agency', icon: Building2 },
         { name: t('navigation.bank_accounts'), href: '/settings/bank-accounts', icon: CreditCard },
         { name: t('navigation.templates'), href: '/settings/templates', icon: FileCode },
+        { name: 'Shopify', href: '/settings/shopify', icon: ShoppingBag },
         { name: t('navigation.billing'), href: '/billing', icon: Wallet },
     ];
 

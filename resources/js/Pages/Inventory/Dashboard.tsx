@@ -83,6 +83,7 @@ const movementTypeVariants: Record<string, 'success' | 'destructive' | 'warning'
     issue: 'destructive',
     adjustment: 'warning',
     invoice_deduction: 'info',
+    shopify_deduction: 'info',
 };
 
 const stockStatusVariants: Record<string, 'success' | 'warning' | 'destructive'> = {
@@ -547,13 +548,15 @@ export default function WarehouseDashboard({
                                                         >
                                                             {movement.invoice_number}
                                                         </Link>
+                                                    ) : movement.notes && movement.type === 'shopify_deduction' ? (
+                                                        <span className="text-sm text-gray-500">{movement.notes}</span>
                                                     ) : (
                                                         <span className="text-sm text-gray-400">-</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <span className={`font-bold ${movement.type === 'issue' || movement.type === 'invoice_deduction' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                                        {movement.type === 'issue' || movement.type === 'invoice_deduction' ? '-' : '+'}{formatNumber(movement.quantity)}
+                                                    <span className={`font-bold ${movement.quantity < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                                        {movement.quantity > 0 ? '+' : ''}{formatNumber(movement.quantity)}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right text-gray-500">

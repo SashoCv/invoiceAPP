@@ -23,6 +23,9 @@ use App\Http\Controllers\Settings\TemplateController;
 use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\PdfController;
+use App\Http\Controllers\Settings\ShopifyController;
+use App\Http\Controllers\ShopifyOrderController;
+use App\Http\Controllers\ShopifyProfitabilityController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -67,6 +70,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/templates', [TemplateController::class, 'index'])->name('templates');
         Route::get('/templates/preview', [TemplateController::class, 'preview'])->name('templates.preview');
         Route::put('/templates', [TemplateController::class, 'update'])->name('templates.update');
+
+        // Shopify
+        Route::get('/shopify', [ShopifyController::class, 'index'])->name('shopify');
+        Route::post('/shopify/connect', [ShopifyController::class, 'connect'])->name('shopify.connect');
+        Route::post('/shopify/disconnect', [ShopifyController::class, 'disconnect'])->name('shopify.disconnect');
+        Route::get('/shopify/products', [ShopifyController::class, 'fetchProducts'])->name('shopify.products');
+        Route::post('/shopify/mappings', [ShopifyController::class, 'saveMapping'])->name('shopify.mappings.store');
+        Route::delete('/shopify/mappings/{mapping}', [ShopifyController::class, 'deleteMapping'])->name('shopify.mappings.destroy');
+        Route::post('/shopify/auto-match', [ShopifyController::class, 'autoMatch'])->name('shopify.auto-match');
+        Route::post('/shopify/sync', [ShopifyController::class, 'syncOrders'])->name('shopify.sync');
+        Route::get('/shopify/callback', [ShopifyController::class, 'callback'])->name('shopify.callback');
     });
 
     // Redirect old profile.edit to new settings
@@ -86,6 +100,11 @@ Route::middleware('auth')->group(function () {
     // Inventory
     Route::get('warehouse', [\App\Http\Controllers\WarehouseDashboardController::class, 'index'])->name('warehouse.dashboard');
     Route::get('profitability', [ProfitabilityController::class, 'index'])->name('profitability');
+
+    // Shopify
+    Route::get('shopify/profitability', [ShopifyProfitabilityController::class, 'index'])->name('shopify.profitability');
+    Route::get('shopify/orders', [ShopifyOrderController::class, 'index'])->name('shopify.orders.index');
+    Route::get('shopify/orders/{shopifyOrder}', [ShopifyOrderController::class, 'show'])->name('shopify.orders.show');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);

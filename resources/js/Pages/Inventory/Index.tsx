@@ -72,12 +72,14 @@ function MovementTypeBadge({ type, t }: { type: string; t: (key: string) => stri
         issue: 'bg-orange-100 text-orange-800',
         adjustment: 'bg-blue-100 text-blue-800',
         invoice_deduction: 'bg-purple-100 text-purple-800',
+        shopify_deduction: 'bg-indigo-100 text-indigo-800',
     };
     const labels: Record<string, string> = {
         receipt: t('inventory.type_receipt'),
         issue: t('inventory.type_issue'),
         adjustment: t('inventory.type_adjustment'),
         invoice_deduction: t('inventory.type_invoice_deduction'),
+        shopify_deduction: t('inventory.type_shopify_deduction'),
     };
 
     return (
@@ -460,8 +462,8 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                                     <MovementTypeBadge type={movement.type} t={t} />
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <span className={movement.type === 'issue' || movement.type === 'invoice_deduction' ? 'text-red-600' : 'text-green-600'}>
-                                                        {movement.type === 'issue' || movement.type === 'invoice_deduction' ? '-' : '+'}{formatNumber(movement.quantity, 0)}
+                                                    <span className={movement.quantity < 0 ? 'text-red-600' : 'text-green-600'}>
+                                                        {movement.quantity > 0 ? '+' : ''}{formatNumber(movement.quantity, 0)}
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right hidden md:table-cell text-gray-500">

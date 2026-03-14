@@ -108,6 +108,7 @@ return [
     'type_issue' => 'Издавање',
     'type_adjustment' => 'Корекција',
     'type_invoice_deduction' => 'Фактура',
+    'type_shopify_deduction' => 'Shopify',
     'no_movements' => 'Нема движења на залихи',
 
     // Empty state

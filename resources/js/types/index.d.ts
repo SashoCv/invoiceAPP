@@ -91,6 +91,7 @@ export interface Article {
     id: number;
     user_id: number;
     name: string;
+    sku: string | null;
     description: string;
     unit: string;
     price: number;
@@ -132,7 +133,7 @@ export interface StockMovement {
     id: number;
     user_id: number;
     article_id: number;
-    type: 'receipt' | 'issue' | 'adjustment' | 'invoice_deduction';
+    type: 'receipt' | 'issue' | 'adjustment' | 'invoice_deduction' | 'shopify_deduction';
     quantity: number;
     quantity_before: number;
     quantity_after: number;

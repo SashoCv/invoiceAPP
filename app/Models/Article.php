@@ -15,6 +15,7 @@ class Article extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'sku',
         'description',
         'unit',
         'price',
@@ -81,9 +82,15 @@ class Article extends Model
         $this->stock_quantity -= $quantity;
         $this->save();
 
+        $type = match ($referenceType) {
+            'invoice' => 'invoice_deduction',
+            'shopify_order' => 'shopify_deduction',
+            default => 'issue',
+        };
+
         return $this->stockMovements()->create([
             'user_id' => $this->user_id,
-            'type' => $referenceType === 'invoice' ? 'invoice_deduction' : 'issue',
+            'type' => $type,
             'quantity' => -$quantity,
             'quantity_before' => $before,
             'quantity_after' => $this->stock_quantity,

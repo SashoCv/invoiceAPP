@@ -20,6 +20,7 @@ import {
     ClipboardCheck,
     PackageMinus,
     TrendingUp,
+    ShoppingBag,
     Settings,
     LogOut,
     Menu,
@@ -98,6 +99,23 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/profitability',
                     icon: TrendingUp,
                     active: currentPath === '/profitability',
+                },
+            ],
+        },
+        {
+            label: 'Shopify',
+            items: [
+                {
+                    name: t('navigation.shopify_sales'),
+                    href: '/shopify/profitability',
+                    icon: ShoppingBag,
+                    active: currentPath === '/shopify/profitability',
+                },
+                {
+                    name: t('navigation.shopify_orders'),
+                    href: '/shopify/orders',
+                    icon: ShoppingBag,
+                    active: currentPath.startsWith('/shopify/orders'),
                 },
             ],
         },

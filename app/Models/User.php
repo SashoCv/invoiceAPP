@@ -99,6 +99,16 @@ class User extends Authenticatable
         return $this->hasMany(IncomingInvoice::class);
     }
 
+    public function shopifyConnection(): HasOne
+    {
+        return $this->hasOne(ShopifyConnection::class);
+    }
+
+    public function shopifyOrders(): HasMany
+    {
+        return $this->hasMany(ShopifyOrder::class);
+    }
+
     /**
      * The attributes that are mass assignable.
      *

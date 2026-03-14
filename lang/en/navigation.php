@@ -39,4 +39,7 @@ return [
     'goods_receipts' => 'Goods Receipts',
     'goods_issues' => 'Dispatch Notes',
     'profitability' => 'Profitability',
+    'shopify' => 'Shopify',
+    'shopify_sales' => 'Sales',
+    'shopify_orders' => 'Orders',
 ];

@@ -108,6 +108,7 @@ return [
     'type_issue' => 'Issue',
     'type_adjustment' => 'Adjustment',
     'type_invoice_deduction' => 'Invoice',
+    'type_shopify_deduction' => 'Shopify',
     'no_movements' => 'No stock movements yet',
 
     // Empty state

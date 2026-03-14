@@ -20,6 +20,7 @@ export default function EditArticle({ article }: EditArticleProps) {
 
     const { data, setData, put, processing, errors } = useForm({
         name: article.name,
+        sku: article.sku || '',
         description: article.description || '',
         unit: article.unit,
         price: article.price,
@@ -63,6 +64,18 @@ export default function EditArticle({ article }: EditArticleProps) {
                                     onChange={(e) => setData('name', e.target.value)}
                                     className="mt-1"
                                     error={errors.name}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="sku">{t('articles.sku')}</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="mt-1"
+                                    placeholder={t('articles.sku_placeholder')}
+                                    error={errors.sku}
                                 />
                             </div>
 

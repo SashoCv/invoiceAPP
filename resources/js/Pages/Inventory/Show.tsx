@@ -178,8 +178,8 @@ export default function ShowInventoryItem({ item, movements }: ShowProps) {
                                                 <MovementTypeBadge type={movement.type} t={t} />
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <span className={movement.type === 'issue' || movement.type === 'invoice_deduction' ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
-                                                    {movement.type === 'issue' || movement.type === 'invoice_deduction' ? '-' : '+'}{formatNumber(movement.quantity, 0)}
+                                                <span className={`font-medium ${movement.quantity < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                    {movement.quantity > 0 ? '+' : ''}{formatNumber(movement.quantity, 0)}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right text-gray-500">

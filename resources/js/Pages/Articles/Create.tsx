@@ -14,6 +14,7 @@ export default function CreateArticle() {
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
+        sku: '',
         description: '',
         unit: 'kom',
         price: 0,
@@ -56,6 +57,18 @@ export default function CreateArticle() {
                                     onChange={(e) => setData('name', e.target.value)}
                                     className="mt-1"
                                     error={errors.name}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="sku">{t('articles.sku')}</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="mt-1"
+                                    placeholder={t('articles.sku_placeholder')}
+                                    error={errors.sku}
                                 />
                             </div>
 
