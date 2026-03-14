@@ -262,9 +262,10 @@ export default function BankTransactionsIndex({
     };
 
     const getClientName = (transaction: BankTransaction) => {
-        return transaction.client?.name
-            || transaction.invoice?.client?.name
-            || '';
+        const client = transaction.client || transaction.invoice?.client;
+        if (!client) return '';
+        if (client.company && client.name) return `${client.company} - ${client.name}`;
+        return client.company || client.name || '';
     };
 
     const buildExportUrl = () => {
