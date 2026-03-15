@@ -135,6 +135,7 @@ class TemplateController extends Controller implements HasMiddleware
                 'client' => $sampleClient,
                 'agency' => $sampleAgency,
                 'items' => collect([]),
+                'totalDecimals' => 2,
                 'bankAccount' => null,
             ];
         } else {
@@ -155,6 +156,7 @@ class TemplateController extends Controller implements HasMiddleware
                 'subtotal' => 50000,
                 'taxAmount' => 9000,
                 'total' => 59000,
+                'totalDecimals' => 0,
                 'notes' => 'Ви благодариме за соработката!',
                 'client' => $sampleClient,
                 'agency' => $sampleAgency,
