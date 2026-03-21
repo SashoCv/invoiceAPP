@@ -34,12 +34,14 @@ return [
     'mapping_deleted' => 'Поврзувањето е отстрането',
     'fetch_products' => 'Земи производи',
     'select_product' => 'Изберете Shopify производ...',
-    'select_article' => 'Изберете локален артикл...',
+    'select_article' => 'Изберете артикл или пакет...',
+    'articles_group' => 'Артикли',
+    'bundles_group' => 'Пакети',
     'auto_match' => 'Авто-поврзи по SKU',
     'auto_matched' => ':count производи поврзани по SKU',
     'shopify_product' => 'Shopify производ',
     'shopify_sku' => 'SKU',
-    'local_article' => 'Локален артикл',
+    'local_article' => 'Локален артикл / пакет',
     'no_mappings' => 'Нема поврзани производи',
 
     // Orders

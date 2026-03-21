@@ -109,6 +109,7 @@ export interface Bundle {
     id: number;
     user_id: number;
     name: string;
+    sku: string | null;
     description: string | null;
     price: number;
     tax_rate: number;

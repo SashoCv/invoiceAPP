@@ -16,6 +16,7 @@ class ShopifyProductMapping extends Model
         'shopify_variant_title',
         'shopify_sku',
         'article_id',
+        'bundle_id',
     ];
 
     protected $casts = [
@@ -31,6 +32,11 @@ class ShopifyProductMapping extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    public function bundle(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Bundle::class);
     }
 
     public function scopeForVariant(Builder $query, int $userId, int $variantId): Builder

@@ -40,6 +40,7 @@ class BundleController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -50,6 +51,7 @@ class BundleController extends Controller implements HasMiddleware
 
         $bundle = $request->user()->bundles()->create([
             'name' => $validated['name'],
+            'sku' => $validated['sku'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'tax_rate' => $validated['tax_rate'],
@@ -89,6 +91,7 @@ class BundleController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
             'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -100,6 +103,7 @@ class BundleController extends Controller implements HasMiddleware
 
         $bundle->update([
             'name' => $validated['name'],
+            'sku' => $validated['sku'],
             'description' => $validated['description'],
             'price' => $validated['price'],
             'tax_rate' => $validated['tax_rate'],

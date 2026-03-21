@@ -56,6 +56,7 @@ class ShopifyOrderProcessor
                 $orderItem = ShopifyOrderItem::create([
                     'shopify_order_id' => $order->id,
                     'article_id' => $mapping?->article_id,
+                    'bundle_id' => $mapping?->bundle_id,
                     'shopify_product_id' => $productId,
                     'shopify_variant_id' => $variantId,
                     'title' => $item['title'] ?? '',
@@ -64,14 +65,23 @@ class ShopifyOrderProcessor
                     'total_discount' => collect($item['discount_allocations'] ?? [])->sum('amount'),
                 ]);
 
-                // Deduct stock if mapped and article tracks inventory
-                if ($mapping && $mapping->article && $mapping->article->track_inventory) {
-                    $mapping->article->deductStock(
-                        $orderItem->quantity,
-                        'shopify_order',
-                        $order->id,
-                        "Shopify order {$order->order_number}"
-                    );
+                if ($mapping) {
+                    if ($mapping->bundle_id && $mapping->bundle) {
+                        // Deduct component stocks for bundle
+                        $mapping->bundle->deductComponentStocks(
+                            $orderItem->quantity,
+                            'shopify_order',
+                            $order->id
+                        );
+                    } elseif ($mapping->article && $mapping->article->track_inventory) {
+                        // Deduct stock for single article
+                        $mapping->article->deductStock(
+                            $orderItem->quantity,
+                            'shopify_order',
+                            $order->id,
+                            "Shopify order {$order->order_number}"
+                        );
+                    }
                 }
             }
 

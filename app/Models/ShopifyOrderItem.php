@@ -12,6 +12,7 @@ class ShopifyOrderItem extends Model
     protected $fillable = [
         'shopify_order_id',
         'article_id',
+        'bundle_id',
         'shopify_product_id',
         'shopify_variant_id',
         'title',
@@ -37,5 +38,10 @@ class ShopifyOrderItem extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    public function bundle(): BelongsTo
+    {
+        return $this->belongsTo(Bundle::class);
     }
 }

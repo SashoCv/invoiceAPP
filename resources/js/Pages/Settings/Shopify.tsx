@@ -40,6 +40,12 @@ interface ShopifyConnection {
     last_synced_at: string | null;
 }
 
+interface BundleOption {
+    id: number;
+    name: string;
+    sku: string | null;
+}
+
 interface ShopifyMapping {
     id: number;
     shopify_product_title: string;
@@ -47,8 +53,10 @@ interface ShopifyMapping {
     shopify_sku: string | null;
     shopify_variant_id: number;
     shopify_product_id: number;
-    article_id: number;
+    article_id: number | null;
+    bundle_id: number | null;
     article?: { id: number; name: string; sku: string | null; unit: string };
+    bundle?: { id: number; name: string; sku: string | null };
 }
 
 interface ShopifyProduct {
@@ -73,10 +81,11 @@ interface Props {
     connection: ShopifyConnection | null;
     mappings: ShopifyMapping[];
     articles: ArticleOption[];
+    bundles: BundleOption[];
     callbackUrl: string;
 }
 
-export default function Shopify({ connection, mappings, articles, callbackUrl }: Props) {
+export default function Shopify({ connection, mappings, articles, bundles, callbackUrl }: Props) {
     const { t } = useTranslation();
     const [products, setProducts] = useState<ShopifyProduct[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -87,7 +96,7 @@ export default function Shopify({ connection, mappings, articles, callbackUrl }:
         variantTitle: string | null;
         sku: string | null;
     } | null>(null);
-    const [selectedArticleId, setSelectedArticleId] = useState<string>('');
+    const [selectedItemId, setSelectedItemId] = useState<string>('');
 
     const connectForm = useForm({
         shop_domain: '',
@@ -129,7 +138,10 @@ export default function Shopify({ connection, mappings, articles, callbackUrl }:
     };
 
     const handleSaveMapping = () => {
-        if (!selectedVariant || !selectedArticleId) return;
+        if (!selectedVariant || !selectedItemId) return;
+
+        const [type, id] = selectedItemId.split(':');
+        const isBundle = type === 'bundle';
 
         router.post('/settings/shopify/mappings', {
             shopify_product_id: selectedVariant.productId,
@@ -137,11 +149,12 @@ export default function Shopify({ connection, mappings, articles, callbackUrl }:
             shopify_product_title: selectedVariant.productTitle,
             shopify_variant_title: selectedVariant.variantTitle,
             shopify_sku: selectedVariant.sku,
-            article_id: parseInt(selectedArticleId),
+            article_id: isBundle ? null : parseInt(id),
+            bundle_id: isBundle ? parseInt(id) : null,
         }, {
             onSuccess: () => {
                 setSelectedVariant(null);
-                setSelectedArticleId('');
+                setSelectedItemId('');
             },
         });
     };
@@ -305,20 +318,35 @@ export default function Shopify({ connection, mappings, articles, callbackUrl }:
                                             </SelectContent>
                                         </Select>
 
-                                        <Select value={selectedArticleId} onValueChange={setSelectedArticleId}>
+                                        <Select value={selectedItemId} onValueChange={setSelectedItemId}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder={t('shopify.select_article')} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {articles.map((article) => (
-                                                    <SelectItem key={article.id} value={String(article.id)}>
-                                                        {article.name}{article.sku ? ` (${article.sku})` : ''}
-                                                    </SelectItem>
-                                                ))}
+                                                {articles.length > 0 && (
+                                                    <>
+                                                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">{t('shopify.articles_group')}</div>
+                                                        {articles.map((article) => (
+                                                            <SelectItem key={`article:${article.id}`} value={`article:${article.id}`}>
+                                                                {article.name}{article.sku ? ` (${article.sku})` : ''}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </>
+                                                )}
+                                                {bundles.length > 0 && (
+                                                    <>
+                                                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 border-t mt-1 pt-1.5">{t('shopify.bundles_group')}</div>
+                                                        {bundles.map((bundle) => (
+                                                            <SelectItem key={`bundle:${bundle.id}`} value={`bundle:${bundle.id}`}>
+                                                                {bundle.name}{bundle.sku ? ` (${bundle.sku})` : ''}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </>
+                                                )}
                                             </SelectContent>
                                         </Select>
 
-                                        <Button onClick={handleSaveMapping} disabled={!selectedVariant || !selectedArticleId}>
+                                        <Button onClick={handleSaveMapping} disabled={!selectedVariant || !selectedItemId}>
                                             {t('shopify.save_mapping')}
                                         </Button>
                                     </div>
@@ -350,7 +378,7 @@ export default function Shopify({ connection, mappings, articles, callbackUrl }:
                                                 <TableCell className="text-gray-500">
                                                     {mapping.shopify_sku || '-'}
                                                 </TableCell>
-                                                <TableCell>{mapping.article?.name || '-'}</TableCell>
+                                                <TableCell>{mapping.article?.name || mapping.bundle?.name || '-'}</TableCell>
                                                 <TableCell>
                                                     <Button
                                                         size="sm"

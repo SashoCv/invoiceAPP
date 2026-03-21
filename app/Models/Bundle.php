@@ -12,6 +12,7 @@ class Bundle extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'sku',
         'description',
         'price',
         'tax_rate',

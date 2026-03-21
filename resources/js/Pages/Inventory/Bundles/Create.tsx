@@ -25,12 +25,14 @@ export default function CreateBundle({ articles }: CreateBundleProps) {
 
     const { data, setData, post, processing, errors } = useForm<{
         name: string;
+        sku: string;
         description: string;
         price: number;
         tax_rate: number;
         items: BundleFormItem[];
     }>({
         name: '',
+        sku: '',
         description: '',
         price: 0,
         tax_rate: 18,
@@ -87,6 +89,17 @@ export default function CreateBundle({ articles }: CreateBundleProps) {
                                     onChange={(e) => setData('name', e.target.value)}
                                     className="mt-1"
                                     error={errors.name}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="sku">{t('inventory.sku')}</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="mt-1"
+                                    error={errors.sku}
                                 />
                             </div>
 

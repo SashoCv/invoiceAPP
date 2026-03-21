@@ -34,12 +34,14 @@ return [
     'mapping_deleted' => 'Mapping removed',
     'fetch_products' => 'Fetch Products',
     'select_product' => 'Select Shopify product...',
-    'select_article' => 'Select local article...',
+    'select_article' => 'Select article or bundle...',
+    'articles_group' => 'Articles',
+    'bundles_group' => 'Bundles',
     'auto_match' => 'Auto-match by SKU',
     'auto_matched' => ':count products matched by SKU',
     'shopify_product' => 'Shopify Product',
     'shopify_sku' => 'SKU',
-    'local_article' => 'Local Article',
+    'local_article' => 'Local Article / Bundle',
     'no_mappings' => 'No product mappings yet',
 
     // Orders

@@ -28,11 +28,12 @@ class ShopifyController extends Controller
 
         $mappings = $activeConnection
             ? ShopifyProductMapping::where('user_id', $user->id)
-                ->with('article:id,name,sku,unit')
+                ->with(['article:id,name,sku,unit', 'bundle:id,name,sku'])
                 ->get()
             : [];
 
         $articles = $user->articles()->where('is_active', true)->get(['id', 'name', 'sku', 'unit']);
+        $bundles = $user->bundles()->where('is_active', true)->get(['id', 'name', 'sku']);
 
         return Inertia::render('Settings/Shopify', [
             'connection' => $activeConnection ? [
@@ -43,6 +44,7 @@ class ShopifyController extends Controller
             ] : null,
             'mappings' => $mappings,
             'articles' => $articles,
+            'bundles' => $bundles,
             'callbackUrl' => route('settings.shopify.callback'),
         ]);
     }
@@ -217,7 +219,8 @@ class ShopifyController extends Controller
             'shopify_product_title' => ['required', 'string'],
             'shopify_variant_title' => ['nullable', 'string'],
             'shopify_sku' => ['nullable', 'string'],
-            'article_id' => ['required', 'exists:articles,id'],
+            'article_id' => ['nullable', 'exists:articles,id', 'required_without:bundle_id'],
+            'bundle_id' => ['nullable', 'exists:bundles,id', 'required_without:article_id'],
         ]);
 
         $user = $request->user();
@@ -233,14 +236,22 @@ class ShopifyController extends Controller
                 'shopify_variant_title' => $request->shopify_variant_title,
                 'shopify_sku' => $request->shopify_sku,
                 'article_id' => $request->article_id,
+                'bundle_id' => $request->bundle_id,
             ]
         );
 
-        // Copy SKU to article if it doesn't have one
+        // Copy SKU to article/bundle if it doesn't have one
         if ($request->shopify_sku) {
-            $article = $user->articles()->find($request->article_id);
-            if ($article && !$article->sku) {
-                $article->update(['sku' => $request->shopify_sku]);
+            if ($request->article_id) {
+                $article = $user->articles()->find($request->article_id);
+                if ($article && !$article->sku) {
+                    $article->update(['sku' => $request->shopify_sku]);
+                }
+            } elseif ($request->bundle_id) {
+                $bundle = $user->bundles()->find($request->bundle_id);
+                if ($bundle && !$bundle->sku) {
+                    $bundle->update(['sku' => $request->shopify_sku]);
+                }
             }
         }
 
@@ -282,9 +293,10 @@ class ShopifyController extends Controller
                     $existing = ShopifyProductMapping::forVariant($user->id, $variant['id'])->exists();
                     if ($existing) continue;
 
-                    // Find matching article by SKU
+                    // Find matching article or bundle by SKU
                     $article = $user->articles()->where('sku', $sku)->first();
-                    if (!$article) continue;
+                    $bundle = !$article ? $user->bundles()->where('sku', $sku)->where('is_active', true)->first() : null;
+                    if (!$article && !$bundle) continue;
 
                     ShopifyProductMapping::create([
                         'user_id' => $user->id,
@@ -293,7 +305,8 @@ class ShopifyController extends Controller
                         'shopify_product_title' => $product['title'],
                         'shopify_variant_title' => $variant['title'] !== 'Default Title' ? $variant['title'] : null,
                         'shopify_sku' => $sku,
-                        'article_id' => $article->id,
+                        'article_id' => $article?->id,
+                        'bundle_id' => $bundle?->id,
                     ]);
 
                     $matched++;

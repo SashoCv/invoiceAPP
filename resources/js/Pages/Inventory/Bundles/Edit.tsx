@@ -31,6 +31,7 @@ export default function EditBundle({ bundle, articles }: EditBundleProps) {
 
     const { data, setData, put, processing, errors } = useForm<{
         name: string;
+        sku: string;
         description: string;
         price: number;
         tax_rate: number;
@@ -38,6 +39,7 @@ export default function EditBundle({ bundle, articles }: EditBundleProps) {
         items: BundleFormItem[];
     }>({
         name: bundle.name,
+        sku: bundle.sku || '',
         description: bundle.description || '',
         price: bundle.price,
         tax_rate: bundle.tax_rate,
@@ -95,6 +97,17 @@ export default function EditBundle({ bundle, articles }: EditBundleProps) {
                                     onChange={(e) => setData('name', e.target.value)}
                                     className="mt-1"
                                     error={errors.name}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="sku">{t('inventory.sku')}</Label>
+                                <Input
+                                    id="sku"
+                                    value={data.sku}
+                                    onChange={(e) => setData('sku', e.target.value)}
+                                    className="mt-1"
+                                    error={errors.sku}
                                 />
                             </div>
 
