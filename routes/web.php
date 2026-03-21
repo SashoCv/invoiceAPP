@@ -106,6 +106,7 @@ Route::middleware('auth')->group(function () {
     // Shopify
     Route::get('shopify/profitability', [ShopifyProfitabilityController::class, 'index'])->name('shopify.profitability');
     Route::get('shopify/orders', [ShopifyOrderController::class, 'index'])->name('shopify.orders.index');
+    Route::get('shopify/orders/pending', [ShopifyOrderController::class, 'pending'])->name('shopify.orders.pending');
     Route::get('shopify/orders/{shopifyOrder}', [ShopifyOrderController::class, 'show'])->name('shopify.orders.show');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);

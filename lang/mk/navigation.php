@@ -42,4 +42,5 @@ return [
     'shopify' => 'Shopify',
     'shopify_sales' => 'Продажби',
     'shopify_orders' => 'Нарачки',
+    'shopify_pending' => 'Чекаат испорака',
 ];

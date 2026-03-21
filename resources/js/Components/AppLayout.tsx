@@ -28,6 +28,7 @@ import {
     Calculator,
     Shield,
     AlertTriangle,
+    Clock,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
@@ -115,7 +116,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     name: t('navigation.shopify_orders'),
                     href: '/shopify/orders',
                     icon: ShoppingBag,
-                    active: currentPath.startsWith('/shopify/orders'),
+                    active: currentPath === '/shopify/orders' || (currentPath.startsWith('/shopify/orders/') && currentPath !== '/shopify/orders/pending'),
+                },
+                {
+                    name: t('navigation.shopify_pending'),
+                    href: '/shopify/orders/pending',
+                    icon: Clock,
+                    active: currentPath === '/shopify/orders/pending',
                 },
             ],
         },

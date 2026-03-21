@@ -42,4 +42,5 @@ return [
     'shopify' => 'Shopify',
     'shopify_sales' => 'Sales',
     'shopify_orders' => 'Orders',
+    'shopify_pending' => 'Pending Shipment',
 ];

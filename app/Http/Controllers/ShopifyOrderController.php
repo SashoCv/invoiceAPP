@@ -35,6 +35,31 @@ class ShopifyOrderController extends Controller
         ]);
     }
 
+    public function pending(Request $request): Response
+    {
+        $user = $request->user();
+
+        $query = $user->shopifyOrders()
+            ->with('items')
+            ->whereNull('fulfillment_status');
+
+        if ($request->filled('from')) {
+            $query->where('ordered_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->where('ordered_at', '<=', $request->to . ' 23:59:59');
+        }
+
+        $orders = $query->orderByDesc('ordered_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Shopify/PendingOrders', [
+            'orders' => $orders,
+            'filters' => $request->only(['from', 'to']),
+        ]);
+    }
+
     public function show(ShopifyOrder $shopifyOrder): Response
     {
         if ($shopifyOrder->user_id !== auth()->id()) {
