@@ -180,10 +180,13 @@ export default function Orders({ orders, filters }: Props) {
                             {orders.last_page > 1 && (
                                 <div className="flex items-center justify-center gap-1 p-4 border-t">
                                     {orders.links.map((link, i) => (
-                                        <Button
+                                        <button
                                             key={i}
-                                            size="sm"
-                                            variant={link.active ? 'default' : 'outline'}
+                                            className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 border transition-colors ${
+                                                link.active
+                                                    ? 'bg-primary text-primary-foreground border-primary'
+                                                    : 'border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                                            } ${!link.url ? 'opacity-50 pointer-events-none' : ''}`}
                                             disabled={!link.url}
                                             onClick={() => link.url && router.get(link.url)}
                                             dangerouslySetInnerHTML={{ __html: link.label }}
