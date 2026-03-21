@@ -351,7 +351,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                     <TableBody>
                                         {bundles.map((bundle) => (
                                             <TableRow key={bundle.id}>
-                                                <TableCell className="text-gray-500">{bundle.id}</TableCell>
+                                                <TableCell className="text-gray-500">П{bundle.id}</TableCell>
                                                 <TableCell className="font-medium text-gray-900">{bundle.name}</TableCell>
                                                 <TableCell className="hidden md:table-cell text-gray-500">
                                                     {bundle.description || '-'}
