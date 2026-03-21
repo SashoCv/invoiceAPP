@@ -27,7 +27,7 @@ class PdfService
      */
     public function generateInvoicePdf(Invoice $invoice): string
     {
-        $invoice->load(['client', 'items', 'user.agency', 'user.bankAccounts']);
+        $invoice->load(['client', 'branch', 'items', 'user.agency', 'user.bankAccounts']);
 
         $template = $invoice->user->invoice_template ?? 'classic';
         $bankAccount = $this->getDefaultBankAccount($invoice->user, $invoice->currency);
@@ -49,6 +49,7 @@ class PdfService
             'totalDecimals' => $invoice->currency === 'MKD' ? 0 : 2,
             'notes' => $invoice->notes,
             'client' => $invoice->client,
+            'branch' => $invoice->branch,
             'agency' => $invoice->user->agency,
             'items' => $invoice->items,
             'bankAccount' => $bankAccount,
@@ -62,7 +63,7 @@ class PdfService
      */
     public function generateProformaPdf(ProformaInvoice $proforma): string
     {
-        $proforma->load(['client', 'items', 'user.agency', 'user.bankAccounts']);
+        $proforma->load(['client', 'branch', 'items', 'user.agency', 'user.bankAccounts']);
 
         $template = $proforma->user->proforma_template ?? $proforma->user->invoice_template ?? 'classic';
         $bankAccount = $this->getDefaultBankAccount($proforma->user, $proforma->currency);
@@ -84,6 +85,7 @@ class PdfService
             'totalDecimals' => $proforma->currency === 'MKD' ? 0 : 2,
             'notes' => $proforma->notes,
             'client' => $proforma->client,
+            'branch' => $proforma->branch,
             'agency' => $proforma->user->agency,
             'items' => $proforma->items,
             'bankAccount' => $bankAccount,
@@ -97,7 +99,7 @@ class PdfService
      */
     public function generateOfferPdf(Offer $offer): string
     {
-        $offer->load(['client', 'items', 'user.agency', 'user.bankAccounts']);
+        $offer->load(['client', 'branch', 'items', 'user.agency', 'user.bankAccounts']);
 
         $template = $offer->user->offer_template ?? 'classic';
 
@@ -121,6 +123,7 @@ class PdfService
             'totalDecimals' => $offer->currency === 'MKD' ? 0 : 2,
             'notes' => $offer->notes,
             'client' => $offer->client,
+            'branch' => $offer->branch,
             'agency' => $offer->user->agency,
             'items' => $offer->has_items ? $offer->items : collect([]),
             'bankAccount' => null,

@@ -93,4 +93,11 @@ return [
     'no_invoices' => 'No invoices for this client yet',
     'no_articles' => 'No articles purchased yet',
     'contact_info' => 'Contact Information',
+
+    // Branches
+    'branches' => 'Branches',
+    'branches_description' => 'Manage branch offices for this client',
+    'branch_name' => 'Branch Name',
+    'add_branch' => 'Add Branch',
+    'delete_branch_confirm' => 'Are you sure you want to delete this branch?',
 ];

@@ -82,9 +82,20 @@ export interface Client {
     bank_account?: string;
     discount?: number;
     notes: string | null;
+    branches?: ClientBranch[];
     created_at: string;
     updated_at: string;
     deleted_at: string | null;
+}
+
+export interface ClientBranch {
+    id: number;
+    client_id: number;
+    name: string;
+    address: string | null;
+    city: string | null;
+    postal_code: string | null;
+    country: string | null;
 }
 
 export interface Article {

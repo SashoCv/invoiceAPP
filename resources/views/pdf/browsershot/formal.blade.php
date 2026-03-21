@@ -75,8 +75,14 @@
         <div>
             <div class="font-bold mb-1">До</div>
             <div class="font-bold">{{ $client->company ?? $client->name }}</div>
-            @if($client->address)<div>{{ $client->address }}</div>@endif
-            @if($client->postal_code || $client->city)<div>{{ $client->postal_code }} {{ $client->city }}</div>@endif
+            @if(!empty($branch))<div class="font-semibold">{{ $branch->name }}</div>@endif
+            @if(!empty($branch) && $branch->address)
+                <div>{{ $branch->address }}</div>
+                @if($branch->postal_code || $branch->city)<div>{{ $branch->postal_code }} {{ $branch->city }}</div>@endif
+            @else
+                @if($client->address)<div>{{ $client->address }}</div>@endif
+                @if($client->postal_code || $client->city)<div>{{ $client->postal_code }} {{ $client->city }}</div>@endif
+            @endif
         </div>
 
         {{-- Document title + details --}}

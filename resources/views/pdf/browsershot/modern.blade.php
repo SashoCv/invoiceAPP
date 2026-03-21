@@ -32,9 +32,15 @@
             <div class="bg-white rounded-xl shadow-lg p-5">
                 <div class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">Клиент</div>
                 <div class="font-bold text-gray-900">{{ $client->company ?? $client->name }}</div>
+                @if(!empty($branch))<div class="text-sm font-semibold text-gray-700 mt-0.5">{{ $branch->name }}</div>@endif
                 <div class="text-sm text-gray-500 mt-1">
-                    @if($client->address)<div>{{ $client->address }}</div>@endif
-                    @if($client->city)<div>{{ $client->city }}</div>@endif
+                    @if(!empty($branch) && $branch->address)
+                        <div>{{ $branch->address }}</div>
+                        @if($branch->city)<div>{{ $branch->city }}</div>@endif
+                    @else
+                        @if($client->address)<div>{{ $client->address }}</div>@endif
+                        @if($client->city)<div>{{ $client->city }}</div>@endif
+                    @endif
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-5">

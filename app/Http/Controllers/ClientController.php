@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\ClientBranch;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -175,6 +176,8 @@ class ClientController extends Controller implements HasMiddleware
     {
         $this->authorize('update', $client);
 
+        $client->load('branches');
+
         $contracts = $client->contracts()
             ->where('user_id', auth()->id())
             ->orderBy('uploaded_at', 'desc')
@@ -184,6 +187,36 @@ class ClientController extends Controller implements HasMiddleware
             'client' => $client,
             'contracts' => $contracts,
         ]);
+    }
+
+    public function storeBranch(Request $request, Client $client): RedirectResponse
+    {
+        $this->authorize('update', $client);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $client->branches()->create($validated);
+
+        return back()->with('success', __('toast.branch_created'));
+    }
+
+    public function destroyBranch(Client $client, ClientBranch $branch): RedirectResponse
+    {
+        $this->authorize('update', $client);
+
+        if ($branch->client_id !== $client->id) {
+            abort(403);
+        }
+
+        $branch->delete();
+
+        return back()->with('success', __('toast.branch_deleted'));
     }
 
     public function update(Request $request, Client $client): RedirectResponse

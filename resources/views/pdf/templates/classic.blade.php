@@ -25,9 +25,13 @@
     <div class="info-left">
         <div class="section-title">Клиент</div>
         <div class="client-name">{{ $client->company ?? $client->name }}</div>
+        @if(!empty($branch))<div class="client-info" style="font-weight: 600;">{{ $branch->name }}</div>@endif
         <div class="client-info">
-            @if($client->address){{ $client->address }}<br>@endif
-            @if($client->postal_code || $client->city){{ $client->postal_code }} {{ $client->city }}<br>@endif
+            @if(!empty($branch) && $branch->address){{ $branch->address }}<br>@if($branch->postal_code || $branch->city){{ $branch->postal_code }} {{ $branch->city }}<br>@endif
+            @else
+                @if($client->address){{ $client->address }}<br>@endif
+                @if($client->postal_code || $client->city){{ $client->postal_code }} {{ $client->city }}<br>@endif
+            @endif
             @if($client->tax_number)ЕДБ: {{ $client->tax_number }}@endif
         </div>
     </div>

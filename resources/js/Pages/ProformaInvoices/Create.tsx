@@ -62,6 +62,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
 
     const { data, setData, post, processing, errors } = useForm<{
         client_id: string;
+        branch_id: string;
         currency: string;
         issue_date: string;
         valid_until: string;
@@ -71,6 +72,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
         items: ProformaItem[];
     }>({
         client_id: proforma?.client_id?.toString() || '',
+        branch_id: (proforma as any)?.branch_id?.toString() || '',
         currency: proforma?.currency || 'MKD',
         issue_date: new Date().toISOString().split('T')[0],
         valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -204,6 +206,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                         setData(prev => ({
                                             ...prev,
                                             client_id: v,
+                                            branch_id: '',
                                             items: prev.items.map(item => ({ ...item, discount: clientDiscount })),
                                         }));
                                     }}>
@@ -234,6 +237,30 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                     </Select>
                                 </div>
                             </div>
+
+                            {(() => {
+                                const selectedClient = clients.find(c => c.id.toString() === data.client_id);
+                                const branches = selectedClient?.branches ?? [];
+                                if (branches.length === 0) return null;
+                                return (
+                                    <div>
+                                        <Label>{t('invoices.branch')}</Label>
+                                        <Select value={data.branch_id || '__none__'} onValueChange={(v) => setData('branch_id', v === '__none__' ? '' : v)}>
+                                            <SelectTrigger className="mt-1">
+                                                <SelectValue placeholder={t('invoices.select_branch')} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="__none__">{t('invoices.no_branch')}</SelectItem>
+                                                {branches.map((b) => (
+                                                    <SelectItem key={b.id} value={b.id.toString()}>
+                                                        {b.name}{b.city ? ` - ${b.city}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                );
+                            })()}
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>

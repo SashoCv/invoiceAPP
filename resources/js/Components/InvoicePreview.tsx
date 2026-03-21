@@ -111,9 +111,27 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                 <div>
                     <h3 className="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wide">Клиент</h3>
                     <div className="font-semibold text-gray-900">{document.client?.company || document.client?.name}</div>
+                    {(document as any).branch && (
+                        <div className="text-sm font-medium text-gray-700 mt-0.5">{(document as any).branch.name}</div>
+                    )}
                     <div className="text-sm text-gray-500 mt-1 space-y-0.5">
-                        {document.client?.address && <div>{document.client.address}</div>}
-                        {document.client?.city && <div>{document.client.postal_code && `${document.client.postal_code} `}{document.client.city}</div>}
+                        {(() => {
+                            const branch = (document as any).branch;
+                            if (branch?.address) {
+                                return (
+                                    <>
+                                        <div>{branch.address}</div>
+                                        {branch.city && <div>{branch.postal_code ? `${branch.postal_code} ` : ''}{branch.city}</div>}
+                                    </>
+                                );
+                            }
+                            return (
+                                <>
+                                    {document.client?.address && <div>{document.client.address}</div>}
+                                    {document.client?.city && <div>{document.client.postal_code ? `${document.client.postal_code} ` : ''}{document.client.city}</div>}
+                                </>
+                            );
+                        })()}
                         {document.client?.tax_number && <div>ЕДБ: {document.client.tax_number}</div>}
                     </div>
                 </div>
@@ -292,9 +310,13 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                     <div className="bg-white rounded-xl shadow-lg p-5">
                         <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">Клиент</div>
                         <div className="font-bold text-gray-900">{document.client?.company || document.client?.name}</div>
+                        {(document as any).branch && <div className="text-sm font-semibold text-gray-700 mt-0.5">{(document as any).branch.name}</div>}
                         <div className="text-sm text-gray-500 mt-1">
-                            {document.client?.address && <div>{document.client.address}</div>}
-                            {document.client?.city && <div>{document.client.city}</div>}
+                            {(() => {
+                                const branch = (document as any).branch;
+                                if (branch?.address) return <><div>{branch.address}</div>{branch.city && <div>{branch.city}</div>}</>;
+                                return <>{document.client?.address && <div>{document.client.address}</div>}{document.client?.city && <div>{document.client.city}</div>}</>;
+                            })()}
                         </div>
                     </div>
                     <div className="bg-white rounded-xl shadow-lg p-5">
@@ -478,9 +500,13 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                 <div>
                     <div className="text-xs uppercase tracking-[0.2em] text-gray-400 mb-4">Клиент</div>
                     <div className="text-gray-900">{document.client?.company || document.client?.name}</div>
+                    {(document as any).branch && <div className="text-sm font-medium text-gray-600 mt-0.5">{(document as any).branch.name}</div>}
                     <div className="text-sm text-gray-400 mt-2 space-y-1">
-                        {document.client?.address && <div>{document.client.address}</div>}
-                        {document.client?.city && <div>{document.client.city}</div>}
+                        {(() => {
+                            const branch = (document as any).branch;
+                            if (branch?.address) return <><div>{branch.address}</div>{branch.city && <div>{branch.city}</div>}</>;
+                            return <>{document.client?.address && <div>{document.client.address}</div>}{document.client?.city && <div>{document.client.city}</div>}</>;
+                        })()}
                         {document.client?.tax_number && <div>ЕДБ {document.client.tax_number}</div>}
                     </div>
                 </div>
@@ -686,8 +712,12 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                 <div>
                     <div className="font-bold mb-1">До</div>
                     <div className="font-bold">{document.client?.company || document.client?.name}</div>
-                    {document.client?.address && <div>{document.client.address}</div>}
-                    {document.client?.city && <div>{document.client.postal_code && `${document.client.postal_code} `}{document.client.city}</div>}
+                    {(document as any).branch && <div className="font-semibold">{(document as any).branch.name}</div>}
+                    {(() => {
+                        const branch = (document as any).branch;
+                        if (branch?.address) return <>{<div>{branch.address}</div>}{branch.city && <div>{branch.postal_code ? `${branch.postal_code} ` : ''}{branch.city}</div>}</>;
+                        return <>{document.client?.address && <div>{document.client.address}</div>}{document.client?.city && <div>{document.client.postal_code && `${document.client.postal_code} `}{document.client.city}</div>}</>;
+                    })()}
                 </div>
                 <div className="text-right">
                     <div className="text-[20px] font-bold mb-2">{titles[type]}</div>

@@ -14,6 +14,7 @@ class ProformaInvoice extends Model
     protected $fillable = [
         'user_id',
         'client_id',
+        'branch_id',
         'proforma_number',
         'proforma_prefix',
         'proforma_sequence',
@@ -51,6 +52,11 @@ class ProformaInvoice extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(ClientBranch::class, 'branch_id');
     }
 
     public function items(): HasMany

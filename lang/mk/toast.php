@@ -19,6 +19,8 @@ return [
     'client_archived' => 'Клиентот е архивиран',
     'client_restored' => 'Клиентот е вратен',
     'client_has_invoices' => 'Не може трајно да се избрише клиент со постоечки фактури',
+    'branch_created' => 'Подружницата е успешно додадена',
+    'branch_deleted' => 'Подружницата е избришана',
     'article_created' => 'Артиклот е успешно додаден',
     'article_updated' => 'Артиклот е успешно ажуриран',
     'article_deleted' => 'Артиклот е избришан',

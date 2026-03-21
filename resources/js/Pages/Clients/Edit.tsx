@@ -1,12 +1,13 @@
 import { FormEventHandler } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/Components/AppLayout';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import type { Client, ClientContract } from '@/types';
 
 interface ClientEditProps {
@@ -16,6 +17,28 @@ interface ClientEditProps {
 
 export default function ClientEdit({ client, contracts }: ClientEditProps) {
     const { t } = useTranslation();
+
+    const branchForm = useForm({
+        name: '',
+        address: '',
+        city: '',
+        postal_code: '',
+        country: '',
+    });
+
+    const handleAddBranch = (e: React.FormEvent) => {
+        e.preventDefault();
+        branchForm.post(`/clients/${client.id}/branches`, {
+            onSuccess: () => branchForm.reset(),
+        });
+    };
+
+    const handleDeleteBranch = (branchId: number) => {
+        if (confirm(t('clients.delete_branch_confirm'))) {
+            router.delete(`/clients/${client.id}/branches/${branchId}`);
+        }
+    };
+
     const { data, setData, put, processing, errors } = useForm({
         name: client.name || '',
         company: client.company || '',
@@ -232,6 +255,99 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
                                     {t('clients.update_client')}
                                 </Button>
                             </div>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                {/* Branches */}
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle>{t('clients.branches')}</CardTitle>
+                        <CardDescription>{t('clients.branches_description')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {(client.branches?.length ?? 0) > 0 && (
+                            <Table className="mb-6">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('clients.branch_name')}</TableHead>
+                                        <TableHead>{t('clients.address')}</TableHead>
+                                        <TableHead>{t('clients.city')}</TableHead>
+                                        <TableHead className="w-[60px]" />
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {client.branches!.map((branch) => (
+                                        <TableRow key={branch.id}>
+                                            <TableCell className="font-medium">{branch.name}</TableCell>
+                                            <TableCell className="text-gray-500">{branch.address || '-'}</TableCell>
+                                            <TableCell className="text-gray-500">{branch.city || '-'}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleDeleteBranch(branch.id)}
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+
+                        <form onSubmit={handleAddBranch} className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                            <p className="text-sm font-medium">{t('clients.add_branch')}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label>{t('clients.branch_name')} *</Label>
+                                    <Input
+                                        value={branchForm.data.name}
+                                        onChange={(e) => branchForm.setData('name', e.target.value)}
+                                        className="mt-1"
+                                        error={branchForm.errors.name}
+                                    />
+                                </div>
+                                <div>
+                                    <Label>{t('clients.address')}</Label>
+                                    <Input
+                                        value={branchForm.data.address}
+                                        onChange={(e) => branchForm.setData('address', e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <Label>{t('clients.city')}</Label>
+                                    <Input
+                                        value={branchForm.data.city}
+                                        onChange={(e) => branchForm.setData('city', e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <Label>{t('clients.postal_code')}</Label>
+                                    <Input
+                                        value={branchForm.data.postal_code}
+                                        onChange={(e) => branchForm.setData('postal_code', e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                                <div>
+                                    <Label>{t('clients.country')}</Label>
+                                    <Input
+                                        value={branchForm.data.country}
+                                        onChange={(e) => branchForm.setData('country', e.target.value)}
+                                        className="mt-1"
+                                    />
+                                </div>
+                            </div>
+                            <Button type="submit" size="sm" disabled={branchForm.processing} loading={branchForm.processing}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                {t('clients.add_branch')}
+                            </Button>
                         </form>
                     </CardContent>
                 </Card>

@@ -59,6 +59,7 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
 
     const { data, setData, put, processing, errors } = useForm({
         client_id: proforma.client_id.toString(),
+        branch_id: (proforma as any).branch_id?.toString() || '',
         currency: proforma.currency,
         issue_date: proforma.issue_date,
         valid_until: proforma.valid_until,
@@ -191,6 +192,7 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
                                         setData(prev => ({
                                             ...prev,
                                             client_id: v,
+                                            branch_id: '',
                                             items: prev.items.map(item => ({ ...item, discount: clientDiscount })),
                                         }));
                                     }}>
@@ -222,9 +224,33 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
                                 </div>
                             </div>
 
+                            {(() => {
+                                const selectedClient = clients.find(c => c.id.toString() === data.client_id);
+                                const branches = selectedClient?.branches ?? [];
+                                if (branches.length === 0) return null;
+                                return (
+                                    <div>
+                                        <Label>{t('invoices.branch')}</Label>
+                                        <Select value={data.branch_id || '__none__'} onValueChange={(v) => setData('branch_id', v === '__none__' ? '' : v)}>
+                                            <SelectTrigger className="mt-1">
+                                                <SelectValue placeholder={t('invoices.select_branch')} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="__none__">{t('invoices.no_branch')}</SelectItem>
+                                                {branches.map((b) => (
+                                                    <SelectItem key={b.id} value={b.id.toString()}>
+                                                        {b.name}{b.city ? ` - ${b.city}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label htmlFor="currency">{t('proforma.currency')} *</Label>
+                                    <Label>{t('proforma.currency')} *</Label>
                                     <Select value={data.currency} onValueChange={(v) => setData('currency', v)}>
                                         <SelectTrigger className="mt-1">
                                             <SelectValue />

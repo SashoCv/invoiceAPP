@@ -56,6 +56,11 @@ class Client extends Model
         return $this->hasMany(ClientContract::class);
     }
 
+    public function branches(): HasMany
+    {
+        return $this->hasMany(ClientBranch::class);
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return $this->company ?: $this->name;

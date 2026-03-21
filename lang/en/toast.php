@@ -19,6 +19,8 @@ return [
     'client_archived' => 'Client archived',
     'client_restored' => 'Client restored',
     'client_has_invoices' => 'Cannot permanently delete client with existing invoices',
+    'branch_created' => 'Branch added successfully',
+    'branch_deleted' => 'Branch deleted',
     'article_created' => 'Article added successfully',
     'article_updated' => 'Article updated successfully',
     'article_deleted' => 'Article deleted',

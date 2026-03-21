@@ -17,6 +17,7 @@ class Invoice extends Model
         'invoice_sequence',
         'invoice_year',
         'client_id',
+        'branch_id',
         'currency',
         'issue_date',
         'due_date',
@@ -62,6 +63,11 @@ class Invoice extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(ClientBranch::class, 'branch_id');
     }
 
     public function items(): HasMany

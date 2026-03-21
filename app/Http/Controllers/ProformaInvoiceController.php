@@ -95,7 +95,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
     public function create(Request $request): Response
     {
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
@@ -118,6 +118,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'branch_id' => ['nullable', 'exists:client_branches,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
             'valid_until' => ['required', 'date', 'after_or_equal:issue_date'],
@@ -152,6 +153,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'proforma_sequence' => $validated['proforma_sequence'],
             'proforma_year' => $proformaYear,
             'client_id' => $validated['client_id'],
+            'branch_id' => $validated['branch_id'] ?? null,
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
             'valid_until' => $validated['valid_until'],
@@ -183,7 +185,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
     {
         $this->authorize('view', $proformaInvoice);
 
-        $proformaInvoice->load(['client', 'items', 'user.agency', 'user.bankAccounts', 'convertedInvoice']);
+        $proformaInvoice->load(['client', 'branch', 'items', 'user.agency', 'user.bankAccounts', 'convertedInvoice']);
 
         return Inertia::render('ProformaInvoices/Show', [
             'proforma' => $proformaInvoice,
@@ -194,7 +196,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
     {
         $this->authorize('update', $proformaInvoice);
 
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
         $proformaInvoice->load('items');
@@ -216,6 +218,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'branch_id' => ['nullable', 'exists:client_branches,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
             'valid_until' => ['required', 'date', 'after_or_equal:issue_date'],
@@ -249,6 +252,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
         $proformaInvoice->update([
             'proforma_number' => ProformaInvoice::formatProformaNumber($validated['proforma_prefix'] ?? null, $proformaYear, $validated['proforma_sequence']),
             'client_id' => $validated['client_id'],
+            'branch_id' => $validated['branch_id'] ?? null,
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
             'valid_until' => $validated['valid_until'],
@@ -294,7 +298,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
         $this->authorize('view', $proformaInvoice);
 
         $proformaInvoice->load('items');
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
 
         $currentYear = (int) date('Y');

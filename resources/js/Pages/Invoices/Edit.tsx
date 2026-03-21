@@ -59,6 +59,7 @@ export default function EditInvoice({ invoice, clients, articles, bundles = [] }
 
     const { data, setData, put, processing, errors } = useForm({
         client_id: invoice.client_id.toString(),
+        branch_id: (invoice as any).branch_id?.toString() || '',
         currency: invoice.currency,
         issue_date: invoice.issue_date,
         due_date: invoice.due_date,
@@ -191,6 +192,7 @@ export default function EditInvoice({ invoice, clients, articles, bundles = [] }
                                         setData(prev => ({
                                             ...prev,
                                             client_id: v,
+                                            branch_id: '',
                                             items: prev.items.map(item => ({ ...item, discount: clientDiscount })),
                                         }));
                                     }}>
@@ -224,6 +226,30 @@ export default function EditInvoice({ invoice, clients, articles, bundles = [] }
                                     </Select>
                                 </div>
                             </div>
+
+                            {(() => {
+                                const selectedClient = clients.find(c => c.id.toString() === data.client_id);
+                                const branches = selectedClient?.branches ?? [];
+                                if (branches.length === 0) return null;
+                                return (
+                                    <div>
+                                        <Label>{t('invoices.branch')}</Label>
+                                        <Select value={data.branch_id || '__none__'} onValueChange={(v) => setData('branch_id', v === '__none__' ? '' : v)}>
+                                            <SelectTrigger className="mt-1">
+                                                <SelectValue placeholder={t('invoices.select_branch')} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="__none__">{t('invoices.no_branch')}</SelectItem>
+                                                {branches.map((b) => (
+                                                    <SelectItem key={b.id} value={b.id.toString()}>
+                                                        {b.name}{b.city ? ` - ${b.city}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                );
+                            })()}
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>

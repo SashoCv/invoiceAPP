@@ -34,9 +34,15 @@
         <div>
             <div class="text-xs uppercase tracking-[0.2em] text-gray-400 mb-4">Клиент</div>
             <div class="text-gray-900">{{ $client->company ?? $client->name }}</div>
+            @if(!empty($branch))<div class="text-sm font-medium text-gray-600 mt-0.5">{{ $branch->name }}</div>@endif
             <div class="text-sm text-gray-400 mt-2 space-y-1">
-                @if($client->address)<div>{{ $client->address }}</div>@endif
-                @if($client->city)<div>{{ $client->city }}</div>@endif
+                @if(!empty($branch) && $branch->address)
+                    <div>{{ $branch->address }}</div>
+                    @if($branch->city)<div>{{ $branch->city }}</div>@endif
+                @else
+                    @if($client->address)<div>{{ $client->address }}</div>@endif
+                    @if($client->city)<div>{{ $client->city }}</div>@endif
+                @endif
                 @if($client->tax_number)<div>ЕДБ {{ $client->tax_number }}</div>@endif
             </div>
         </div>

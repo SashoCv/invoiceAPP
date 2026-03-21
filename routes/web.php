@@ -93,6 +93,8 @@ Route::middleware('auth')->group(function () {
     Route::post('clients/{id}/restore', [ClientController::class, 'restore'])->name('clients.restore');
     Route::delete('clients/{id}/force-delete', [ClientController::class, 'forceDelete'])->name('clients.force-delete');
     Route::resource('clients', ClientController::class);
+    Route::post('clients/{client}/branches', [ClientController::class, 'storeBranch'])->name('clients.branches.store');
+    Route::delete('clients/{client}/branches/{branch}', [ClientController::class, 'destroyBranch'])->name('clients.branches.destroy');
 
     // Articles
     Route::resource('articles', ArticleController::class)->except(['show']);

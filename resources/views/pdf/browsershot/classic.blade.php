@@ -36,9 +36,15 @@
         <div>
             <h3 class="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wide">Клиент</h3>
             <div class="font-semibold text-gray-900">{{ $client->company ?? $client->name }}</div>
+            @if(!empty($branch))<div class="text-sm font-medium text-gray-700 mt-0.5">{{ $branch->name }}</div>@endif
             <div class="text-sm text-gray-500 mt-1 space-y-0.5">
-                @if($client->address)<div>{{ $client->address }}</div>@endif
-                @if($client->city)<div>{{ $client->postal_code }} {{ $client->city }}</div>@endif
+                @if(!empty($branch) && $branch->address)
+                    <div>{{ $branch->address }}</div>
+                    @if($branch->city)<div>{{ $branch->postal_code }} {{ $branch->city }}</div>@endif
+                @else
+                    @if($client->address)<div>{{ $client->address }}</div>@endif
+                    @if($client->city)<div>{{ $client->postal_code }} {{ $client->city }}</div>@endif
+                @endif
                 @if($client->tax_number)<div>ЕДБ: {{ $client->tax_number }}</div>@endif
             </div>
         </div>

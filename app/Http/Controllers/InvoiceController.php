@@ -106,7 +106,7 @@ class InvoiceController extends Controller implements HasMiddleware
 
     public function create(Request $request): Response
     {
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
@@ -129,6 +129,7 @@ class InvoiceController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'branch_id' => ['nullable', 'exists:client_branches,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
@@ -165,6 +166,7 @@ class InvoiceController extends Controller implements HasMiddleware
                 'invoice_sequence' => $validated['invoice_sequence'],
                 'invoice_year' => $invoiceYear,
                 'client_id' => $validated['client_id'],
+                'branch_id' => $validated['branch_id'] ?? null,
                 'currency' => $validated['currency'],
                 'issue_date' => $validated['issue_date'],
                 'due_date' => $validated['due_date'],
@@ -218,7 +220,7 @@ class InvoiceController extends Controller implements HasMiddleware
     {
         $this->authorize('view', $invoice);
 
-        $invoice->load(['client', 'items', 'user.agency', 'user.bankAccounts']);
+        $invoice->load(['client', 'branch', 'items', 'user.agency', 'user.bankAccounts']);
 
         return Inertia::render('Invoices/Show', [
             'invoice' => $invoice,
@@ -229,7 +231,7 @@ class InvoiceController extends Controller implements HasMiddleware
     {
         $this->authorize('update', $invoice);
 
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
         $invoice->load('items');
@@ -251,6 +253,7 @@ class InvoiceController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
+            'branch_id' => ['nullable', 'exists:client_branches,id'],
             'currency' => ['required', 'in:MKD,EUR,USD'],
             'issue_date' => ['required', 'date'],
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
@@ -288,6 +291,7 @@ class InvoiceController extends Controller implements HasMiddleware
         $invoice->update([
             'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
             'client_id' => $validated['client_id'],
+            'branch_id' => $validated['branch_id'] ?? null,
             'currency' => $validated['currency'],
             'issue_date' => $validated['issue_date'],
             'due_date' => $validated['due_date'],
@@ -353,7 +357,7 @@ class InvoiceController extends Controller implements HasMiddleware
         $this->authorize('view', $invoice);
 
         $invoice->load('items');
-        $clients = $request->user()->clients()->orderBy('company')->orderBy('name')->get();
+        $clients = $request->user()->clients()->with('branches')->orderBy('company')->orderBy('name')->get();
         $articles = $request->user()->articles()->where('is_active', true)->orderBy('name')->get();
         $bundles = $request->user()->bundles()->where('is_active', true)->with('bundleItems.article')->orderBy('name')->get();
 
