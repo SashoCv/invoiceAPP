@@ -23,7 +23,19 @@ class ProcessShopifyOrder implements ShouldQueue
 
     public function handle(ShopifyOrderProcessor $processor): void
     {
-        $processor->processOrder($this->userId, $this->orderData);
+        Log::info('ProcessShopifyOrder job: started', [
+            'user_id' => $this->userId,
+            'shopify_order_id' => $this->orderData['id'] ?? null,
+            'order_number' => $this->orderData['name'] ?? null,
+        ]);
+
+        $result = $processor->processOrder($this->userId, $this->orderData);
+
+        Log::info('ProcessShopifyOrder job: completed', [
+            'shopify_order_id' => $this->orderData['id'] ?? null,
+            'created_order_id' => $result?->id,
+            'was_new' => $result?->wasRecentlyCreated ?? false,
+        ]);
     }
 
     public function failed(\Throwable $exception): void

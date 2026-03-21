@@ -15,14 +15,29 @@ class ShopifyOrderProcessor
     {
         $shopifyOrderId = $orderData['id'];
 
+        Log::info('ShopifyOrderProcessor: processing order', [
+            'user_id' => $userId,
+            'shopify_order_id' => $shopifyOrderId,
+            'order_number' => $orderData['name'] ?? null,
+            'financial_status' => $orderData['financial_status'] ?? null,
+            'total_price' => $orderData['total_price'] ?? null,
+            'line_items_count' => count($orderData['line_items'] ?? []),
+        ]);
+
         // Idempotent: skip if already processed
         $existing = ShopifyOrder::where('user_id', $userId)
             ->where('shopify_order_id', $shopifyOrderId)
             ->first();
 
         if ($existing) {
+            Log::info('ShopifyOrderProcessor: order already exists, skipping', [
+                'shopify_order_id' => $shopifyOrderId,
+                'existing_id' => $existing->id,
+            ]);
             return $existing;
         }
+
+        Log::info('ShopifyOrderProcessor: creating new order', ['shopify_order_id' => $shopifyOrderId]);
 
         return DB::transaction(function () use ($userId, $orderData, $shopifyOrderId) {
             // Extract customer info
@@ -42,6 +57,12 @@ class ShopifyOrderProcessor
                 'total_tax' => $orderData['total_tax'] ?? 0,
                 'total_price' => $orderData['total_price'] ?? 0,
                 'ordered_at' => Carbon::parse($orderData['created_at']),
+            ]);
+
+            Log::info('ShopifyOrderProcessor: order created in DB', [
+                'id' => $order->id,
+                'shopify_order_id' => $shopifyOrderId,
+                'order_number' => $order->order_number,
             ]);
 
             $lineItems = $orderData['line_items'] ?? [];

@@ -354,16 +354,35 @@ class ShopifyController extends Controller
                 $params['created_at_max'] = $dateTo;
             }
 
+            Log::info('Shopify syncOrders: fetching orders', ['params' => $params]);
+
             $orders = $client->getOrders($params);
 
+            Log::info('Shopify syncOrders: received orders from API', [
+                'count' => count($orders),
+                'first_order' => $orders[0] ?? null,
+                'order_ids' => collect($orders)->pluck('id')->toArray(),
+            ]);
+
             foreach ($orders as $order) {
-                ProcessShopifyOrder::dispatch($user->id, $order);
+                Log::info('Shopify syncOrders: dispatching job', [
+                    'shopify_order_id' => $order['id'],
+                    'order_number' => $order['name'] ?? $order['order_number'] ?? null,
+                    'line_items_count' => count($order['line_items'] ?? []),
+                ]);
+                ProcessShopifyOrder::dispatchSync($user->id, $order);
             }
+
+            Log::info('Shopify syncOrders: all jobs dispatched', [
+                'total' => count($orders),
+                'jobs_in_queue' => \Illuminate\Support\Facades\DB::table('jobs')->count(),
+            ]);
 
             $connection->update(['last_synced_at' => now()]);
 
             return back()->with('success', __('shopify.sync_started', ['count' => count($orders)]));
         } catch (\Exception $e) {
+            Log::error('Shopify syncOrders: failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->with('error', $e->getMessage());
         }
     }
