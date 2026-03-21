@@ -339,6 +339,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead>{t('inventory.article_code')}</TableHead>
                                             <TableHead>{t('inventory.name')}</TableHead>
                                             <TableHead className="hidden md:table-cell">{t('inventory.description')}</TableHead>
                                             <TableHead>{t('inventory.component_count')}</TableHead>
@@ -350,6 +351,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                     <TableBody>
                                         {bundles.map((bundle) => (
                                             <TableRow key={bundle.id}>
+                                                <TableCell className="text-gray-500">{bundle.id}</TableCell>
                                                 <TableCell className="font-medium text-gray-900">{bundle.name}</TableCell>
                                                 <TableCell className="hidden md:table-cell text-gray-500">
                                                     {bundle.description || '-'}
