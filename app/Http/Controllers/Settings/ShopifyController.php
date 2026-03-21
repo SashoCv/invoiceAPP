@@ -321,6 +321,11 @@ class ShopifyController extends Controller
 
     public function syncOrders(Request $request): RedirectResponse
     {
+        $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+        ]);
+
         $user = $request->user();
         $connection = $user->shopifyConnection;
 
@@ -328,14 +333,28 @@ class ShopifyController extends Controller
             return back()->with('error', __('shopify.not_connected'));
         }
 
+        $dateFrom = $request->date_from
+            ? \Carbon\Carbon::parse($request->date_from)->startOfDay()->toIso8601String()
+            : now()->subDays(30)->toIso8601String();
+
+        $dateTo = $request->date_to
+            ? \Carbon\Carbon::parse($request->date_to)->endOfDay()->toIso8601String()
+            : null;
+
         try {
             $client = new ShopifyApiClient($connection);
-            $orders = $client->getOrders([
+            $params = [
                 'status' => 'any',
                 'financial_status' => 'paid',
-                'created_at_min' => now()->subDays(30)->toIso8601String(),
+                'created_at_min' => $dateFrom,
                 'limit' => 250,
-            ]);
+            ];
+
+            if ($dateTo) {
+                $params['created_at_max'] = $dateTo;
+            }
+
+            $orders = $client->getOrders($params);
 
             foreach ($orders as $order) {
                 ProcessShopifyOrder::dispatch($user->id, $order);

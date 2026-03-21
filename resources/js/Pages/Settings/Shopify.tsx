@@ -6,6 +6,13 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/Components/ui/dialog';
+import {
     Table,
     TableBody,
     TableCell,
@@ -97,6 +104,14 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
         sku: string | null;
     } | null>(null);
     const [selectedItemId, setSelectedItemId] = useState<string>('');
+    const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+    const [syncDateFrom, setSyncDateFrom] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        return d.toISOString().split('T')[0];
+    });
+    const [syncDateTo, setSyncDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+    const [syncing, setSyncing] = useState(false);
 
     const connectForm = useForm({
         shop_domain: '',
@@ -116,7 +131,16 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
     };
 
     const handleSync = () => {
-        router.post('/settings/shopify/sync');
+        setSyncing(true);
+        router.post('/settings/shopify/sync', {
+            date_from: syncDateFrom,
+            date_to: syncDateTo,
+        }, {
+            onFinish: () => {
+                setSyncing(false);
+                setSyncDialogOpen(false);
+            },
+        });
     };
 
     const handleAutoMatch = () => {
@@ -194,7 +218,7 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
                                 )}
 
                                 <div className="flex gap-2">
-                                    <Button size="sm" onClick={handleSync}>
+                                    <Button size="sm" onClick={() => setSyncDialogOpen(true)}>
                                         <RefreshCw className="w-4 h-4 mr-2" />
                                         {t('shopify.sync_orders')}
                                     </Button>
@@ -402,6 +426,48 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
                     </Card>
                 )}
             </div>
+
+            <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t('shopify.sync_orders')}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <p className="text-sm text-gray-500">{t('shopify.sync_date_description')}</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="sync_date_from">{t('shopify.date_from')}</Label>
+                                <Input
+                                    id="sync_date_from"
+                                    type="date"
+                                    value={syncDateFrom}
+                                    onChange={(e) => setSyncDateFrom(e.target.value)}
+                                    className="mt-1"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="sync_date_to">{t('shopify.date_to')}</Label>
+                                <Input
+                                    id="sync_date_to"
+                                    type="date"
+                                    value={syncDateTo}
+                                    onChange={(e) => setSyncDateTo(e.target.value)}
+                                    className="mt-1"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setSyncDialogOpen(false)}>
+                            {t('general.cancel')}
+                        </Button>
+                        <Button onClick={handleSync} disabled={syncing} loading={syncing}>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            {t('shopify.sync_orders')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </SettingsLayout>
     );
 }

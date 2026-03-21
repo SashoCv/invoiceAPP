@@ -17,6 +17,9 @@ return [
     'client_secret' => 'Client Secret',
     'last_synced' => 'Last synced',
     'sync_orders' => 'Sync Orders',
+    'sync_date_description' => 'Select the date range for orders to sync from Shopify.',
+    'date_from' => 'From',
+    'date_to' => 'To',
     'sync_started' => ':count orders queued for processing',
 
     // Setup instructions

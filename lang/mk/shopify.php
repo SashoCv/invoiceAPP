@@ -17,6 +17,9 @@ return [
     'client_secret' => 'Client Secret',
     'last_synced' => 'Последна синхронизација',
     'sync_orders' => 'Синхронизирај нарачки',
+    'sync_date_description' => 'Изберете период за синхронизација на нарачки од Shopify.',
+    'date_from' => 'Од',
+    'date_to' => 'До',
     'sync_started' => ':count нарачки пратени на обработка',
 
     // Setup instructions

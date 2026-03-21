@@ -4,6 +4,8 @@ return [
     'title' => 'Warehouse',
     'subtitle' => 'Manage inventory items, bundles, and stock movements',
 
+    'article_code' => 'Code',
+
     // Tabs
     'items_tab' => 'Items',
     'bundles_tab' => 'Bundles',

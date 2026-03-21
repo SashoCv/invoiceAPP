@@ -243,6 +243,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
+                                                <TableHead>{t('inventory.article_code')}</TableHead>
                                                 <SortableTableHead column="name" currentSort={filters.sort} currentDirection={filters.dir} baseUrl="/inventory">
                                                     {t('inventory.name')}
                                                 </SortableTableHead>
@@ -260,6 +261,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                         <TableBody>
                                             {items.data.map((item) => (
                                                 <TableRow key={item.id}>
+                                                    <TableCell className="text-gray-500">{item.id}</TableCell>
                                                     <TableCell>
                                                         <Link href={`/inventory/${item.id}`} className="font-medium text-gray-900 hover:text-blue-600">
                                                             {item.name}
