@@ -27,6 +27,10 @@ return [
     'description_placeholder' => 'Optional description',
     'tax_rate' => 'Tax Rate',
     'is_active' => 'Active',
+    'type' => 'Type',
+    'type_product' => 'Product',
+    'type_service' => 'Service',
+    'all_types' => 'All types',
 
     // Actions
     'back_to_list' => 'Back to list',

@@ -102,6 +102,7 @@ export interface Article {
     id: number;
     user_id: number;
     name: string;
+    type: 'product' | 'service';
     sku: string | null;
     description: string;
     unit: string;

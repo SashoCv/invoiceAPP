@@ -8,6 +8,13 @@ import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Checkbox } from '@/Components/ui/checkbox';
 import { useTranslation } from '@/hooks/use-translation';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 import type { Article } from '@/types';
 
@@ -20,6 +27,7 @@ export default function EditArticle({ article }: EditArticleProps) {
 
     const { data, setData, put, processing, errors } = useForm({
         name: article.name,
+        type: article.type || 'product' as 'product' | 'service',
         sku: article.sku || '',
         description: article.description || '',
         unit: article.unit,
@@ -65,6 +73,19 @@ export default function EditArticle({ article }: EditArticleProps) {
                                     className="mt-1"
                                     error={errors.name}
                                 />
+                            </div>
+
+                            <div>
+                                <Label>{t('articles.type')} *</Label>
+                                <Select value={data.type} onValueChange={(v) => setData('type', v as 'product' | 'service')}>
+                                    <SelectTrigger className="mt-1">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="product">{t('articles.type_product')}</SelectItem>
+                                        <SelectItem value="service">{t('articles.type_service')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div>

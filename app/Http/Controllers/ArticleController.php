@@ -42,6 +42,11 @@ class ArticleController extends Controller implements HasMiddleware
             $query->where('is_active', $request->status === 'active');
         }
 
+        // Filter by type (product/service)
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
         // Sorting
         $sortBy = $request->get('sort', 'name');
         $sortDir = $request->get('dir', 'asc');
@@ -57,7 +62,7 @@ class ArticleController extends Controller implements HasMiddleware
 
         return Inertia::render('Articles/Index', [
             'articles' => $articles,
-            'filters' => $request->only(['search', 'status', 'per_page', 'sort', 'dir']),
+            'filters' => $request->only(['search', 'status', 'type', 'per_page', 'sort', 'dir']),
         ]);
     }
 
@@ -70,6 +75,7 @@ class ArticleController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'in:product,service'],
             'sku' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'unit' => ['required', 'string', 'max:50'],
@@ -97,6 +103,7 @@ class ArticleController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'type' => ['required', 'in:product,service'],
             'sku' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'unit' => ['required', 'string', 'max:50'],

@@ -27,6 +27,10 @@ return [
     'description_placeholder' => 'Опционален опис',
     'tax_rate' => 'ДДВ стапка',
     'is_active' => 'Активен',
+    'type' => 'Тип',
+    'type_product' => 'Производ',
+    'type_service' => 'Услуга',
+    'all_types' => 'Сите типови',
 
     // Actions
     'back_to_list' => 'Назад кон листа',

@@ -36,6 +36,7 @@ interface ArticlesIndexProps {
     filters: {
         search?: string;
         status?: string;
+        type?: string;
         per_page?: number;
         sort?: string;
         dir?: 'asc' | 'desc';
@@ -47,6 +48,7 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '__all__');
+    const [typeFilter, setTypeFilter] = useState(filters.type || '__all__');
     const [deleteArticle, setDeleteArticle] = useState<Article | null>(null);
 
     const handleFilter = (e: React.FormEvent) => {
@@ -54,16 +56,18 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
         const params: Record<string, string> = {};
         if (search) params.search = search;
         if (statusFilter && statusFilter !== '__all__') params.status = statusFilter;
+        if (typeFilter && typeFilter !== '__all__') params.type = typeFilter;
         router.get('/articles', params, { preserveState: true });
     };
 
     const clearFilters = () => {
         setSearch('');
         setStatusFilter('__all__');
+        setTypeFilter('__all__');
         router.get('/articles', {});
     };
 
-    const hasFilters = filters.search || filters.status;
+    const hasFilters = filters.search || filters.status || filters.type;
 
     return (
         <AppLayout>
@@ -95,7 +99,7 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                 <Card className="mb-6">
                     <CardContent className="pt-6">
                         <form onSubmit={handleFilter}>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         {t('articles.search')}
@@ -105,6 +109,22 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder={t('articles.search_placeholder')}
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        {t('articles.type')}
+                                    </label>
+                                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={t('articles.all_types')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="__all__">{t('articles.all_types')}</SelectItem>
+                                            <SelectItem value="product">{t('articles.type_product')}</SelectItem>
+                                            <SelectItem value="service">{t('articles.type_service')}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 <div>
@@ -183,7 +203,14 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                                     {articles.data.map((article) => (
                                         <TableRow key={article.id}>
                                             <TableCell>
-                                                <span className="font-medium text-gray-900">{article.name}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-gray-900">{article.name}</span>
+                                                    {article.type === 'service' && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {t('articles.type_service')}
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="hidden md:table-cell">
                                                 <span className="text-sm text-gray-600 truncate max-w-xs block">

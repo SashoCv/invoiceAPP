@@ -7,6 +7,13 @@ import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 
 export default function CreateArticle() {
@@ -14,6 +21,7 @@ export default function CreateArticle() {
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
+        type: 'product' as 'product' | 'service',
         sku: '',
         description: '',
         unit: 'kom',
@@ -58,6 +66,19 @@ export default function CreateArticle() {
                                     className="mt-1"
                                     error={errors.name}
                                 />
+                            </div>
+
+                            <div>
+                                <Label>{t('articles.type')} *</Label>
+                                <Select value={data.type} onValueChange={(v) => setData('type', v as 'product' | 'service')}>
+                                    <SelectTrigger className="mt-1">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="product">{t('articles.type_product')}</SelectItem>
+                                        <SelectItem value="service">{t('articles.type_service')}</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div>
