@@ -73,6 +73,9 @@ export default function Profitability({
     const [articleSortDir, setArticleSortDir] = useState<'asc' | 'desc'>('desc');
     const [customerSortKey, setCustomerSortKey] = useState<CustomerSortKey>('total');
     const [customerSortDir, setCustomerSortDir] = useState<'asc' | 'desc'>('desc');
+    const [articlePage, setArticlePage] = useState(1);
+    const [customerPage, setCustomerPage] = useState(1);
+    const perPage = 10;
 
     const applyFilter = () => {
         router.get('/shopify/profitability', { from: fromDate, to: toDate }, { preserveState: true });
@@ -85,6 +88,7 @@ export default function Profitability({
             setArticleSortKey(key);
             setArticleSortDir('desc');
         }
+        setArticlePage(1);
     };
 
     const handleCustomerSort = (key: CustomerSortKey) => {
@@ -94,6 +98,7 @@ export default function Profitability({
             setCustomerSortKey(key);
             setCustomerSortDir('desc');
         }
+        setCustomerPage(1);
     };
 
     const sortedArticles = useMemo(() => {
@@ -117,6 +122,52 @@ export default function Profitability({
             return customerSortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
         });
     }, [customers, customerSortKey, customerSortDir]);
+
+    const articleTotalPages = Math.ceil(sortedArticles.length / perPage);
+    const paginatedArticles = sortedArticles.slice((articlePage - 1) * perPage, articlePage * perPage);
+
+    const customerTotalPages = Math.ceil(sortedCustomers.length / perPage);
+    const paginatedCustomers = sortedCustomers.slice((customerPage - 1) * perPage, customerPage * perPage);
+
+    const Pagination = ({ page, totalPages, onPageChange, total }: { page: number; totalPages: number; onPageChange: (p: number) => void; total: number }) => {
+        if (totalPages <= 1) return null;
+        return (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+                <span className="text-sm text-gray-500">
+                    {(page - 1) * perPage + 1}-{Math.min(page * perPage, total)} / {total}
+                </span>
+                <div className="flex gap-1">
+                    <button
+                        className="px-3 py-1 text-sm rounded border border-input bg-background hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+                        disabled={page <= 1}
+                        onClick={() => onPageChange(page - 1)}
+                    >
+                        &laquo;
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                        <button
+                            key={p}
+                            className={`px-3 py-1 text-sm rounded border ${
+                                p === page
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'border-input bg-background hover:bg-accent'
+                            }`}
+                            onClick={() => onPageChange(p)}
+                        >
+                            {p}
+                        </button>
+                    ))}
+                    <button
+                        className="px-3 py-1 text-sm rounded border border-input bg-background hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+                        disabled={page >= totalPages}
+                        onClick={() => onPageChange(page + 1)}
+                    >
+                        &raquo;
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     const SortableArticleHeader = ({ label, field }: { label: string; field: ArticleSortKey }) => (
         <TableHead className="cursor-pointer select-none hover:bg-gray-50" onClick={() => handleArticleSort(field)}>
@@ -276,7 +327,7 @@ export default function Profitability({
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {sortedArticles.map((article, i) => (
+                                            {paginatedArticles.map((article, i) => (
                                                 <TableRow key={i}>
                                                     <TableCell>
                                                         <div className="flex items-center gap-2">
@@ -295,6 +346,7 @@ export default function Profitability({
                                         </TableBody>
                                     </Table>
                                 </div>
+                                <Pagination page={articlePage} totalPages={articleTotalPages} onPageChange={setArticlePage} total={sortedArticles.length} />
                             </CardContent>
                         </Card>
 
@@ -315,7 +367,7 @@ export default function Profitability({
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {sortedCustomers.map((customer, i) => (
+                                            {paginatedCustomers.map((customer, i) => (
                                                 <TableRow key={i}>
                                                     <TableCell>
                                                         <div>
@@ -333,6 +385,7 @@ export default function Profitability({
                                         </TableBody>
                                     </Table>
                                 </div>
+                                <Pagination page={customerPage} totalPages={customerTotalPages} onPageChange={setCustomerPage} total={sortedCustomers.length} />
                             </CardContent>
                         </Card>
                     </div>
