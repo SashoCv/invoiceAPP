@@ -131,6 +131,22 @@ export default function Profitability({
 
     const Pagination = ({ page, totalPages, onPageChange, total }: { page: number; totalPages: number; onPageChange: (p: number) => void; total: number }) => {
         if (totalPages <= 1) return null;
+
+        const getPageNumbers = () => {
+            const pages: (number | '...')[] = [];
+            if (totalPages <= 7) {
+                return Array.from({ length: totalPages }, (_, i) => i + 1);
+            }
+            pages.push(1);
+            if (page > 3) pages.push('...');
+            for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+                pages.push(i);
+            }
+            if (page < totalPages - 2) pages.push('...');
+            pages.push(totalPages);
+            return pages;
+        };
+
         return (
             <div className="flex items-center justify-between px-4 py-3 border-t">
                 <span className="text-sm text-gray-500">
@@ -144,19 +160,23 @@ export default function Profitability({
                     >
                         &laquo;
                     </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                        <button
-                            key={p}
-                            className={`px-3 py-1 text-sm rounded border ${
-                                p === page
-                                    ? 'bg-primary text-primary-foreground border-primary'
-                                    : 'border-input bg-background hover:bg-accent'
-                            }`}
-                            onClick={() => onPageChange(p)}
-                        >
-                            {p}
-                        </button>
-                    ))}
+                    {getPageNumbers().map((p, i) =>
+                        p === '...' ? (
+                            <span key={`ellipsis-${i}`} className="px-2 py-1 text-sm text-gray-400">…</span>
+                        ) : (
+                            <button
+                                key={p}
+                                className={`px-3 py-1 text-sm rounded border ${
+                                    p === page
+                                        ? 'bg-primary text-primary-foreground border-primary'
+                                        : 'border-input bg-background hover:bg-accent'
+                                }`}
+                                onClick={() => onPageChange(p)}
+                            >
+                                {p}
+                            </button>
+                        )
+                    )}
                     <button
                         className="px-3 py-1 text-sm rounded border border-input bg-background hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
                         disabled={page >= totalPages}
