@@ -102,6 +102,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     icon: TrendingUp,
                     active: currentPath === '/profitability',
                 },
+                {
+                    name: t('navigation.purchase_prices'),
+                    href: '/purchase-prices',
+                    icon: DollarSign,
+                    active: currentPath.startsWith('/purchase-prices'),
+                },
             ],
         },
         {
@@ -182,12 +188,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/goods-issues',
                     icon: PackageMinus,
                     active: currentPath.startsWith('/goods-issues'),
-                },
-                {
-                    name: t('navigation.purchase_prices'),
-                    href: '/purchase-prices',
-                    icon: DollarSign,
-                    active: currentPath.startsWith('/purchase-prices'),
                 },
                 {
                     name: t('navigation.expenses'),

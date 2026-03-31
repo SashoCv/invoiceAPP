@@ -15,24 +15,29 @@ import {
 } from '@/Components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber } from '@/lib/utils';
-import { Download, Search, DollarSign } from 'lucide-react';
+import { Download, Search, BarChart3 } from 'lucide-react';
 
-interface ArticlePriceData {
+interface ArticleData {
     id: number;
     name: string;
     sku: string | null;
     unit: string;
-    tax_rate: number;
-    total_quantity: number;
-    avg_cost_price: number;
-    last_cost_price: number;
-    selling_price: number;
+    purchased_qty: number;
+    avg_purchase_price: number;
+    total_purchase_cost: number;
+    invoice_sold_qty: number;
+    invoice_avg_price: number;
+    invoice_revenue: number;
+    shopify_sold_qty: number;
+    shopify_avg_price: number;
+    shopify_revenue: number;
+    total_sold_qty: number;
+    total_revenue: number;
     margin_percent: number;
-    total_cost_with_tax: number;
 }
 
 interface Props {
-    articles: ArticlePriceData[];
+    articles: ArticleData[];
     filters: {
         date_from: string;
         date_to: string;
@@ -67,19 +72,18 @@ export default function PurchasePrices({ articles, filters }: Props) {
         window.location.href = `/purchase-prices/export${query ? '?' + query : ''}`;
     };
 
-    const avgOverallMargin = articles.length > 0
-        ? articles.reduce((sum, a) => sum + a.margin_percent, 0) / articles.length
-        : 0;
+    const totalPurchased = articles.reduce((sum, a) => sum + a.total_purchase_cost, 0);
+    const totalRevenue = articles.reduce((sum, a) => sum + a.total_revenue, 0);
 
     return (
         <AppLayout>
-            <Head title={t('inventory.purchase_prices_title')} />
+            <Head title={t('inventory.pp_title')} />
 
             <div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{t('inventory.purchase_prices_title')}</h1>
-                        <p className="mt-1 text-sm text-gray-500">{t('inventory.purchase_prices_subtitle')}</p>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('inventory.pp_title')}</h1>
+                        <p className="mt-1 text-sm text-gray-500">{t('inventory.pp_subtitle')}</p>
                     </div>
                     {articles.length > 0 && (
                         <Button variant="outline" onClick={handleExport} className="flex items-center gap-1.5">
@@ -92,22 +96,20 @@ export default function PurchasePrices({ articles, filters }: Props) {
                 {/* Summary */}
                 {articles.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-5 text-white">
                             <div className="absolute top-0 right-0 -mt-3 -mr-3 w-20 h-20 bg-white/10 rounded-full" />
-                            <p className="text-blue-100 text-sm font-medium">{t('inventory.total_articles')}</p>
-                            <p className="text-3xl font-bold mt-1">{articles.length}</p>
+                            <p className="text-red-100 text-sm font-medium">{t('inventory.pp_total_purchased')}</p>
+                            <p className="text-3xl font-bold mt-1">{formatNumber(totalPurchased)}</p>
                         </div>
                         <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white">
                             <div className="absolute top-0 right-0 -mt-3 -mr-3 w-20 h-20 bg-white/10 rounded-full" />
-                            <p className="text-emerald-100 text-sm font-medium">{t('inventory.avg_margin')}</p>
-                            <p className="text-3xl font-bold mt-1">{formatNumber(avgOverallMargin, 1)}%</p>
+                            <p className="text-emerald-100 text-sm font-medium">{t('inventory.pp_total_revenue')}</p>
+                            <p className="text-3xl font-bold mt-1">{formatNumber(totalRevenue)}</p>
                         </div>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg p-5 text-white">
+                        <div className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white">
                             <div className="absolute top-0 right-0 -mt-3 -mr-3 w-20 h-20 bg-white/10 rounded-full" />
-                            <p className="text-indigo-100 text-sm font-medium">{t('inventory.total_purchased_value')}</p>
-                            <p className="text-3xl font-bold mt-1">
-                                {formatNumber(articles.reduce((sum, a) => sum + a.total_cost_with_tax, 0))}
-                            </p>
+                            <p className="text-blue-100 text-sm font-medium">{t('inventory.pp_difference')}</p>
+                            <p className="text-3xl font-bold mt-1">{formatNumber(totalRevenue - totalPurchased)}</p>
                         </div>
                     </div>
                 )}
@@ -149,51 +151,86 @@ export default function PurchasePrices({ articles, filters }: Props) {
                     <CardContent className="p-0">
                         {articles.length === 0 ? (
                             <div className="py-12 text-center">
-                                <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-3 text-sm font-medium text-gray-900">{t('inventory.no_purchase_data')}</h3>
-                                <p className="mt-1 text-sm text-gray-500">{t('inventory.no_purchase_data_desc')}</p>
+                                <BarChart3 className="mx-auto h-12 w-12 text-gray-400" />
+                                <h3 className="mt-3 text-sm font-medium text-gray-900">{t('inventory.pp_no_data')}</h3>
+                                <p className="mt-1 text-sm text-gray-500">{t('inventory.pp_no_data_desc')}</p>
                             </div>
                         ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>{t('inventory.name')}</TableHead>
-                                        <TableHead className="hidden md:table-cell">{t('inventory.sku')}</TableHead>
-                                        <TableHead className="hidden lg:table-cell">{t('inventory.unit')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.received_qty')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.avg_purchase_price')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.last_purchase_price')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.tax_rate')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.selling_price')}</TableHead>
-                                        <TableHead className="text-right">{t('inventory.margin')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {articles.map((article) => (
-                                        <TableRow key={article.id}>
-                                            <TableCell className="font-medium text-gray-900">{article.name}</TableCell>
-                                            <TableCell className="hidden md:table-cell text-gray-500">{article.sku || '-'}</TableCell>
-                                            <TableCell className="hidden lg:table-cell text-gray-500">{article.unit}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(article.total_quantity, 0)}</TableCell>
-                                            <TableCell className="text-right font-medium">{formatNumber(article.avg_cost_price)}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(article.last_cost_price)}</TableCell>
-                                            <TableCell className="text-right text-gray-500">{formatNumber(article.tax_rate, 0)}%</TableCell>
-                                            <TableCell className="text-right">{formatNumber(article.selling_price)}</TableCell>
-                                            <TableCell className="text-right">
-                                                <span className={
-                                                    article.margin_percent >= 30
-                                                        ? 'text-green-600 font-medium'
-                                                        : article.margin_percent >= 10
-                                                            ? 'text-yellow-600 font-medium'
-                                                            : 'text-red-600 font-medium'
-                                                }>
-                                                    {formatNumber(article.margin_percent, 1)}%
-                                                </span>
-                                            </TableCell>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead rowSpan={2} className="align-bottom border-r">{t('inventory.name')}</TableHead>
+                                            <TableHead colSpan={3} className="text-center border-b border-r bg-red-50 text-red-700">{t('inventory.pp_purchases')}</TableHead>
+                                            <TableHead colSpan={3} className="text-center border-b border-r bg-green-50 text-green-700">{t('inventory.pp_sales')}</TableHead>
+                                            <TableHead rowSpan={2} className="text-right align-bottom">{t('inventory.margin')}</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                        <TableRow>
+                                            <TableHead className="text-right bg-red-50/50">{t('inventory.pp_qty')}</TableHead>
+                                            <TableHead className="text-right bg-red-50/50">{t('inventory.pp_avg_price')}</TableHead>
+                                            <TableHead className="text-right bg-red-50/50 border-r">{t('inventory.pp_total')}</TableHead>
+                                            <TableHead className="text-right bg-green-50/50">{t('inventory.pp_qty')}</TableHead>
+                                            <TableHead className="text-right bg-green-50/50">{t('inventory.pp_avg_price')}</TableHead>
+                                            <TableHead className="text-right bg-green-50/50 border-r">{t('inventory.pp_total')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {articles.map((article) => {
+                                            const soldDetail: string[] = [];
+                                            if (article.invoice_sold_qty > 0) {
+                                                soldDetail.push(`F: ${formatNumber(article.invoice_sold_qty, 0)}`);
+                                            }
+                                            if (article.shopify_sold_qty > 0) {
+                                                soldDetail.push(`S: ${formatNumber(article.shopify_sold_qty, 0)}`);
+                                            }
+
+                                            // Weighted avg selling price
+                                            const avgSellingPrice = article.total_sold_qty > 0
+                                                ? article.total_revenue / article.total_sold_qty
+                                                : 0;
+
+                                            return (
+                                                <TableRow key={article.id}>
+                                                    <TableCell className="border-r">
+                                                        <div className="font-medium text-gray-900">{article.name}</div>
+                                                        {article.sku && (
+                                                            <div className="text-xs text-gray-400">{article.sku}</div>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">{article.purchased_qty > 0 ? formatNumber(article.purchased_qty, 0) : '-'}</TableCell>
+                                                    <TableCell className="text-right">{article.purchased_qty > 0 ? formatNumber(article.avg_purchase_price) : '-'}</TableCell>
+                                                    <TableCell className="text-right border-r font-medium">{article.purchased_qty > 0 ? formatNumber(article.total_purchase_cost) : '-'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        {article.total_sold_qty > 0 ? (
+                                                            <div>
+                                                                <span>{formatNumber(article.total_sold_qty, 0)}</span>
+                                                                {soldDetail.length > 0 && (
+                                                                    <div className="text-xs text-gray-400">{soldDetail.join(' / ')}</div>
+                                                                )}
+                                                            </div>
+                                                        ) : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">{article.total_sold_qty > 0 ? formatNumber(avgSellingPrice) : '-'}</TableCell>
+                                                    <TableCell className="text-right border-r font-medium">{article.total_sold_qty > 0 ? formatNumber(article.total_revenue) : '-'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        {article.margin_percent !== 0 ? (
+                                                            <span className={
+                                                                article.margin_percent >= 30
+                                                                    ? 'text-green-600 font-medium'
+                                                                    : article.margin_percent >= 10
+                                                                        ? 'text-yellow-600 font-medium'
+                                                                        : 'text-red-600 font-medium'
+                                                            }>
+                                                                {formatNumber(article.margin_percent, 1)}%
+                                                            </span>
+                                                        ) : '-'}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
