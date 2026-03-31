@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Bundle;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,17 +51,17 @@ class PurchasePriceController extends Controller
                 'Просечна набавна цена',
                 'Набавна вредност (со ДДВ)',
                 'Продадено кол. (фактури)',
-                'Просечна продажна (фактури)',
                 'Приход фактури',
                 'Продадено кол. (Shopify)',
-                'Просечна продажна (Shopify)',
                 'Приход Shopify',
                 'Вкупно продадено кол.',
+                'Просечна продажна цена',
                 'Вкупен приход',
                 'Маржа %',
             ]);
 
             foreach ($data as $row) {
+                $avgSelling = $row['total_sold_qty'] > 0 ? $row['total_revenue'] / $row['total_sold_qty'] : 0;
                 fputcsv($handle, [
                     $row['name'],
                     $row['sku'] ?? '',
@@ -69,12 +70,11 @@ class PurchasePriceController extends Controller
                     number_format($row['avg_purchase_price'], 2, '.', ''),
                     number_format($row['total_purchase_cost'], 2, '.', ''),
                     $row['invoice_sold_qty'],
-                    number_format($row['invoice_avg_price'], 2, '.', ''),
                     number_format($row['invoice_revenue'], 2, '.', ''),
                     $row['shopify_sold_qty'],
-                    number_format($row['shopify_avg_price'], 2, '.', ''),
                     number_format($row['shopify_revenue'], 2, '.', ''),
                     $row['total_sold_qty'],
+                    number_format($avgSelling, 2, '.', ''),
                     number_format($row['total_revenue'], 2, '.', ''),
                     number_format($row['margin_percent'], 1, '.', ''),
                 ]);
@@ -119,51 +119,153 @@ class PurchasePriceController extends Controller
             ->get()
             ->keyBy('article_id');
 
-        // 2. Sales from invoices
-        $invoiceSalesQuery = DB::table('invoice_items')
+        // Load bundles with their components for distributing bundle sales
+        $bundles = Bundle::where('user_id', $userId)
+            ->with('bundleItems.article')
+            ->get()
+            ->keyBy('id');
+
+        // Helper: distribute bundle sale to component articles
+        // Returns array of [article_id => ['qty' => x, 'revenue' => y]]
+        $distributeBundleSale = function (int $bundleId, float $bundleQty, float $lineRevenue) use ($bundles): array {
+            $bundle = $bundles->get($bundleId);
+            if (!$bundle || $bundle->bundleItems->isEmpty()) return [];
+
+            // Calculate total component value for proportional revenue distribution
+            $totalComponentValue = 0;
+            foreach ($bundle->bundleItems as $bi) {
+                if ($bi->article) {
+                    $totalComponentValue += (float) $bi->article->price * $bi->quantity;
+                }
+            }
+
+            $result = [];
+            foreach ($bundle->bundleItems as $bi) {
+                if (!$bi->article) continue;
+                $articleQty = $bundleQty * $bi->quantity;
+                $articleRevenue = $totalComponentValue > 0
+                    ? $lineRevenue * ((float) $bi->article->price * $bi->quantity / $totalComponentValue)
+                    : 0;
+                $result[$bi->article_id] = [
+                    'qty' => $articleQty,
+                    'revenue' => $articleRevenue,
+                ];
+            }
+            return $result;
+        };
+
+        // 2. Sales from invoices - direct articles
+        $invoiceDirectQuery = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.user_id', $userId)
             ->whereNull('invoices.deleted_at')
-            ->whereNotNull('invoice_items.article_id');
+            ->whereNotNull('invoice_items.article_id')
+            ->whereNull('invoice_items.bundle_id');
 
-        if ($dateFrom) $invoiceSalesQuery->where('invoices.issue_date', '>=', $dateFrom);
-        if ($dateTo) $invoiceSalesQuery->where('invoices.issue_date', '<=', $dateTo);
+        if ($dateFrom) $invoiceDirectQuery->where('invoices.issue_date', '>=', $dateFrom);
+        if ($dateTo) $invoiceDirectQuery->where('invoices.issue_date', '<=', $dateTo);
 
-        $invoiceSales = $invoiceSalesQuery
+        $invoiceDirectSales = $invoiceDirectQuery
             ->select(
                 'invoice_items.article_id',
                 DB::raw('SUM(invoice_items.quantity) as qty'),
-                DB::raw('SUM(invoice_items.quantity * invoice_items.unit_price) / SUM(invoice_items.quantity) as avg_price'),
                 DB::raw('SUM(invoice_items.total) as revenue'),
             )
             ->groupBy('invoice_items.article_id')
-            ->get()
-            ->keyBy('article_id');
+            ->get();
 
-        // 3. Sales from Shopify
-        $shopifySalesQuery = DB::table('shopify_order_items')
+        // Accumulate invoice sales per article
+        $invoiceSalesMap = []; // article_id => ['qty' => x, 'revenue' => y]
+        foreach ($invoiceDirectSales as $row) {
+            $id = $row->article_id;
+            $invoiceSalesMap[$id] = [
+                'qty' => (float) $row->qty,
+                'revenue' => (float) $row->revenue,
+            ];
+        }
+
+        // 2b. Invoice bundle sales
+        $invoiceBundleQuery = DB::table('invoice_items')
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->where('invoices.user_id', $userId)
+            ->whereNull('invoices.deleted_at')
+            ->whereNotNull('invoice_items.bundle_id');
+
+        if ($dateFrom) $invoiceBundleQuery->where('invoices.issue_date', '>=', $dateFrom);
+        if ($dateTo) $invoiceBundleQuery->where('invoices.issue_date', '<=', $dateTo);
+
+        $invoiceBundleSales = $invoiceBundleQuery
+            ->select('invoice_items.bundle_id', 'invoice_items.quantity', 'invoice_items.total')
+            ->get();
+
+        foreach ($invoiceBundleSales as $row) {
+            $distributed = $distributeBundleSale($row->bundle_id, (float) $row->quantity, (float) $row->total);
+            foreach ($distributed as $articleId => $data) {
+                if (!isset($invoiceSalesMap[$articleId])) {
+                    $invoiceSalesMap[$articleId] = ['qty' => 0, 'revenue' => 0];
+                }
+                $invoiceSalesMap[$articleId]['qty'] += $data['qty'];
+                $invoiceSalesMap[$articleId]['revenue'] += $data['revenue'];
+            }
+        }
+
+        // 3. Sales from Shopify - direct articles
+        $shopifyDirectQuery = DB::table('shopify_order_items')
             ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
             ->where('shopify_orders.user_id', $userId)
-            ->whereNotNull('shopify_order_items.article_id');
+            ->whereNotNull('shopify_order_items.article_id')
+            ->whereNull('shopify_order_items.bundle_id');
 
-        if ($dateFrom) $shopifySalesQuery->where('shopify_orders.ordered_at', '>=', $dateFrom);
-        if ($dateTo) $shopifySalesQuery->where('shopify_orders.ordered_at', '<=', $dateTo . ' 23:59:59');
+        if ($dateFrom) $shopifyDirectQuery->where('shopify_orders.ordered_at', '>=', $dateFrom);
+        if ($dateTo) $shopifyDirectQuery->where('shopify_orders.ordered_at', '<=', $dateTo . ' 23:59:59');
 
-        $shopifySales = $shopifySalesQuery
+        $shopifyDirectSales = $shopifyDirectQuery
             ->select(
                 'shopify_order_items.article_id',
                 DB::raw('SUM(shopify_order_items.quantity) as qty'),
-                DB::raw('SUM(shopify_order_items.quantity * shopify_order_items.price) / SUM(shopify_order_items.quantity) as avg_price'),
                 DB::raw('SUM(shopify_order_items.quantity * shopify_order_items.price - shopify_order_items.total_discount) as revenue'),
             )
             ->groupBy('shopify_order_items.article_id')
-            ->get()
-            ->keyBy('article_id');
+            ->get();
+
+        $shopifySalesMap = []; // article_id => ['qty' => x, 'revenue' => y]
+        foreach ($shopifyDirectSales as $row) {
+            $id = $row->article_id;
+            $shopifySalesMap[$id] = [
+                'qty' => (float) $row->qty,
+                'revenue' => (float) $row->revenue,
+            ];
+        }
+
+        // 3b. Shopify bundle sales
+        $shopifyBundleQuery = DB::table('shopify_order_items')
+            ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
+            ->where('shopify_orders.user_id', $userId)
+            ->whereNotNull('shopify_order_items.bundle_id');
+
+        if ($dateFrom) $shopifyBundleQuery->where('shopify_orders.ordered_at', '>=', $dateFrom);
+        if ($dateTo) $shopifyBundleQuery->where('shopify_orders.ordered_at', '<=', $dateTo . ' 23:59:59');
+
+        $shopifyBundleSales = $shopifyBundleQuery
+            ->select('shopify_order_items.bundle_id', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount')
+            ->get();
+
+        foreach ($shopifyBundleSales as $row) {
+            $lineRevenue = (float) $row->quantity * (float) $row->price - (float) $row->total_discount;
+            $distributed = $distributeBundleSale($row->bundle_id, (float) $row->quantity, $lineRevenue);
+            foreach ($distributed as $articleId => $data) {
+                if (!isset($shopifySalesMap[$articleId])) {
+                    $shopifySalesMap[$articleId] = ['qty' => 0, 'revenue' => 0];
+                }
+                $shopifySalesMap[$articleId]['qty'] += $data['qty'];
+                $shopifySalesMap[$articleId]['revenue'] += $data['revenue'];
+            }
+        }
 
         // Collect all article IDs that have any activity
         $allArticleIds = $purchases->keys()
-            ->merge($invoiceSales->keys())
-            ->merge($shopifySales->keys())
+            ->merge(collect(array_keys($invoiceSalesMap)))
+            ->merge(collect(array_keys($shopifySalesMap)))
             ->unique()
             ->values()
             ->toArray();
@@ -183,20 +285,18 @@ class PurchasePriceController extends Controller
             if (!$article) continue;
 
             $p = $purchases->get($articleId);
-            $inv = $invoiceSales->get($articleId);
-            $shop = $shopifySales->get($articleId);
 
             $purchasedQty = $p ? round((float) $p->qty, 2) : 0;
             $avgPurchasePrice = $p ? round((float) $p->avg_price, 2) : 0;
             $totalPurchaseCost = $p ? round((float) $p->total_cost, 2) : 0;
 
-            $invoiceSoldQty = $inv ? round((float) $inv->qty, 2) : 0;
-            $invoiceAvgPrice = $inv ? round((float) $inv->avg_price, 2) : 0;
-            $invoiceRevenue = $inv ? round((float) $inv->revenue, 2) : 0;
+            $inv = $invoiceSalesMap[$articleId] ?? null;
+            $invoiceSoldQty = $inv ? round($inv['qty'], 2) : 0;
+            $invoiceRevenue = $inv ? round($inv['revenue'], 2) : 0;
 
-            $shopifySoldQty = $shop ? round((float) $shop->qty, 2) : 0;
-            $shopifyAvgPrice = $shop ? round((float) $shop->avg_price, 2) : 0;
-            $shopifyRevenue = $shop ? round((float) $shop->revenue, 2) : 0;
+            $shop = $shopifySalesMap[$articleId] ?? null;
+            $shopifySoldQty = $shop ? round($shop['qty'], 2) : 0;
+            $shopifyRevenue = $shop ? round($shop['revenue'], 2) : 0;
 
             $totalSoldQty = $invoiceSoldQty + $shopifySoldQty;
             $totalRevenue = $invoiceRevenue + $shopifyRevenue;
@@ -216,10 +316,8 @@ class PurchasePriceController extends Controller
                 'avg_purchase_price' => $avgPurchasePrice,
                 'total_purchase_cost' => $totalPurchaseCost,
                 'invoice_sold_qty' => $invoiceSoldQty,
-                'invoice_avg_price' => $invoiceAvgPrice,
                 'invoice_revenue' => $invoiceRevenue,
                 'shopify_sold_qty' => $shopifySoldQty,
-                'shopify_avg_price' => $shopifyAvgPrice,
                 'shopify_revenue' => $shopifyRevenue,
                 'total_sold_qty' => $totalSoldQty,
                 'total_revenue' => $totalRevenue,
