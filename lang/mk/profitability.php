@@ -36,10 +36,11 @@ return [
     'actual' => 'Реален (период)',
 
     // Unlinked revenue
-    'unlinked_revenue_title' => 'Промет неповрзан со артикли (вклучен во вкупниот приход)',
-    'unlinked_invoice_items' => 'Фактурни ставки без артикл',
-    'unlinked_shopify_items' => 'Немапирани Shopify ставки',
-    'shopify_shipping_other' => 'Shopify достава и друго',
+    'unlinked_revenue_title' => 'Промет неповрзан со артикли',
+    'unlinked_source' => 'Извор',
+    'unlinked_description' => 'Опис',
+    'source_invoice' => 'Фактура',
+    'shopify_shipping_other' => 'Достава и друго',
 
     // Empty state
     'no_data' => 'Нема податоци за профитабилност',

@@ -148,7 +148,7 @@ class ProfitabilityController extends Controller
             }
         }
 
-        // 5. Unlinked invoice items (no article, no bundle)
+        // 5. Unlinked invoice items (no article, no bundle) - with details
         $invoiceUnlinkedItems = InvoiceItem::query()
             ->whereNull('article_id')
             ->whereNull('bundle_id')
@@ -158,28 +158,39 @@ class ProfitabilityController extends Controller
                     ->whereBetween('issue_date', [$fromDate, $toDate]);
             })
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->select('invoice_items.total', 'invoices.currency', 'invoices.issue_date')
+            ->select('invoice_items.description', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.total', 'invoices.currency', 'invoices.issue_date', 'invoices.invoice_number')
             ->get();
 
-        $unlinkedInvoiceRevenue = 0;
+        $unlinkedRevenue = [];
         foreach ($invoiceUnlinkedItems as $item) {
-            $unlinkedInvoiceRevenue += $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
+            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
+            $unlinkedRevenue[] = [
+                'source' => __('profitability.source_invoice') . ' ' . $item->invoice_number,
+                'description' => $item->description,
+                'qty' => (float) $item->quantity,
+                'amount' => round($converted, 2),
+            ];
         }
 
-        // 6. Unmapped Shopify items (no article, no bundle)
+        // 6. Unmapped Shopify items (no article, no bundle) - with details
         $shopifyUnmappedItems = DB::table('shopify_order_items')
             ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
             ->where('shopify_orders.user_id', $user->id)
             ->whereBetween('shopify_orders.ordered_at', [$fromDate, $toDate])
             ->whereNull('shopify_order_items.article_id')
             ->whereNull('shopify_order_items.bundle_id')
-            ->select('shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at')
+            ->select('shopify_order_items.title', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at', 'shopify_orders.order_number')
             ->get();
 
-        $unlinkedShopifyRevenue = 0;
         foreach ($shopifyUnmappedItems as $item) {
             $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
-            $unlinkedShopifyRevenue += $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
+            $converted = $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
+            $unlinkedRevenue[] = [
+                'source' => 'Shopify #' . $item->order_number,
+                'description' => $item->title,
+                'qty' => (float) $item->quantity,
+                'amount' => round($converted, 2),
+            ];
         }
 
         // 7. Shopify shipping & other (order total - sum of items)
@@ -199,15 +210,13 @@ class ProfitabilityController extends Controller
         }
         $shopifyShippingOther = $shopifyOrderTotals - $shopifyItemTotals;
 
-        $unlinkedRevenue = [];
-        if ($unlinkedInvoiceRevenue > 0) {
-            $unlinkedRevenue[] = ['label' => __('profitability.unlinked_invoice_items'), 'amount' => round($unlinkedInvoiceRevenue, 2)];
-        }
-        if ($unlinkedShopifyRevenue > 0) {
-            $unlinkedRevenue[] = ['label' => __('profitability.unlinked_shopify_items'), 'amount' => round($unlinkedShopifyRevenue, 2)];
-        }
         if (abs($shopifyShippingOther) > 0.01) {
-            $unlinkedRevenue[] = ['label' => __('profitability.shopify_shipping_other'), 'amount' => round($shopifyShippingOther, 2)];
+            $unlinkedRevenue[] = [
+                'source' => 'Shopify',
+                'description' => __('profitability.shopify_shipping_other'),
+                'qty' => null,
+                'amount' => round($shopifyShippingOther, 2),
+            ];
         }
 
         // === COST ===
@@ -277,7 +286,7 @@ class ProfitabilityController extends Controller
             ];
         }
 
-        $totalUnlinked = array_sum(array_column($unlinkedRevenue, 'amount'));
+        $totalUnlinked = collect($unlinkedRevenue)->sum('amount');
         $totalRevenue += $totalUnlinked;
 
         $totalProfit = $totalRevenue - $totalCost;

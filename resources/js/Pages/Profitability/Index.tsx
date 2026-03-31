@@ -42,7 +42,9 @@ interface ArticleData {
 }
 
 interface UnlinkedRevenue {
-    label: string;
+    source: string;
+    description: string;
+    qty: number | null;
     amount: number;
 }
 
@@ -247,16 +249,35 @@ export default function Index({
 
                 {/* Unlinked Revenue */}
                 {unlinkedRevenue.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
-                        <p className="text-sm font-medium text-amber-800 mb-2">{t('profitability.unlinked_revenue_title')}</p>
-                        <div className="flex flex-wrap gap-x-6 gap-y-1">
-                            {unlinkedRevenue.map((item, i) => (
-                                <span key={i} className="text-sm text-amber-700">
-                                    {item.label}: <span className="font-medium">{formatNumber(item.amount, 0)} {displayCurrency}</span>
-                                </span>
-                            ))}
-                        </div>
-                    </div>
+                    <Card className="mb-8 border-amber-200">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium text-amber-800">
+                                {t('profitability.unlinked_revenue_title')} — {formatNumber(unlinkedRevenue.reduce((s, i) => s + i.amount, 0), 0)} {displayCurrency}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>{t('profitability.unlinked_source')}</TableHead>
+                                        <TableHead>{t('profitability.unlinked_description')}</TableHead>
+                                        <TableHead className="text-right">{t('profitability.qty_sold')}</TableHead>
+                                        <TableHead className="text-right">{t('profitability.revenue')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {unlinkedRevenue.map((item, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell className="text-gray-500 text-sm">{item.source}</TableCell>
+                                            <TableCell className="font-medium">{item.description}</TableCell>
+                                            <TableCell className="text-right">{item.qty !== null ? formatNumber(item.qty, 0) : '-'}</TableCell>
+                                            <TableCell className="text-right font-medium">{formatNumber(item.amount, 0)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Articles Table */}

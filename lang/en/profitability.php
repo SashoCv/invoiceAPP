@@ -36,10 +36,11 @@ return [
     'actual' => 'Actual (Period)',
 
     // Unlinked revenue
-    'unlinked_revenue_title' => 'Revenue not linked to articles (included in total revenue)',
-    'unlinked_invoice_items' => 'Invoice items without article',
-    'unlinked_shopify_items' => 'Unmapped Shopify items',
-    'shopify_shipping_other' => 'Shopify shipping & other',
+    'unlinked_revenue_title' => 'Revenue not linked to articles',
+    'unlinked_source' => 'Source',
+    'unlinked_description' => 'Description',
+    'source_invoice' => 'Invoice',
+    'shopify_shipping_other' => 'Shipping & other',
 
     // Empty state
     'no_data' => 'No profitability data available',
