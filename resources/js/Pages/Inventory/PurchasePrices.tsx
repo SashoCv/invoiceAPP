@@ -22,11 +22,13 @@ interface ArticlePriceData {
     name: string;
     sku: string | null;
     unit: string;
+    tax_rate: number;
     total_quantity: number;
     avg_cost_price: number;
     last_cost_price: number;
     selling_price: number;
     margin_percent: number;
+    total_cost_with_tax: number;
 }
 
 interface Props {
@@ -104,7 +106,7 @@ export default function PurchasePrices({ articles, filters }: Props) {
                             <div className="absolute top-0 right-0 -mt-3 -mr-3 w-20 h-20 bg-white/10 rounded-full" />
                             <p className="text-indigo-100 text-sm font-medium">{t('inventory.total_purchased_value')}</p>
                             <p className="text-3xl font-bold mt-1">
-                                {formatNumber(articles.reduce((sum, a) => sum + a.avg_cost_price * a.total_quantity, 0))}
+                                {formatNumber(articles.reduce((sum, a) => sum + a.total_cost_with_tax, 0))}
                             </p>
                         </div>
                     </div>
@@ -161,6 +163,7 @@ export default function PurchasePrices({ articles, filters }: Props) {
                                         <TableHead className="text-right">{t('inventory.received_qty')}</TableHead>
                                         <TableHead className="text-right">{t('inventory.avg_purchase_price')}</TableHead>
                                         <TableHead className="text-right">{t('inventory.last_purchase_price')}</TableHead>
+                                        <TableHead className="text-right">{t('inventory.tax_rate')}</TableHead>
                                         <TableHead className="text-right">{t('inventory.selling_price')}</TableHead>
                                         <TableHead className="text-right">{t('inventory.margin')}</TableHead>
                                     </TableRow>
@@ -174,6 +177,7 @@ export default function PurchasePrices({ articles, filters }: Props) {
                                             <TableCell className="text-right">{formatNumber(article.total_quantity, 0)}</TableCell>
                                             <TableCell className="text-right font-medium">{formatNumber(article.avg_cost_price)}</TableCell>
                                             <TableCell className="text-right">{formatNumber(article.last_cost_price)}</TableCell>
+                                            <TableCell className="text-right text-gray-500">{formatNumber(article.tax_rate, 0)}%</TableCell>
                                             <TableCell className="text-right">{formatNumber(article.selling_price)}</TableCell>
                                             <TableCell className="text-right">
                                                 <span className={

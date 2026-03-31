@@ -50,8 +50,10 @@ class PurchasePriceController extends Controller
                 'Примено кол.',
                 'Просечна набавна цена',
                 'Последна набавна цена',
+                'ДДВ %',
                 'Продажна цена',
                 'Маржа %',
+                'Вкупна набавна вредност',
             ]);
 
             foreach ($data as $row) {
@@ -62,8 +64,10 @@ class PurchasePriceController extends Controller
                     $row['total_quantity'],
                     number_format($row['avg_cost_price'], 2, '.', ''),
                     number_format($row['last_cost_price'], 2, '.', ''),
+                    number_format($row['tax_rate'], 0, '.', ''),
                     number_format($row['selling_price'], 2, '.', ''),
                     number_format($row['margin_percent'], 1, '.', ''),
+                    number_format($row['total_cost_with_tax'], 2, '.', ''),
                 ]);
             }
 
@@ -102,6 +106,7 @@ class PurchasePriceController extends Controller
                 'stock_movements.article_id',
                 DB::raw('SUM(stock_movements.quantity) as total_quantity'),
                 DB::raw('SUM(stock_movements.cost_price * stock_movements.quantity) / SUM(stock_movements.quantity) as avg_cost_price'),
+                DB::raw('SUM(stock_movements.cost_price * stock_movements.quantity * (1 + COALESCE(stock_movements.tax_rate, 0) / 100)) as total_cost_with_tax'),
             )
             ->groupBy('stock_movements.article_id')
             ->get()
@@ -164,11 +169,13 @@ class PurchasePriceController extends Controller
                 'name' => $article->name,
                 'sku' => $article->sku,
                 'unit' => $article->unit,
+                'tax_rate' => (float) $article->tax_rate,
                 'total_quantity' => round((float) $agg->total_quantity, 2),
                 'avg_cost_price' => $avgCost,
                 'last_cost_price' => $lastCost,
                 'selling_price' => $sellingPrice,
                 'margin_percent' => $margin,
+                'total_cost_with_tax' => round((float) $agg->total_cost_with_tax, 2),
             ];
         }
 
