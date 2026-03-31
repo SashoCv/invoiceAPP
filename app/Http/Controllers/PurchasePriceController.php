@@ -154,11 +154,12 @@ class PurchasePriceController extends Controller
             return $result;
         };
 
-        // 2. Sales from invoices - direct articles
+        // 2. Sales from invoices - direct articles (only paid)
         $invoiceDirectQuery = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.user_id', $userId)
             ->whereNull('invoices.deleted_at')
+            ->where('invoices.status', 'paid')
             ->whereNotNull('invoice_items.article_id')
             ->whereNull('invoice_items.bundle_id');
 
@@ -184,11 +185,12 @@ class PurchasePriceController extends Controller
             ];
         }
 
-        // 2b. Invoice bundle sales
+        // 2b. Invoice bundle sales (only paid)
         $invoiceBundleQuery = DB::table('invoice_items')
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
             ->where('invoices.user_id', $userId)
             ->whereNull('invoices.deleted_at')
+            ->where('invoices.status', 'paid')
             ->whereNotNull('invoice_items.bundle_id');
 
         if ($dateFrom) $invoiceBundleQuery->where('invoices.issue_date', '>=', $dateFrom);
