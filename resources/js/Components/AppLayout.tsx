@@ -29,6 +29,7 @@ import {
     Shield,
     AlertTriangle,
     Clock,
+    DollarSign,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
@@ -181,6 +182,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/goods-issues',
                     icon: PackageMinus,
                     active: currentPath.startsWith('/goods-issues'),
+                },
+                {
+                    name: t('navigation.purchase_prices'),
+                    href: '/purchase-prices',
+                    icon: DollarSign,
+                    active: currentPath.startsWith('/purchase-prices'),
                 },
                 {
                     name: t('navigation.expenses'),

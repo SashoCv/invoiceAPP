@@ -38,6 +38,7 @@ return [
     'bank_transactions' => 'Bank Statements',
     'goods_receipts' => 'Goods Receipts',
     'goods_issues' => 'Dispatch Notes',
+    'purchase_prices' => 'Purchase Prices',
     'profitability' => 'Profitability',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Sales',

@@ -112,6 +112,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::resource('goods-issues', \App\Http\Controllers\GoodsIssueController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+    Route::get('purchase-prices', [\App\Http\Controllers\PurchasePriceController::class, 'index'])->name('purchase-prices.index');
+    Route::get('purchase-prices/export', [\App\Http\Controllers\PurchasePriceController::class, 'export'])->name('purchase-prices.export');
 
     // Bundles
     Route::resource('bundles', BundleController::class)->except(['index', 'show']);

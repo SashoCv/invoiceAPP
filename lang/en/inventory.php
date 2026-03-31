@@ -208,4 +208,19 @@ return [
     'issue_client' => 'Client',
     'issue_client_placeholder' => 'Select client...',
     'no_client' => 'No client',
+
+    // Purchase Prices
+    'purchase_prices_title' => 'Purchase Prices',
+    'purchase_prices_subtitle' => 'Average purchase prices per article from goods receipts',
+    'avg_purchase_price' => 'Avg. Purchase',
+    'last_purchase_price' => 'Last Purchase',
+    'selling_price' => 'Selling Price',
+    'margin' => 'Margin',
+    'received_qty' => 'Received Qty',
+    'export_csv' => 'Export CSV',
+    'total_articles' => 'Articles',
+    'avg_margin' => 'Avg. Margin',
+    'total_purchased_value' => 'Purchase Value',
+    'no_purchase_data' => 'No purchase data',
+    'no_purchase_data_desc' => 'Create goods receipts to calculate purchase prices',
 ];

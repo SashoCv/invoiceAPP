@@ -38,6 +38,7 @@ return [
     'bank_transactions' => 'Изводи',
     'goods_receipts' => 'Приемници',
     'goods_issues' => 'Испратници',
+    'purchase_prices' => 'Набавни цени',
     'profitability' => 'Профитабилност',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Продажби',

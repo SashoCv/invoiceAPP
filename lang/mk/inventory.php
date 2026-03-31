@@ -208,4 +208,19 @@ return [
     'issue_client' => 'Клиент',
     'issue_client_placeholder' => 'Избери клиент...',
     'no_client' => 'Без клиент',
+
+    // Purchase Prices
+    'purchase_prices_title' => 'Набавни цени',
+    'purchase_prices_subtitle' => 'Просечни набавни цени по артикл од приемници',
+    'avg_purchase_price' => 'Просечна набавна',
+    'last_purchase_price' => 'Последна набавна',
+    'selling_price' => 'Продажна цена',
+    'margin' => 'Маржа',
+    'received_qty' => 'Примено кол.',
+    'export_csv' => 'Експорт CSV',
+    'total_articles' => 'Артикли',
+    'avg_margin' => 'Просечна маржа',
+    'total_purchased_value' => 'Набавна вредност',
+    'no_purchase_data' => 'Нема набавни податоци',
+    'no_purchase_data_desc' => 'Креирајте приемници за да се пресметаат набавните цени',
 ];
