@@ -115,11 +115,11 @@ class PurchasePriceController extends Controller
         $articleIds = $aggregated->keys()->toArray();
 
         $lastPricesQuery = StockMovement::query()
-            ->where('user_id', $userId)
-            ->where('type', 'receipt')
-            ->whereNotNull('cost_price')
-            ->where('cost_price', '>', 0)
-            ->whereIn('article_id', $articleIds);
+            ->where('stock_movements.user_id', $userId)
+            ->where('stock_movements.type', 'receipt')
+            ->whereNotNull('stock_movements.cost_price')
+            ->where('stock_movements.cost_price', '>', 0)
+            ->whereIn('stock_movements.article_id', $articleIds);
 
         if ($request->filled('date_from') || $request->filled('date_to')) {
             $lastPricesQuery->join('goods_receipts as gr', function ($join) {
