@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Expense;
 use App\Models\Invoice;
+use App\Models\ShopifyOrder;
 use App\Services\CurrencyConverter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -30,16 +31,27 @@ class DashboardController extends Controller
         $pendingInvoices = $user->invoices()->whereIn('status', ['draft', 'sent'])->count();
         $overdueInvoices = $user->invoices()->where('status', 'overdue')->count();
 
-        // Revenue — convert each invoice individually
+        // Revenue from paid invoices
         $paidInvoiceRows = $user->invoices()->where('status', 'paid')
             ->whereBetween('issue_date', [$fromDate, $toDate])
             ->get(['total', 'currency', 'issue_date']);
 
-        $totalRevenue = $paidInvoiceRows->sum(fn ($inv) =>
+        $invoiceRevenue = $paidInvoiceRows->sum(fn ($inv) =>
             $converter->convert($inv->total, $inv->currency, $displayCurrency, $inv->issue_date)
         );
 
-        // Pending & overdue amounts — convert each invoice
+        // Revenue from Shopify orders
+        $shopifyOrders = ShopifyOrder::where('user_id', $user->id)
+            ->whereBetween('ordered_at', [$fromDate, $toDate])
+            ->get(['total_price', 'currency', 'ordered_at']);
+
+        $shopifyRevenue = $shopifyOrders->sum(fn ($order) =>
+            $converter->convert((float) $order->total_price, $order->currency, $displayCurrency, $order->ordered_at)
+        );
+
+        $totalRevenue = $invoiceRevenue + $shopifyRevenue;
+
+        // Pending & overdue amounts
         $pendingInvoiceRows = $user->invoices()->whereIn('status', ['draft', 'sent'])
             ->get(['total', 'currency', 'issue_date']);
         $pendingAmount = $pendingInvoiceRows->sum(fn ($inv) =>
@@ -52,14 +64,13 @@ class DashboardController extends Controller
             $converter->convert($inv->total, $inv->currency, $displayCurrency, $inv->issue_date)
         );
 
-        // Expenses — assumed MKD
+        // Expenses
         $expenseRows = $user->expenses()
             ->whereBetween('date', [$fromDate, $toDate])
             ->get(['amount', 'date']);
         $totalExpenses = $expenseRows->sum(fn ($exp) =>
             $converter->convert($exp->amount, 'MKD', $displayCurrency, $exp->date)
         );
-
 
         $totalClients = $user->clients()->count();
 
@@ -69,14 +80,29 @@ class DashboardController extends Controller
         $end = $toDate->copy()->startOfMonth();
 
         while ($current->lte($end)) {
+            $monthStart = $current->copy()->startOfMonth();
+            $monthEnd = $current->copy()->endOfMonth();
+
+            // Invoice revenue
             $monthInvoices = $user->invoices()->where('status', 'paid')
                 ->whereYear('issue_date', $current->year)
                 ->whereMonth('issue_date', $current->month)
                 ->get(['total', 'currency', 'issue_date']);
 
-            $revenue = $monthInvoices->sum(fn ($inv) =>
+            $monthInvRevenue = $monthInvoices->sum(fn ($inv) =>
                 $converter->convert($inv->total, $inv->currency, $displayCurrency, $inv->issue_date)
             );
+
+            // Shopify revenue
+            $monthShopifyOrders = ShopifyOrder::where('user_id', $user->id)
+                ->whereBetween('ordered_at', [$monthStart, $monthEnd->copy()->endOfDay()])
+                ->get(['total_price', 'currency', 'ordered_at']);
+
+            $monthShopRevenue = $monthShopifyOrders->sum(fn ($order) =>
+                $converter->convert((float) $order->total_price, $order->currency, $displayCurrency, $order->ordered_at)
+            );
+
+            $revenue = $monthInvRevenue + $monthShopRevenue;
 
             $monthExpenses = $user->expenses()
                 ->whereYear('date', $current->year)
@@ -87,7 +113,6 @@ class DashboardController extends Controller
                 $converter->convert($exp->amount, 'MKD', $displayCurrency, $exp->date)
             );
 
-
             $monthlyData[] = [
                 'month' => $current->translatedFormat('M Y'),
                 'revenue' => round($revenue, 2),
@@ -97,7 +122,7 @@ class DashboardController extends Controller
             $current->addMonth();
         }
 
-        // Recent invoices with converted totals
+        // Recent invoices
         $recentInvoices = $user->invoices()->with('client')
             ->latest()
             ->take(5)

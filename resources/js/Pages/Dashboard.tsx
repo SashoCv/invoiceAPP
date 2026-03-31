@@ -167,7 +167,7 @@ export default function Dashboard({
                             </div>
                             <div className="mt-4 flex items-center text-emerald-100 text-sm">
                                 <CheckCircle className="w-4 h-4 mr-1" />
-                                <span className="font-medium">{paidInvoices} {t('dashboard.paid')}</span>
+                                <span className="font-medium">{t('dashboard.invoices_and_shopify')}</span>
                             </div>
                         </div>
                     </div>

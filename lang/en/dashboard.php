@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Dashboard',
-    'subtitle' => 'Overview of invoices and finances',
+    'subtitle' => 'Overview of invoices, Shopify and finances',
 
     // Period filter
     'from' => 'From',
@@ -14,6 +14,7 @@ return [
     'clients' => 'clients',
     'collected' => 'Collected',
 'paid' => 'paid',
+    'invoices_and_shopify' => 'invoices + Shopify',
     'pending_payment' => 'Pending Payment',
     'invoices' => 'invoices',
     'overdue' => 'Overdue',

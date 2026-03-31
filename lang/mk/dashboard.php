@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Контролна табла',
-    'subtitle' => 'Преглед на фактури и финансии',
+    'subtitle' => 'Преглед на фактури, Shopify и финансии',
 
     // Period filter
     'from' => 'Од',
@@ -14,6 +14,7 @@ return [
     'clients' => 'клиенти',
     'collected' => 'Наплатено',
 'paid' => 'платени',
+    'invoices_and_shopify' => 'фактури + Shopify',
     'pending_payment' => 'Чека наплата',
     'invoices' => 'фактури',
     'overdue' => 'Задоцнети',

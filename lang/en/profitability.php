@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Profitability',
-    'subtitle' => 'Per-article profit margins and analysis',
+    'subtitle' => 'Per-article profit margins and analysis (prices excl. VAT)',
 
     // Period filter
     'from' => 'From',
@@ -14,7 +14,7 @@ return [
     'total_cost' => 'Total Cost',
     'total_profit' => 'Total Profit',
     'overall_margin' => 'Overall Margin',
-    'from_paid_invoices' => 'from paid invoices',
+    'from_paid_invoices' => 'invoices + Shopify (excl. VAT)',
     'from_goods_receipts' => 'from goods receipts',
     'revenue_minus_cost' => 'revenue - cost',
 
