@@ -85,13 +85,12 @@ class ProfitabilityController extends Controller
 
         foreach ($invoiceDirectItems as $item) {
             $articleId = $item->article_id;
-            $netAmount = $item->total - $item->tax_amount;
-            $converted = $converter->convert($netAmount, $item->currency, $displayCurrency, $item->issue_date);
+            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
             $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $converted;
             $qtySoldByArticle[$articleId] = ($qtySoldByArticle[$articleId] ?? 0) + $item->quantity;
         }
 
-        // 2. Invoice bundle sales (net = total - tax, distributed to components)
+        // 2. Invoice bundle sales (distributed to components)
         $invoiceBundleItems = InvoiceItem::query()
             ->whereNotNull('bundle_id')
             ->whereHas('invoice', function ($q) use ($user, $fromDate, $toDate) {
@@ -104,8 +103,7 @@ class ProfitabilityController extends Controller
             ->get();
 
         foreach ($invoiceBundleItems as $item) {
-            $netAmount = $item->total - $item->tax_amount;
-            $converted = $converter->convert($netAmount, $item->currency, $displayCurrency, $item->issue_date);
+            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
             $distributed = $distributeBundleSale($item->bundle_id, (float) $item->quantity, $converted);
             foreach ($distributed as $articleId => $data) {
                 $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $data['revenue'];
