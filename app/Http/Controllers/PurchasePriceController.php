@@ -201,10 +201,10 @@ class PurchasePriceController extends Controller
             $totalSoldQty = $invoiceSoldQty + $shopifySoldQty;
             $totalRevenue = $invoiceRevenue + $shopifyRevenue;
 
-            // Margin based on purchase cost vs revenue (using cost without tax for fair comparison)
-            $totalPurchaseCostNet = $p ? round((float) $p->avg_price * (float) $p->qty, 2) : 0;
-            $margin = $totalRevenue > 0 && $totalPurchaseCostNet > 0
-                ? round(($totalRevenue - $totalPurchaseCostNet) / $totalRevenue * 100, 1)
+            // Margin: (avg selling price - avg purchase price) / avg selling price * 100
+            $avgSellingPrice = $totalSoldQty > 0 ? $totalRevenue / $totalSoldQty : 0;
+            $margin = $avgSellingPrice > 0 && $avgPurchasePrice > 0
+                ? round(($avgSellingPrice - $avgPurchasePrice) / $avgSellingPrice * 100, 1)
                 : 0;
 
             $result[] = [
