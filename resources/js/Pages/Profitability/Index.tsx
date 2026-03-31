@@ -41,8 +41,14 @@ interface ArticleData {
     actual_margin: number | null;
 }
 
+interface UnlinkedRevenue {
+    label: string;
+    amount: number;
+}
+
 interface ProfitabilityProps {
     articles: ArticleData[];
+    unlinkedRevenue: UnlinkedRevenue[];
     totalRevenue: number;
     totalCost: number;
     totalProfit: number;
@@ -56,6 +62,7 @@ type SortKey = 'name' | 'selling_price' | 'avg_cost' | 'theoretical_margin' | 'q
 
 export default function Index({
     articles,
+    unlinkedRevenue,
     totalRevenue,
     totalCost,
     totalProfit,
@@ -237,6 +244,20 @@ export default function Index({
                         </div>
                     </div>
                 </div>
+
+                {/* Unlinked Revenue */}
+                {unlinkedRevenue.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
+                        <p className="text-sm font-medium text-amber-800 mb-2">{t('profitability.unlinked_revenue_title')}</p>
+                        <div className="flex flex-wrap gap-x-6 gap-y-1">
+                            {unlinkedRevenue.map((item, i) => (
+                                <span key={i} className="text-sm text-amber-700">
+                                    {item.label}: <span className="font-medium">{formatNumber(item.amount, 0)} {displayCurrency}</span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Articles Table */}
                 {articles.length === 0 ? (

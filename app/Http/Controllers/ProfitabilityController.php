@@ -148,6 +148,68 @@ class ProfitabilityController extends Controller
             }
         }
 
+        // 5. Unlinked invoice items (no article, no bundle)
+        $invoiceUnlinkedItems = InvoiceItem::query()
+            ->whereNull('article_id')
+            ->whereNull('bundle_id')
+            ->whereHas('invoice', function ($q) use ($user, $fromDate, $toDate) {
+                $q->where('user_id', $user->id)
+                    ->where('status', 'paid')
+                    ->whereBetween('issue_date', [$fromDate, $toDate]);
+            })
+            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
+            ->select('invoice_items.total', 'invoices.currency', 'invoices.issue_date')
+            ->get();
+
+        $unlinkedInvoiceRevenue = 0;
+        foreach ($invoiceUnlinkedItems as $item) {
+            $unlinkedInvoiceRevenue += $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
+        }
+
+        // 6. Unmapped Shopify items (no article, no bundle)
+        $shopifyUnmappedItems = DB::table('shopify_order_items')
+            ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
+            ->where('shopify_orders.user_id', $user->id)
+            ->whereBetween('shopify_orders.ordered_at', [$fromDate, $toDate])
+            ->whereNull('shopify_order_items.article_id')
+            ->whereNull('shopify_order_items.bundle_id')
+            ->select('shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at')
+            ->get();
+
+        $unlinkedShopifyRevenue = 0;
+        foreach ($shopifyUnmappedItems as $item) {
+            $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
+            $unlinkedShopifyRevenue += $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
+        }
+
+        // 7. Shopify shipping & other (order total - sum of items)
+        $shopifyOrders = \App\Models\ShopifyOrder::where('user_id', $user->id)
+            ->whereBetween('ordered_at', [$fromDate, $toDate])
+            ->with('items')
+            ->get();
+
+        $shopifyOrderTotals = 0;
+        $shopifyItemTotals = 0;
+        foreach ($shopifyOrders as $order) {
+            $shopifyOrderTotals += $converter->convert((float) $order->total_price, $order->currency, $displayCurrency, $order->ordered_at);
+            foreach ($order->items as $item) {
+                $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
+                $shopifyItemTotals += $converter->convert($lineTotal, $order->currency, $displayCurrency, $order->ordered_at);
+            }
+        }
+        $shopifyShippingOther = $shopifyOrderTotals - $shopifyItemTotals;
+
+        $unlinkedRevenue = [];
+        if ($unlinkedInvoiceRevenue > 0) {
+            $unlinkedRevenue[] = ['label' => __('profitability.unlinked_invoice_items'), 'amount' => round($unlinkedInvoiceRevenue, 2)];
+        }
+        if ($unlinkedShopifyRevenue > 0) {
+            $unlinkedRevenue[] = ['label' => __('profitability.unlinked_shopify_items'), 'amount' => round($unlinkedShopifyRevenue, 2)];
+        }
+        if (abs($shopifyShippingOther) > 0.01) {
+            $unlinkedRevenue[] = ['label' => __('profitability.shopify_shipping_other'), 'amount' => round($shopifyShippingOther, 2)];
+        }
+
         // === COST ===
         $costItems = StockMovement::query()
             ->where('user_id', $user->id)
@@ -215,6 +277,9 @@ class ProfitabilityController extends Controller
             ];
         }
 
+        $totalUnlinked = array_sum(array_column($unlinkedRevenue, 'amount'));
+        $totalRevenue += $totalUnlinked;
+
         $totalProfit = $totalRevenue - $totalCost;
         $overallMargin = $totalRevenue > 0
             ? round(($totalProfit / $totalRevenue) * 100, 1)
@@ -222,6 +287,7 @@ class ProfitabilityController extends Controller
 
         return Inertia::render('Profitability/Index', [
             'articles' => $articleData,
+            'unlinkedRevenue' => $unlinkedRevenue,
             'totalRevenue' => round($totalRevenue, 2),
             'totalCost' => round($totalCost, 2),
             'totalProfit' => round($totalProfit, 2),

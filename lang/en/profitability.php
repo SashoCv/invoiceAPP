@@ -35,6 +35,12 @@ return [
     'theoretical' => 'Theoretical',
     'actual' => 'Actual (Period)',
 
+    // Unlinked revenue
+    'unlinked_revenue_title' => 'Revenue not linked to articles (included in total revenue)',
+    'unlinked_invoice_items' => 'Invoice items without article',
+    'unlinked_shopify_items' => 'Unmapped Shopify items',
+    'shopify_shipping_other' => 'Shopify shipping & other',
+
     // Empty state
     'no_data' => 'No profitability data available',
     'no_data_description' => 'Create articles with stock receipts or paid invoices to see profitability analysis.',

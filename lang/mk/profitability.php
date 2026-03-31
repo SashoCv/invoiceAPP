@@ -35,6 +35,12 @@ return [
     'theoretical' => 'Теоретски',
     'actual' => 'Реален (период)',
 
+    // Unlinked revenue
+    'unlinked_revenue_title' => 'Промет неповрзан со артикли (вклучен во вкупниот приход)',
+    'unlinked_invoice_items' => 'Фактурни ставки без артикл',
+    'unlinked_shopify_items' => 'Немапирани Shopify ставки',
+    'shopify_shipping_other' => 'Shopify достава и друго',
+
     // Empty state
     'no_data' => 'Нема податоци за профитабилност',
     'no_data_description' => 'Креирајте артикли со приемници или платени фактури за анализа на профитабилност.',
