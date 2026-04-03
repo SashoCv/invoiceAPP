@@ -27,7 +27,7 @@
     <div class="card">
         <div class="card-label">Клиент</div>
         <div class="card-value">{{ $client->company ?? $client->name }}</div>
-        @if(!empty($branch))<div class="card-subvalue" style="font-weight: 600;">{{ $branch->name }}</div>@endif
+        @if(!empty($branch))<div class="card-subvalue" style="font-weight: bold;">{{ $branch->name }}</div>@endif
         <div class="card-subvalue">
             @if(!empty($branch) && $branch->address){{ $branch->address }}<br>@if($branch->city){{ $branch->city }}@endif
             @else
