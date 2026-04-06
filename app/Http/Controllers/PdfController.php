@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Models\Offer;
+use App\Models\GoodsIssue;
 use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -114,6 +115,38 @@ class PdfController extends Controller
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="Ponuda_' . $offer->offer_number . '.pdf"',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Generate and download goods issue PDF
+     */
+    public function goodsIssue(GoodsIssue $goodsIssue): BinaryFileResponse
+    {
+        abort_if($goodsIssue->user_id !== auth()->id(), 403);
+
+        $pdfPath = $this->pdfService->generateGoodsIssuePdf($goodsIssue);
+
+        $filename = "Ispratnica_{$goodsIssue->issue_number}.pdf";
+        $filename = str_replace(['/', '\\', ' '], '_', $filename);
+
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Preview goods issue PDF in browser
+     */
+    public function goodsIssuePreview(GoodsIssue $goodsIssue): BinaryFileResponse
+    {
+        abort_if($goodsIssue->user_id !== auth()->id(), 403);
+
+        $pdfPath = $this->pdfService->generateGoodsIssuePdf($goodsIssue);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Ispratnica_' . $goodsIssue->issue_number . '.pdf"',
         ])->deleteFileAfterSend(true);
     }
 }

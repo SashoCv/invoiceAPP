@@ -111,6 +111,8 @@ Route::middleware('auth')->group(function () {
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
+    Route::get('goods-issues/{goodsIssue}/pdf', [PdfController::class, 'goodsIssue'])->name('goods-issues.pdf');
+    Route::get('goods-issues/{goodsIssue}/pdf/preview', [PdfController::class, 'goodsIssuePreview'])->name('goods-issues.pdf.preview');
     Route::resource('goods-issues', \App\Http\Controllers\GoodsIssueController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::get('purchase-prices', [\App\Http\Controllers\PurchasePriceController::class, 'index'])->name('purchase-prices.index');
     Route::get('purchase-prices/export', [\App\Http\Controllers\PurchasePriceController::class, 'export'])->name('purchase-prices.export');

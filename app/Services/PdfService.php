@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Models\Offer;
+use App\Models\GoodsIssue;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Str;
@@ -130,6 +131,75 @@ class PdfService
         ];
 
         return $this->generatePdf($data, "offer_{$offer->id}");
+    }
+
+    /**
+     * Generate PDF for a goods issue
+     */
+    public function generateGoodsIssuePdf(GoodsIssue $goodsIssue): string
+    {
+        $goodsIssue->load(['client', 'movements.article', 'user.agency']);
+
+        $agency = $goodsIssue->user->agency;
+
+        $data = [
+            'title' => 'Испратница ' . $goodsIssue->issue_number,
+            'docTitle' => 'ИСПРАТНИЦА',
+            'docNumber' => $goodsIssue->issue_number,
+            'issueDate' => $goodsIssue->date?->format('d.m.Y'),
+            'notes' => $goodsIssue->notes,
+            'client' => $goodsIssue->client,
+            'agency' => $agency,
+            'movements' => $goodsIssue->movements,
+        ];
+
+        return $this->generateGoodsIssuePdfFile($data, "goods_issue_{$goodsIssue->id}");
+    }
+
+    /**
+     * Generate goods issue PDF using configured engine
+     */
+    protected function generateGoodsIssuePdfFile(array $data, string $filename): string
+    {
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/' . $filename . '_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.goods-issue', $data)->setPaper('a4');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.goods-issue-browsershot', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
     }
 
     /**

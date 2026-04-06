@@ -12,7 +12,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
 import { Button } from '@/Components/ui/button';
-import { ArrowLeft, PackageMinus, Pencil } from 'lucide-react';
+import { ArrowLeft, Download, PackageMinus, Pencil, Printer } from 'lucide-react';
 
 interface Movement {
     id: number;
@@ -65,12 +65,26 @@ export default function GoodsIssueShow({ issue, movements }: Props) {
                             <p className="text-sm text-gray-500">{formatDate(issue.date)}</p>
                         </div>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                        <Link href={`/goods-issues/${issue.id}/edit`} className="gap-1.5">
-                            <Pencil className="w-4 h-4" />
-                            {t('inventory.edit_goods_issue')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={`/goods-issues/${issue.id}/pdf`} className="gap-1.5">
+                                <Download className="w-4 h-4" />
+                                PDF
+                            </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={`/goods-issues/${issue.id}/pdf/preview`} target="_blank" className="gap-1.5">
+                                <Printer className="w-4 h-4" />
+                                {t('invoices.print_pdf')}
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/goods-issues/${issue.id}/edit`} className="gap-1.5">
+                                <Pencil className="w-4 h-4" />
+                                {t('inventory.edit_goods_issue')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className={`grid grid-cols-1 gap-4 mb-6 ${issue.client ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
