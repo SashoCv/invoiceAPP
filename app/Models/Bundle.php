@@ -13,6 +13,7 @@ class Bundle extends Model
         'user_id',
         'name',
         'sku',
+        'code',
         'description',
         'price',
         'tax_rate',

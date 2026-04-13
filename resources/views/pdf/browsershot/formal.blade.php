@@ -33,6 +33,7 @@
 
             $itemsData[] = [
                 'description' => $item->description,
+                'code' => $item->code,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'discount' => $item->discount ?? 0,
@@ -108,7 +109,7 @@
 
     {{-- Items Table --}}
     @if($hasItems && count($items) > 0)
-    <table class="w-full border-collapse mb-1 text-[8px]">
+    <table class="w-full border-collapse mb-1 text-[7px]">
         <thead>
             <tr class="border-t border-b border-black">
                 <th class="text-left py-2 px-1 font-bold" style="width: 3%;">Рб</th>
@@ -126,7 +127,7 @@
             @foreach($itemsData as $index => $item)
             <tr class="border-b border-gray-300">
                 <td class="py-2 px-1">{{ $index + 1 }}.</td>
-                <td class="py-2 px-1">{{ $item['description'] }}</td>
+                <td class="py-2 px-1">{{ $item['code'] ? '[' . $item['code'] . '] ' : '' }}{{ $item['description'] }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['unit_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['discount'], 0) }}%</td>

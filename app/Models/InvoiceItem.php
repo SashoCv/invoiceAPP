@@ -12,6 +12,7 @@ class InvoiceItem extends Model
         'bundle_id',
         'article_id',
         'description',
+        'code',
         'quantity',
         'unit_price',
         'tax_rate',

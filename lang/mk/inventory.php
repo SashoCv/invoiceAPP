@@ -26,6 +26,7 @@ return [
     // Fields
     'name' => 'Име',
     'sku' => 'SKU',
+    'code' => 'Код',
     'description' => 'Опис',
     'unit' => 'Единица мерка',
     'price' => 'Цена',

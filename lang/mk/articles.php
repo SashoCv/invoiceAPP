@@ -24,6 +24,8 @@ return [
     'description' => 'Опис',
     'sku' => 'SKU',
     'sku_placeholder' => 'пр. PROD-001',
+    'code' => 'Код',
+    'code_placeholder' => 'пр. ART-001',
     'description_placeholder' => 'Опционален опис',
     'tax_rate' => 'ДДВ стапка',
     'is_active' => 'Активен',

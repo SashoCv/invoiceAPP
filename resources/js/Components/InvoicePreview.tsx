@@ -182,7 +182,7 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className={index % 2 === 1 ? 'bg-gray-50' : 'bg-white'}>
-                                        <td className="px-4 py-3 text-sm border-b border-gray-200">{item.description}</td>
+                                        <td className="px-4 py-3 text-sm border-b border-gray-200">{item.code ? `[${item.code}] ` : ''}{item.description}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.quantity, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{Number(item.discount || 0).toFixed(0)}%</td>
@@ -379,7 +379,7 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     const total = afterDiscount + tax;
                                     return (
                                         <tr key={index} className="border-b border-gray-100 hover:bg-purple-50/50 transition-colors">
-                                            <td className="px-6 py-4 text-sm text-gray-900">{item.description}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900">{item.code ? `[${item.code}] ` : ''}{item.description}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.quantity, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
@@ -559,7 +559,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 const total = afterDiscount + tax;
                                 return (
                                     <tr key={index} className="border-b border-gray-100">
-                                        <td className="py-5 text-gray-900">{item.description}</td>
+                                        <td className="py-5 text-gray-900">{item.code ? `[${item.code}] ` : ''}{item.description}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.quantity, 0)}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="py-5 text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
@@ -740,7 +740,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             {/* Items Table */}
             {hasItems && itemsData.length > 0 && (
                 <>
-                    <table className="w-full text-[8px] mb-1">
+                    <table className="w-full text-[7px] mb-1">
                         <thead>
                             <tr className="border-t border-b border-black">
                                 <th className="text-left py-2 px-1 font-bold w-[3%]">Рб</th>
@@ -758,7 +758,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                             {itemsData.map((item: any, index: number) => (
                                 <tr key={index} className="border-b border-gray-300">
                                     <td className="py-2 px-1">{index + 1}.</td>
-                                    <td className="py-2 px-1">{item.description}</td>
+                                    <td className="py-2 px-1">{item.code ? `[${item.code}] ` : ''}{item.description}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.quantity, 0)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.unit_price, 2)}</td>
                                     <td className="py-2 px-1 text-right">{Number(item.discount || 0).toFixed(0)}%</td>

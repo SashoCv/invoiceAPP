@@ -26,6 +26,7 @@ export default function CreateBundle({ articles }: CreateBundleProps) {
     const { data, setData, post, processing, errors } = useForm<{
         name: string;
         sku: string;
+        code: string;
         description: string;
         price: number;
         tax_rate: number;
@@ -33,6 +34,7 @@ export default function CreateBundle({ articles }: CreateBundleProps) {
     }>({
         name: '',
         sku: '',
+        code: '',
         description: '',
         price: 0,
         tax_rate: 18,
@@ -100,6 +102,18 @@ export default function CreateBundle({ articles }: CreateBundleProps) {
                                     onChange={(e) => setData('sku', e.target.value)}
                                     className="mt-1"
                                     error={errors.sku}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="code">{t('inventory.code')}</Label>
+                                <Input
+                                    id="code"
+                                    value={data.code}
+                                    onChange={(e) => setData('code', e.target.value)}
+                                    className="mt-1"
+                                    placeholder={t('articles.code_placeholder')}
+                                    error={errors.code}
                                 />
                             </div>
 

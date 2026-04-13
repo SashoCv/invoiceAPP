@@ -24,6 +24,7 @@ interface InvoiceItem {
     article_id: string;
     bundle_id: string;
     description: string;
+    code: string;
     quantity: number;
     unit_price: number;
     tax_rate: number;
@@ -44,7 +45,7 @@ interface CreateInvoiceProps {
 export default function CreateInvoice({ clients, articles, bundles = [], currentYear, nextSequence, invoice, isDuplicate }: CreateInvoiceProps) {
     const { t } = useTranslation();
 
-    const defaultItem: InvoiceItem = { article_id: '', bundle_id: '', description: '', quantity: 1, unit_price: 0, tax_rate: 18, discount: 0, item_source: 'article' };
+    const defaultItem: InvoiceItem = { article_id: '', bundle_id: '', description: '', code: '', quantity: 1, unit_price: 0, tax_rate: 18, discount: 0, item_source: 'article' };
 
     const mapExistingItem = (item: any): InvoiceItem => {
         const source: ItemSource = item.bundle_id ? 'bundle' : 'article';
@@ -52,6 +53,7 @@ export default function CreateInvoice({ clients, articles, bundles = [], current
             article_id: item.article_id?.toString() || '',
             bundle_id: item.bundle_id?.toString() || '',
             description: item.description,
+            code: item.code || '',
             quantity: item.quantity,
             unit_price: item.unit_price,
             tax_rate: item.tax_rate,
@@ -108,6 +110,7 @@ export default function CreateInvoice({ clients, articles, bundles = [], current
                 article_id: articleId,
                 bundle_id: '',
                 description: article.name,
+                code: article.code || '',
                 unit_price: article.price,
                 tax_rate: article.tax_rate,
                 item_source: 'article',
@@ -125,6 +128,7 @@ export default function CreateInvoice({ clients, articles, bundles = [], current
                 article_id: '',
                 bundle_id: bundleId,
                 description: bundle.name,
+                code: bundle.code || '',
                 unit_price: bundle.price,
                 tax_rate: bundle.tax_rate,
                 item_source: 'bundle',

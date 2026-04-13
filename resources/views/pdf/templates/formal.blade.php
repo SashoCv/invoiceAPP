@@ -32,6 +32,7 @@
 
             $itemsData[] = [
                 'description' => $item->description,
+                'code' => $item->code,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'discount' => $item->discount ?? 0,
@@ -118,7 +119,7 @@
         @foreach($itemsData as $index => $item)
         <tr>
             <td style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ $index + 1 }}.</td>
-            <td style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ $item['description'] }}</td>
+            <td style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ $item['code'] ? '[' . $item['code'] . '] ' : '' }}{{ $item['description'] }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['unit_price'], 2, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['discount'], 0) }}%</td>

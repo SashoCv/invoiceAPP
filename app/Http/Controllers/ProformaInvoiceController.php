@@ -133,6 +133,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.code' => ['nullable', 'string', 'max:255'],
         ]);
 
         $exists = ProformaInvoice::withTrashed()
@@ -169,6 +170,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
                 'article_id' => $item['article_id'] ?? null,
                 'bundle_id' => $item['bundle_id'] ?? null,
                 'description' => $item['description'],
+                'code' => $item['code'] ?? null,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
@@ -234,6 +236,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.code' => ['nullable', 'string', 'max:255'],
         ]);
 
         $exists = ProformaInvoice::withTrashed()
@@ -423,6 +426,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
                 'article_id' => $item->article_id,
                 'bundle_id' => $item->bundle_id,
                 'description' => $item->description,
+                'code' => $item->code,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'tax_rate' => $item->tax_rate,

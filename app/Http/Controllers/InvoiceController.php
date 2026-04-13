@@ -142,6 +142,7 @@ class InvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.code' => ['nullable', 'string', 'max:255'],
             'items.*.article_id' => ['required_without:items.*.bundle_id', 'nullable', 'exists:articles,id'],
             'items.*.bundle_id' => ['required_without:items.*.article_id', 'nullable', 'exists:bundles,id'],
         ]);
@@ -186,6 +187,7 @@ class InvoiceController extends Controller implements HasMiddleware
         foreach ($validated['items'] as $item) {
             $invoice->items()->create([
                 'description' => $item['description'],
+                'code' => $item['code'] ?? null,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
@@ -267,6 +269,7 @@ class InvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.code' => ['nullable', 'string', 'max:255'],
             'items.*.article_id' => ['required_without:items.*.bundle_id', 'nullable', 'exists:articles,id'],
             'items.*.bundle_id' => ['required_without:items.*.article_id', 'nullable', 'exists:bundles,id'],
         ]);
@@ -309,6 +312,7 @@ class InvoiceController extends Controller implements HasMiddleware
         foreach ($validated['items'] as $item) {
             $invoice->items()->create([
                 'description' => $item['description'],
+                'code' => $item['code'] ?? null,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],

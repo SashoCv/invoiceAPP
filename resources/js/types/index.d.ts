@@ -104,6 +104,7 @@ export interface Article {
     name: string;
     type: 'product' | 'service';
     sku: string | null;
+    code: string | null;
     description: string;
     unit: string;
     price: number;
@@ -122,6 +123,7 @@ export interface Bundle {
     user_id: number;
     name: string;
     sku: string | null;
+    code: string | null;
     description: string | null;
     price: number;
     tax_rate: number;
@@ -163,6 +165,7 @@ export interface InvoiceItem {
     article_id?: number;
     bundle_id?: number | null;
     description: string;
+    code?: string | null;
     quantity: number;
     unit?: string;
     unit_price: number;
@@ -202,6 +205,7 @@ export interface ProformaInvoiceItem {
     article_id?: number;
     bundle_id?: number | null;
     description: string;
+    code?: string | null;
     quantity: number;
     unit?: string;
     unit_price: number;
@@ -244,6 +248,7 @@ export interface OfferItem {
     article_id?: number;
     bundle_id?: number | null;
     description: string;
+    code?: string | null;
     quantity: number;
     unit?: string;
     unit_price: number;

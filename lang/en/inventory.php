@@ -26,6 +26,7 @@ return [
     // Fields
     'name' => 'Name',
     'sku' => 'SKU',
+    'code' => 'Code',
     'description' => 'Description',
     'unit' => 'Unit',
     'price' => 'Price',

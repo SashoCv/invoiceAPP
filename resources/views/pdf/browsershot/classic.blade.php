@@ -93,7 +93,7 @@
                     $itemTotal = $afterDiscount + $itemTax;
                 @endphp
                 <tr class="{{ $index % 2 === 1 ? 'bg-gray-50' : 'bg-white' }}">
-                    <td class="px-4 py-3 text-sm border-b border-gray-200">{{ $item->description }}</td>
+                    <td class="px-4 py-3 text-sm border-b border-gray-200">{{ $item->code ? '[' . $item->code . '] ' : '' }}{{ $item->description }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->discount, 0) }}%</td>

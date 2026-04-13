@@ -23,6 +23,7 @@ export default function CreateArticle() {
         name: '',
         type: 'product' as 'product' | 'service',
         sku: '',
+        code: '',
         description: '',
         unit: 'kom',
         price: 0,
@@ -90,6 +91,18 @@ export default function CreateArticle() {
                                     className="mt-1"
                                     placeholder={t('articles.sku_placeholder')}
                                     error={errors.sku}
+                                />
+                            </div>
+
+                            <div>
+                                <Label htmlFor="code">{t('articles.code')}</Label>
+                                <Input
+                                    id="code"
+                                    value={data.code}
+                                    onChange={(e) => setData('code', e.target.value)}
+                                    className="mt-1"
+                                    placeholder={t('articles.code_placeholder')}
+                                    error={errors.code}
                                 />
                             </div>
 

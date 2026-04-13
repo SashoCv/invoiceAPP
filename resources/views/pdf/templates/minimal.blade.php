@@ -58,7 +58,7 @@
     <tbody>
         @foreach($items as $item)
         <tr>
-            <td>{{ $item->description }}</td>
+            <td>{{ $item->code ? '[' . $item->code . '] ' : '' }}{{ $item->description }}</td>
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->discount, 0) }}%</td>

@@ -399,6 +399,7 @@ class OfferController extends Controller implements HasMiddleware
             foreach ($offer->items as $item) {
                 $invoice->items()->create([
                     'description' => $item->description,
+                    'code' => $item->code,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
                     'tax_rate' => $item->tax_rate,

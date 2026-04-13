@@ -24,6 +24,8 @@ return [
     'description' => 'Description',
     'sku' => 'SKU',
     'sku_placeholder' => 'e.g. PROD-001',
+    'code' => 'Code',
+    'code_placeholder' => 'e.g. ART-001',
     'description_placeholder' => 'Optional description',
     'tax_rate' => 'Tax Rate',
     'is_active' => 'Active',

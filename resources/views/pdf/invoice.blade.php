@@ -472,7 +472,7 @@
         }
 
         .formal .items-table th {
-            font-size: 9pt;
+            font-size: 8pt;
             font-weight: bold;
             padding: 6px 3px;
             text-align: left;
@@ -484,7 +484,7 @@
 
         .formal .items-table td {
             padding: 5px 3px;
-            font-size: 9pt;
+            font-size: 8pt;
         }
 
         .formal .items-table td.right {

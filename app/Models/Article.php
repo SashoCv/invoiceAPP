@@ -17,6 +17,7 @@ class Article extends Model
         'name',
         'type',
         'sku',
+        'code',
         'description',
         'unit',
         'price',
