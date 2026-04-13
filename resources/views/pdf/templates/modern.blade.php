@@ -55,12 +55,13 @@
 <table class="items-table">
     <thead>
         <tr>
-            <th style="width: 35%;">Опис</th>
-            <th class="right" style="width: 10%;">Кол.</th>
-            <th class="right" style="width: 13%;">Цена</th>
-            <th class="right" style="width: 10%;">Рабат</th>
-            <th class="right" style="width: 10%;">ДДВ</th>
-            <th class="right" style="width: 16%;">Вкупно</th>
+            <th style="width: 26%;">Опис</th>
+            <th class="right" style="width: 8%;">Кол.</th>
+            <th class="right" style="width: 11%;">Цена</th>
+            <th class="right" style="width: 8%;">Рабат</th>
+            <th class="right" style="width: 13%;">Цена со попуст</th>
+            <th class="right" style="width: 8%;">ДДВ</th>
+            <th class="right" style="width: 14%;">Вкупно</th>
         </tr>
     </thead>
     <tbody>
@@ -70,6 +71,7 @@
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->discount, 0) }}%</td>
+            <td class="right">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->tax_rate, 0) }}%</td>
             <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $item->discount / 100) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
         </tr>

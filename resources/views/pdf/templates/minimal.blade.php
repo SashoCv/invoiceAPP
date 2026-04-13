@@ -47,11 +47,12 @@
 <table class="items-table">
     <thead>
         <tr>
-            <th style="width: 42%;">Опис</th>
-            <th class="right" style="width: 10%;">Кол.</th>
-            <th class="right" style="width: 16%;">Цена</th>
-            <th class="right" style="width: 12%;">Рабат</th>
-            <th class="right" style="width: 20%;">Износ</th>
+            <th style="width: 30%;">Опис</th>
+            <th class="right" style="width: 8%;">Кол.</th>
+            <th class="right" style="width: 13%;">Цена</th>
+            <th class="right" style="width: 9%;">Рабат</th>
+            <th class="right" style="width: 14%;">Цена со попуст</th>
+            <th class="right" style="width: 16%;">Износ</th>
         </tr>
     </thead>
     <tbody>
@@ -61,6 +62,7 @@
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->discount, 0) }}%</td>
+            <td class="right">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $item->discount / 100) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
         </tr>
         @endforeach

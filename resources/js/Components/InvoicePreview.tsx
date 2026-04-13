@@ -167,8 +167,9 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-left px-4 py-3 text-sm font-semibold">Опис</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Кол.</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Цена</th>
-                                <th className="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Рабат</th>
+                                <th className="text-right px-4 py-3 text-sm font-semibold">Цена со попуст</th>
+                                <th className="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Вкупно</th>
                             </tr>
                         </thead>
@@ -184,8 +185,9 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                         <td className="px-4 py-3 text-sm border-b border-gray-200">{item.description}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.quantity, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price, 2)}</td>
-                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{item.tax_rate}%</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{Number(item.discount || 0).toFixed(0)}%</td>
+                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{item.tax_rate}%</td>
                                         <td className="px-4 py-3 text-sm text-right font-medium border-b border-gray-200">{formatNumber(total, 2)}</td>
                                     </tr>
                                 );
@@ -362,8 +364,9 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <th className="text-left px-6 py-4 text-sm font-semibold">Опис</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Кол.</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Цена</th>
-                                    <th className="text-right px-4 py-4 text-sm font-semibold">ДДВ</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Рабат</th>
+                                    <th className="text-right px-4 py-4 text-sm font-semibold">Цена со попуст</th>
+                                    <th className="text-right px-4 py-4 text-sm font-semibold">ДДВ</th>
                                     <th className="text-right px-6 py-4 text-sm font-semibold">Вкупно</th>
                                 </tr>
                             </thead>
@@ -379,8 +382,9 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                             <td className="px-6 py-4 text-sm text-gray-900">{item.description}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.quantity, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
-                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{item.tax_rate}%</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
+                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{item.tax_rate}%</td>
                                             <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{formatNumber(total, 2)}</td>
                                         </tr>
                                     );
@@ -542,6 +546,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Кол.</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Рабат</th>
+                                <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена со попуст</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Износ</th>
                             </tr>
                         </thead>
@@ -558,6 +563,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.quantity, 0)}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="py-5 text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
+                                        <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
                                         <td className="py-5 text-right text-gray-900">{formatNumber(total, 2)}</td>
                                     </tr>
                                 );
@@ -737,14 +743,15 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                     <table className="w-full text-[8px] mb-1">
                         <thead>
                             <tr className="border-t border-b border-black">
-                                <th className="text-left py-2 px-1 font-bold w-[4%]">Рб</th>
-                                <th className="text-left py-2 px-1 font-bold w-[30%]">Опис на артикал - услуга</th>
-                                <th className="text-right py-2 px-1 font-bold w-[8%]">Кол.</th>
-                                <th className="text-right py-2 px-1 font-bold w-[12%]">Цена</th>
-                                <th className="text-right py-2 px-1 font-bold w-[8%]">Рабат</th>
-                                <th className="text-right py-2 px-1 font-bold w-[14%]">Износ</th>
-                                <th className="text-center py-2 px-1 font-bold w-[8%]">ддв</th>
-                                <th className="text-right py-2 px-1 font-bold w-[16%]">Вкупно</th>
+                                <th className="text-left py-2 px-1 font-bold w-[3%]">Рб</th>
+                                <th className="text-left py-2 px-1 font-bold w-[22%]">Опис на артикал - услуга</th>
+                                <th className="text-right py-2 px-1 font-bold w-[7%]">Кол.</th>
+                                <th className="text-right py-2 px-1 font-bold w-[10%]">Цена</th>
+                                <th className="text-right py-2 px-1 font-bold w-[7%]">Рабат</th>
+                                <th className="text-right py-2 px-1 font-bold w-[11%]">Цена(п)</th>
+                                <th className="text-right py-2 px-1 font-bold w-[12%]">Износ</th>
+                                <th className="text-center py-2 px-1 font-bold w-[7%]">ддв</th>
+                                <th className="text-right py-2 px-1 font-bold w-[14%]">Вкупно</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -755,6 +762,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <td className="py-2 px-1 text-right">{formatNumber(item.quantity, 0)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.unit_price, 2)}</td>
                                     <td className="py-2 px-1 text-right">{Number(item.discount || 0).toFixed(0)}%</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.base, 2)}</td>
                                     <td className="py-2 px-1 text-center">{item.tax_rate}%</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.total, 2)}</td>

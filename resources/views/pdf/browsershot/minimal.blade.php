@@ -75,6 +75,7 @@
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Кол.</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Рабат</th>
+                    <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена со попуст</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Износ</th>
                 </tr>
             </thead>
@@ -92,6 +93,7 @@
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->quantity, 0, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->discount, 0) }}%</td>
+                    <td class="py-5 text-right text-gray-600">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-900">{{ number_format($itemTotal, 2, ',', ' ') }}</td>
                 </tr>
                 @endforeach

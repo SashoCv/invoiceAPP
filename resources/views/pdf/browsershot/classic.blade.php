@@ -78,6 +78,7 @@
                     <th class="text-right px-4 py-3 text-sm font-semibold">Кол.</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Цена</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Рабат</th>
+                    <th class="text-right px-4 py-3 text-sm font-semibold">Цена со попуст</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
                     <th class="text-right px-4 py-3 text-sm font-semibold">Вкупно</th>
                 </tr>
@@ -96,6 +97,7 @@
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->discount, 0) }}%</td>
+                    <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
                     <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item->tax_rate, 0) }}%</td>
                     <td class="px-4 py-3 text-sm text-right font-medium border-b border-gray-200">{{ number_format($itemTotal, 2, ',', ' ') }}</td>
                 </tr>

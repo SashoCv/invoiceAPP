@@ -36,6 +36,7 @@
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'discount' => $item->discount ?? 0,
+                'discounted_price' => round($item->unit_price * (1 - ($item->discount ?? 0) / 100), 2),
                 'base' => $lineBase,
                 'tax_rate' => $item->tax_rate,
                 'total' => $lineTotal,
@@ -110,14 +111,15 @@
     <table class="w-full border-collapse mb-1 text-[8px]">
         <thead>
             <tr class="border-t border-b border-black">
-                <th class="text-left py-2 px-1 font-bold" style="width: 4%;">Рб</th>
-                <th class="text-left py-2 px-1 font-bold" style="width: 30%;">Опис на артикал - услуга</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 8%;">Кол.</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 12%;">Цена</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 8%;">Рабат</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 14%;">Износ</th>
-                <th class="text-center py-2 px-1 font-bold" style="width: 8%;">ддв</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 16%;">Вкупно</th>
+                <th class="text-left py-2 px-1 font-bold" style="width: 3%;">Рб</th>
+                <th class="text-left py-2 px-1 font-bold" style="width: 22%;">Опис на артикал - услуга</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 7%;">Кол.</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 10%;">Цена</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 7%;">Рабат</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 11%;">Цена(п)</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 12%;">Износ</th>
+                <th class="text-center py-2 px-1 font-bold" style="width: 7%;">ддв</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 14%;">Вкупно</th>
             </tr>
         </thead>
         <tbody>
@@ -128,6 +130,7 @@
                 <td class="py-2 px-1 text-right">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['unit_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['discount'], 0) }}%</td>
+                <td class="py-2 px-1 text-right">{{ number_format($item['discounted_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['base'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-center">{{ number_format($item['tax_rate'], 0) }}%</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['total'], 2, ',', '.') }}</td>
