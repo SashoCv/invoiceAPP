@@ -97,6 +97,12 @@ return [
     'occurrence_count' => 'Пати',
     'total_spent' => 'Вкупно потрошено',
 
+    // Spending by category
+    'spending_by_category' => 'Трошок по категорија',
+    'period_total' => 'Вкупно за периодот',
+    'no_spending' => 'Нема трошоци за овој период',
+    'no_spending_description' => 'Изберете друг период или додајте трошоци.',
+
     // Empty states
     'no_expenses' => 'Нема трошоци',
     'no_expenses_description' => 'Додајте го вашиот прв трошок за овој месец.',

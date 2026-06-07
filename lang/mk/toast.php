@@ -90,4 +90,8 @@ return [
     'invoice_sent_email' => 'Фактурата е успешно испратена по email',
     'proforma_sent_email' => 'Профактурата е успешно испратена по email',
     'offer_sent_email' => 'Понудата е успешно испратена по email',
+
+    // Trade ledger
+    'fiscal_report_saved' => 'Дневниот фискален извештај е зачуван',
+    'fiscal_report_deleted' => 'Дневниот фискален извештај е избришан',
 ];

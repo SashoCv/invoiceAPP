@@ -57,6 +57,27 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $monthlyTotal = $expenses->sum('amount');
 
+        // Spending per category for a selectable period (defaults to the selected month).
+        $catFrom = $request->get('cat_from', $startOfMonth->toDateString());
+        $catTo = $request->get('cat_to', $endOfMonth->toDateString());
+
+        $categorySpendingRows = $request->user()->expenses()
+            ->whereBetween('date', [$catFrom, $catTo])
+            ->selectRaw('category_id, SUM(amount) as total, COUNT(*) as count')
+            ->groupBy('category_id')
+            ->get();
+
+        $categorySpending = [];
+        $uncategorizedSpending = ['total' => 0.0, 'count' => 0];
+        foreach ($categorySpendingRows as $row) {
+            if ($row->category_id === null) {
+                $uncategorizedSpending = ['total' => (float) $row->total, 'count' => (int) $row->count];
+            } else {
+                $categorySpending[$row->category_id] = ['total' => (float) $row->total, 'count' => (int) $row->count];
+            }
+        }
+        $categoryPeriodTotal = (float) $categorySpendingRows->sum('total');
+
         $incomingInvoices = $request->user()->incomingInvoices()
             ->with(['client', 'items'])
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
@@ -95,6 +116,11 @@ class ExpenseController extends Controller implements HasMiddleware
             'unpaidIncomingTotal' => (float) $unpaidIncomingTotal,
             'paidIncomingTotal' => (float) $paidIncomingTotal,
             'spendingAnalysis' => $spendingAnalysis,
+            'categorySpending' => $categorySpending,
+            'uncategorizedSpending' => $uncategorizedSpending,
+            'categoryPeriodTotal' => $categoryPeriodTotal,
+            'catFrom' => $catFrom,
+            'catTo' => $catTo,
             'month' => $month,
             'tab' => $tab,
             'monthlyTotal' => (float) $monthlyTotal,

@@ -94,6 +94,11 @@ class User extends Authenticatable
         return $this->hasMany(GoodsIssue::class);
     }
 
+    public function dailyFiscalReports(): HasMany
+    {
+        return $this->hasMany(DailyFiscalReport::class);
+    }
+
     public function incomingInvoices(): HasMany
     {
         return $this->hasMany(IncomingInvoice::class);

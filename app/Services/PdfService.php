@@ -6,6 +6,8 @@ use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Models\Offer;
 use App\Models\GoodsIssue;
+use App\Models\GoodsReceipt;
+use App\Models\StockMovement;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Str;
@@ -177,6 +179,370 @@ class PdfService
         }
 
         $html = view('pdf.goods-issue-browsershot', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate a goods receipt (приемница) PDF.
+     */
+    public function generateGoodsReceiptPdf(GoodsReceipt $goodsReceipt): string
+    {
+        $goodsReceipt->load(['movements.article', 'user.agency']);
+
+        $items = $goodsReceipt->movements->map(function ($movement) {
+            $quantity = (float) $movement->quantity;
+            $costPrice = (float) ($movement->cost_price ?? 0);
+            $taxRate = (float) ($movement->tax_rate ?? 0);
+            $base = $quantity * $costPrice;
+            $vat = $base * $taxRate / 100;
+
+            return [
+                'name' => $movement->article->name ?? '-',
+                'unit' => $movement->article->unit ?? '',
+                'quantity' => $quantity,
+                'cost_price' => $costPrice,
+                'tax_rate' => $taxRate,
+                'base' => $base,
+                'vat' => $vat,
+                'total' => $base + $vat,
+            ];
+        });
+
+        $data = [
+            'agency' => $goodsReceipt->user->agency,
+            'docNumber' => $goodsReceipt->receipt_number,
+            'receiptDate' => $goodsReceipt->date?->format('d.m.Y'),
+            'notes' => $goodsReceipt->notes,
+            'items' => $items,
+            'subtotal' => $items->sum('base'),
+            'totalVat' => $items->sum('vat'),
+            'grandTotal' => $items->sum('total'),
+        ];
+
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/goods_receipt_' . $goodsReceipt->id . '_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.goods-receipt', $data)->setPaper('a4');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.goods-receipt', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate an output calculation (Излезна калкулација) PDF for an invoice.
+     *
+     * Purchase cost per article is the weighted average cost from goods receipts
+     * (SUM(cost_price*qty)/SUM(qty)) — the same basis as the profitability report.
+     */
+    public function generateOutputCalculationPdf(Invoice $invoice): string
+    {
+        $invoice->load(['items.article', 'client', 'user.agency']);
+
+        $articleIds = $invoice->items->pluck('article_id')->filter()->unique()->values();
+
+        $avgCosts = $articleIds->isEmpty()
+            ? collect()
+            : StockMovement::whereIn('article_id', $articleIds)
+                ->where('type', 'receipt')
+                ->where('cost_price', '>', 0)
+                ->selectRaw('article_id, SUM(cost_price * quantity) / SUM(quantity) as avg_cost')
+                ->groupBy('article_id')
+                ->pluck('avg_cost', 'article_id');
+
+        $rows = [];
+        $tariffs = [];
+
+        foreach ($invoice->items as $item) {
+            $qty = (float) $item->quantity;
+            $unitPrice = (float) $item->unit_price;       // selling price, без ДДВ
+            $taxRate = (float) $item->tax_rate;
+            $discountPct = (float) $item->discount;
+
+            $avgCost = (float) ($avgCosts[$item->article_id] ?? 0); // покупна цена по единица, без ДДВ
+            $purchaseAmount = $avgCost * $qty;
+            $transferredTax = $purchaseAmount * $taxRate / 100;
+
+            // Recompute from price/qty/discount/tax (same basis as InvoiceItem::booted)
+            // so the calculation is always self-consistent regardless of stored totals.
+            $grossNoTax = $qty * $unitPrice;
+            $discountAmount = $grossNoTax * $discountPct / 100;
+            $salesNoTax = $grossNoTax - $discountAmount;           // продажна без ДДВ (по рабат)
+            $calcTax = $salesNoTax * $taxRate / 100;               // пресметан данок
+            $salesWithTax = $salesNoTax + $calcTax;                // продажна со ДДВ (по рабат)
+            $margin = $salesNoTax - $purchaseAmount;
+
+            $row = [
+                'code' => $item->code ?: ($item->article->code ?? ''),
+                'unit' => $item->article->unit ?? '',
+                'name' => $item->description ?: ($item->article->name ?? ''),
+                'quantity' => $qty,
+                'purchase_unit' => $avgCost,
+                'purchase_amount' => round($purchaseAmount, 2),
+                'transferred_tax' => round($transferredTax, 2),
+                'discount' => round($discountAmount, 2),
+                'sales_unit' => round($unitPrice * (1 + $taxRate / 100), 2),
+                'sales_amount' => round($salesWithTax, 2),
+                'calc_tax' => round($calcTax, 2),
+                'margin' => round($margin, 2),
+                'tax_rate' => $taxRate,
+            ];
+            $rows[] = $row;
+
+            // Accumulate the tariff summary from the rounded row values so the
+            // summary totals reconcile exactly with the line-item totals.
+            $key = (string) $taxRate;
+            if (!isset($tariffs[$key])) {
+                $tariffs[$key] = [
+                    'rate' => $taxRate,
+                    'purchase_amount' => 0,
+                    'discount' => 0,
+                    'sales_no_tax' => 0,
+                    'tax' => 0,
+                    'sales_with_tax' => 0,
+                    'margin' => 0,
+                ];
+            }
+            $tariffs[$key]['purchase_amount'] += $row['purchase_amount'];
+            $tariffs[$key]['discount'] += $row['discount'];
+            $tariffs[$key]['sales_no_tax'] += $row['sales_amount'] - $row['calc_tax'];
+            $tariffs[$key]['tax'] += $row['calc_tax'];
+            $tariffs[$key]['sales_with_tax'] += $row['sales_amount'];
+            $tariffs[$key]['margin'] += $row['margin'];
+        }
+
+        ksort($tariffs);
+
+        $totals = [
+            'purchase_amount' => round(array_sum(array_column($rows, 'purchase_amount')), 2),
+            'transferred_tax' => round(array_sum(array_column($rows, 'transferred_tax')), 2),
+            'discount' => round(array_sum(array_column($rows, 'discount')), 2),
+            'sales_amount' => round(array_sum(array_column($rows, 'sales_amount')), 2),
+            'calc_tax' => round(array_sum(array_column($rows, 'calc_tax')), 2),
+            'margin' => round(array_sum(array_column($rows, 'margin')), 2),
+        ];
+
+        $data = [
+            'agency' => $invoice->user->agency,
+            'calcNumber' => sprintf('%04d', $invoice->id),
+            'documentNumber' => $invoice->invoice_number,
+            'date' => $invoice->issue_date?->format('d.m.Y'),
+            'client' => $invoice->client,
+            'rows' => $rows,
+            'tariffs' => array_values($tariffs),
+            'totals' => $totals,
+        ];
+
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/output_calculation_' . $invoice->id . '_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.output-calculation', $data)->setPaper('a4', 'landscape');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.output-calculation', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->landscape()
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate the daily financial report (дневна продажба на артикли) PDF.
+     */
+    public function generateDailyFinancialReportPdf(array $data): string
+    {
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/daily_financial_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.daily-financial-report', $data)->setPaper('a4', 'landscape');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.daily-financial-report', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->landscape()
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate the trade ledger (Образец ЕТ — Евиденција во трговија) PDF.
+     */
+    public function generateTradeLedgerPdf(array $data): string
+    {
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/trade_ledger_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.trade-ledger', $data)->setPaper('a4', 'landscape');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.trade-ledger', $data)->render();
+
+        $browsershot = Browsershot::html($html)
+            ->format('A4')
+            ->landscape()
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate an inventory (warehouse) list PDF.
+     */
+    public function generateInventoryPdf(array $data): string
+    {
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/inventory_list_' . Str::random(8) . '.pdf';
+
+        $engine = config('app.pdf_engine', 'browsershot');
+
+        if ($engine === 'dompdf') {
+            $pdf = Pdf::loadView('pdf.inventory-list', $data)->setPaper('a4');
+            file_put_contents($pdfFile, $pdf->output());
+            return $pdfFile;
+        }
+
+        $html = view('pdf.inventory-list', $data)->render();
 
         $browsershot = Browsershot::html($html)
             ->format('A4')

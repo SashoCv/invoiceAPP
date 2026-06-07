@@ -64,6 +64,11 @@ interface ExpensesIndexProps {
     unpaidIncomingTotal: number;
     paidIncomingTotal: number;
     spendingAnalysis: SpendingAnalysisItem[];
+    categorySpending: Record<number, { total: number; count: number }>;
+    uncategorizedSpending: { total: number; count: number };
+    categoryPeriodTotal: number;
+    catFrom: string;
+    catTo: string;
     month: string;
     tab: string;
     monthlyTotal: number;
@@ -118,6 +123,11 @@ export default function ExpensesIndex({
     unpaidIncomingTotal,
     paidIncomingTotal,
     spendingAnalysis,
+    categorySpending,
+    uncategorizedSpending,
+    categoryPeriodTotal,
+    catFrom,
+    catTo,
     month,
     tab,
     monthlyTotal,
@@ -190,6 +200,14 @@ export default function ExpensesIndex({
 
     const handleMonthChange = (newMonth: string) => {
         router.get('/expenses', { month: newMonth, tab: activeTab }, { preserveState: true });
+    };
+
+    const handleCategoryPeriodChange = (from: string, to: string) => {
+        router.get(
+            '/expenses',
+            { month, tab: 'categories', cat_from: from, cat_to: to },
+            { preserveState: true, preserveScroll: true },
+        );
     };
 
     const handleTabChange = (value: string) => {
@@ -722,6 +740,126 @@ export default function ExpensesIndex({
 
                     {/* Tab 3: Categories */}
                     <TabsContent value="categories">
+                        {/* Spending per category over a selectable period */}
+                        <Card className="mb-6">
+                            <div className="flex flex-col gap-4 p-4 border-b sm:flex-row sm:items-center sm:justify-between">
+                                <h3 className="font-semibold text-gray-900">{t('expenses.spending_by_category')}</h3>
+                                <div className="flex flex-wrap items-end gap-3">
+                                    <div>
+                                        <Label className="mb-1 block text-xs text-gray-500">{t('expenses.start_date')}</Label>
+                                        <Input
+                                            type="date"
+                                            value={catFrom}
+                                            max={catTo}
+                                            onChange={(e) => handleCategoryPeriodChange(e.target.value, catTo)}
+                                            className="h-9 w-[150px]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="mb-1 block text-xs text-gray-500">{t('expenses.end_date')}</Label>
+                                        <Input
+                                            type="date"
+                                            value={catTo}
+                                            min={catFrom}
+                                            onChange={(e) => handleCategoryPeriodChange(catFrom, e.target.value)}
+                                            className="h-9 w-[150px]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <CardContent className="pt-6">
+                                <div className="mb-4 flex items-baseline justify-between">
+                                    <span className="text-sm text-gray-500">{t('expenses.period_total')}</span>
+                                    <span className="text-xl font-bold text-gray-900">
+                                        {formatNumber(categoryPeriodTotal, 2)} ден.
+                                    </span>
+                                </div>
+                                {(() => {
+                                    const ranked = categories
+                                        .map((c) => ({
+                                            category: c,
+                                            spend: categorySpending[c.id] || { total: 0, count: 0 },
+                                        }))
+                                        .sort((a, b) => b.spend.total - a.spend.total);
+                                    const maxTotal = Math.max(
+                                        categoryPeriodTotal,
+                                        ...ranked.map((r) => r.spend.total),
+                                        uncategorizedSpending.total,
+                                        1,
+                                    );
+
+                                    if (categoryPeriodTotal === 0) {
+                                        return (
+                                            <EmptyState
+                                                icon={Receipt}
+                                                title={t('expenses.no_spending')}
+                                                description={t('expenses.no_spending_description')}
+                                            />
+                                        );
+                                    }
+
+                                    return (
+                                        <div className="space-y-3">
+                                            {ranked.map(({ category, spend }) => (
+                                                <div key={category.id}>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <span
+                                                                className="w-3 h-3 rounded-full"
+                                                                style={{ backgroundColor: category.color || '#6b7280' }}
+                                                            />
+                                                            <span className="font-medium text-gray-900">{category.name}</span>
+                                                            <span className="text-xs text-gray-400">
+                                                                ({spend.count})
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-semibold text-gray-900">
+                                                            {formatNumber(spend.total, 2)} ден.
+                                                        </span>
+                                                    </div>
+                                                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                                                        <div
+                                                            className="h-full rounded-full"
+                                                            style={{
+                                                                width: `${(spend.total / maxTotal) * 100}%`,
+                                                                backgroundColor: category.color || '#6b7280',
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {uncategorizedSpending.total > 0 && (
+                                                <div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-3 h-3 rounded-full bg-gray-400" />
+                                                            <span className="font-medium text-gray-900">
+                                                                {t('expenses.no_category')}
+                                                            </span>
+                                                            <span className="text-xs text-gray-400">
+                                                                ({uncategorizedSpending.count})
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-semibold text-gray-900">
+                                                            {formatNumber(uncategorizedSpending.total, 2)} ден.
+                                                        </span>
+                                                    </div>
+                                                    <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                                                        <div
+                                                            className="h-full rounded-full bg-gray-400"
+                                                            style={{
+                                                                width: `${(uncategorizedSpending.total / maxTotal) * 100}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </CardContent>
+                        </Card>
+
                         <Card>
                             <div className="p-4 border-b">
                                 <h3 className="font-semibold text-gray-900">{t('expenses.tab_categories')}</h3>

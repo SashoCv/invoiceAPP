@@ -283,6 +283,67 @@ class ExportController extends Controller
         });
     }
 
+    public function exportGoodsReceipts(Request $request): StreamedResponse
+    {
+        $query = $request->user()->goodsReceipts()->with('movements.article');
+
+        if ($request->filled('date_from')) {
+            $query->where('date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->where('date', '<=', $request->input('date_to'));
+        }
+
+        $receipts = $query->orderBy('date')->orderBy('id')->get();
+
+        // Flatten to one row per receipt line item, so the export contains everything.
+        $rows = collect();
+        foreach ($receipts as $receipt) {
+            foreach ($receipt->movements as $movement) {
+                $quantity = (float) $movement->quantity;
+                $costPrice = (float) ($movement->cost_price ?? 0);
+                $taxRate = (float) ($movement->tax_rate ?? 0);
+                $base = $quantity * $costPrice;
+                $vat = $base * $taxRate / 100;
+
+                $rows->push([
+                    $receipt->receipt_number,
+                    $receipt->date?->format('d.m.Y') ?? '',
+                    $movement->article->name ?? '-',
+                    $movement->article->unit ?? '',
+                    $quantity,
+                    $costPrice,
+                    round($base, 2),
+                    $taxRate,
+                    round($vat, 2),
+                    round($base + $vat, 2),
+                    $receipt->notes ?? '',
+                ]);
+            }
+        }
+
+        $headers = [
+            __('inventory.receipt_number'),
+            __('inventory.receipt_date'),
+            __('inventory.name'),
+            __('inventory.unit'),
+            __('inventory.quantity'),
+            __('inventory.cost_price'),
+            __('inventory.amount_base'),
+            __('inventory.vat_rate'),
+            __('inventory.vat_amount'),
+            __('inventory.line_total'),
+            __('inventory.receipt_notes'),
+        ];
+
+        $suffix = '';
+        if ($request->filled('date_from') || $request->filled('date_to')) {
+            $suffix = '_' . ($request->input('date_from', '') ?: 'x') . '_' . ($request->input('date_to', '') ?: 'x');
+        }
+
+        return $this->streamCsv("priemnici{$suffix}.csv", $headers, $rows, fn ($row) => $row);
+    }
+
     private function streamCsv(string $filename, array $headers, $rows, callable $rowMapper): StreamedResponse
     {
         return response()->streamDownload(function () use ($headers, $rows, $rowMapper) {

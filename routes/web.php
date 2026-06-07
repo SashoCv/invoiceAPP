@@ -103,13 +103,28 @@ Route::middleware('auth')->group(function () {
     Route::get('warehouse', [\App\Http\Controllers\WarehouseDashboardController::class, 'index'])->name('warehouse.dashboard');
     Route::get('profitability', [ProfitabilityController::class, 'index'])->name('profitability');
 
+    // Trade ledger (Образец ЕТ — Евиденција во трговија)
+    Route::get('trade-ledger', [\App\Http\Controllers\TradeLedgerController::class, 'index'])->name('trade-ledger.index');
+    Route::get('trade-ledger/pdf', [\App\Http\Controllers\TradeLedgerController::class, 'exportPdf'])->name('trade-ledger.pdf');
+    // Daily financial report (дневна продажба на артикли — ЕТ / МЕГТ)
+    Route::get('daily-financial-report', [\App\Http\Controllers\DailyFinancialReportController::class, 'index'])->name('daily-financial-report.index');
+    Route::get('daily-financial-report/pdf', [\App\Http\Controllers\DailyFinancialReportController::class, 'exportPdf'])->name('daily-financial-report.pdf');
+
+    Route::post('trade-ledger/reports', [\App\Http\Controllers\TradeLedgerController::class, 'storeReport'])->name('trade-ledger.reports.store');
+    Route::put('trade-ledger/reports/{dailyFiscalReport}', [\App\Http\Controllers\TradeLedgerController::class, 'updateReport'])->name('trade-ledger.reports.update');
+    Route::delete('trade-ledger/reports/{dailyFiscalReport}', [\App\Http\Controllers\TradeLedgerController::class, 'destroyReport'])->name('trade-ledger.reports.destroy');
+
     // Shopify
     Route::get('shopify/profitability', [ShopifyProfitabilityController::class, 'index'])->name('shopify.profitability');
     Route::get('shopify/orders', [ShopifyOrderController::class, 'index'])->name('shopify.orders.index');
     Route::get('shopify/orders/pending', [ShopifyOrderController::class, 'pending'])->name('shopify.orders.pending');
     Route::get('shopify/orders/{shopifyOrder}', [ShopifyOrderController::class, 'show'])->name('shopify.orders.show');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
+    Route::get('inventory/export/pdf', [InventoryItemController::class, 'exportPdf'])->name('inventory.export.pdf');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
+    Route::get('goods-receipts/export/csv', [ExportController::class, 'exportGoodsReceipts'])->name('goods-receipts.export.csv');
+    Route::get('goods-receipts/{goodsReceipt}/pdf', [PdfController::class, 'goodsReceipt'])->name('goods-receipts.pdf');
+    Route::get('goods-receipts/{goodsReceipt}/pdf/preview', [PdfController::class, 'goodsReceiptPreview'])->name('goods-receipts.pdf.preview');
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::get('goods-issues/{goodsIssue}/pdf', [PdfController::class, 'goodsIssue'])->name('goods-issues.pdf');
     Route::get('goods-issues/{goodsIssue}/pdf/preview', [PdfController::class, 'goodsIssuePreview'])->name('goods-issues.pdf.preview');
@@ -155,6 +170,8 @@ Route::middleware('auth')->group(function () {
     Route::get('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoices.duplicate');
     Route::get('invoices/{invoice}/pdf', [PdfController::class, 'invoice'])->name('invoices.pdf');
     Route::get('invoices/{invoice}/pdf/preview', [PdfController::class, 'invoicePreview'])->name('invoices.pdf.preview');
+    Route::get('invoices/{invoice}/output-calculation', [PdfController::class, 'outputCalculation'])->name('invoices.output-calculation');
+    Route::get('invoices/{invoice}/output-calculation/preview', [PdfController::class, 'outputCalculationPreview'])->name('invoices.output-calculation.preview');
     Route::post('invoices/{id}/restore', [InvoiceController::class, 'restore'])->name('invoices.restore');
     Route::delete('invoices/{id}/force-delete', [InvoiceController::class, 'forceDelete'])->name('invoices.force-delete');
     Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.update-status');

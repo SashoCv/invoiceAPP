@@ -27,7 +27,7 @@ import {
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { ArrowLeft, Pencil, Copy, FileText, Printer, Eye, Download, Send } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, FileText, Printer, Eye, Download, Send, Calculator } from 'lucide-react';
 import InvoicePreview from '@/Components/InvoicePreview';
 import type { Invoice, Agency, BankAccount } from '@/types';
 
@@ -172,6 +172,12 @@ export default function ShowInvoice({ invoice }: ShowInvoiceProps) {
                         <a href={`/invoices/${invoice.id}/pdf/preview`} target="_blank" className="flex items-center gap-2">
                             <Printer className="w-4 h-4" />
                             {t('invoices.print_pdf')}
+                        </a>
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={`/invoices/${invoice.id}/output-calculation/preview`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            <Calculator className="w-4 h-4" />
+                            {t('invoices.output_calculation')}
                         </a>
                     </Button>
                     {/* TODO: Enable when email sending is implemented

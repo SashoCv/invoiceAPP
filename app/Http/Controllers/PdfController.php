@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\ProformaInvoice;
 use App\Models\Offer;
 use App\Models\GoodsIssue;
+use App\Models\GoodsReceipt;
 use App\Services\PdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -147,6 +148,70 @@ class PdfController extends Controller
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="Ispratnica_' . $goodsIssue->issue_number . '.pdf"',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Generate and download the output calculation (Излезна калкулација) for an invoice
+     */
+    public function outputCalculation(Invoice $invoice): BinaryFileResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $pdfPath = $this->pdfService->generateOutputCalculationPdf($invoice);
+
+        $filename = "Izlezna_kalkulacija_{$invoice->invoice_number}.pdf";
+        $filename = str_replace(['/', '\\', ' '], '_', $filename);
+
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Preview the output calculation PDF in browser
+     */
+    public function outputCalculationPreview(Invoice $invoice): BinaryFileResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $pdfPath = $this->pdfService->generateOutputCalculationPdf($invoice);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Izlezna_kalkulacija_' . str_replace(['/', '\\', ' '], '_', $invoice->invoice_number) . '.pdf"',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Generate and download goods receipt (приемница) PDF
+     */
+    public function goodsReceipt(GoodsReceipt $goodsReceipt): BinaryFileResponse
+    {
+        abort_if($goodsReceipt->user_id !== auth()->id(), 403);
+
+        $pdfPath = $this->pdfService->generateGoodsReceiptPdf($goodsReceipt);
+
+        $filename = "Priemnica_{$goodsReceipt->receipt_number}.pdf";
+        $filename = str_replace(['/', '\\', ' '], '_', $filename);
+
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Preview goods receipt PDF in browser
+     */
+    public function goodsReceiptPreview(GoodsReceipt $goodsReceipt): BinaryFileResponse
+    {
+        abort_if($goodsReceipt->user_id !== auth()->id(), 403);
+
+        $pdfPath = $this->pdfService->generateGoodsReceiptPdf($goodsReceipt);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Priemnica_' . $goodsReceipt->receipt_number . '.pdf"',
         ])->deleteFileAfterSend(true);
     }
 }

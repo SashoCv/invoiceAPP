@@ -97,6 +97,12 @@ return [
     'occurrence_count' => 'Times',
     'total_spent' => 'Total Spent',
 
+    // Spending by category
+    'spending_by_category' => 'Spending by Category',
+    'period_total' => 'Period total',
+    'no_spending' => 'No expenses for this period',
+    'no_spending_description' => 'Pick a different period or add expenses.',
+
     // Empty states
     'no_expenses' => 'No expenses',
     'no_expenses_description' => 'Add your first expense for this month.',

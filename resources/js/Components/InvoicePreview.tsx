@@ -685,7 +685,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             tax18Amount += lineTax;
         }
 
-        return { ...item, base: lineBase, total: lineTotal };
+        return { ...item, base: lineBase, tax: lineTax, total: lineTotal };
     });
 
     const totalTax = tax5Amount + tax18Amount;
@@ -744,14 +744,15 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                         <thead>
                             <tr className="border-t border-b border-black">
                                 <th className="text-left py-2 px-1 font-bold w-[3%]">Рб</th>
-                                <th className="text-left py-2 px-1 font-bold w-[22%]">Опис на артикал - услуга</th>
-                                <th className="text-right py-2 px-1 font-bold w-[7%]">Кол.</th>
-                                <th className="text-right py-2 px-1 font-bold w-[10%]">Цена</th>
-                                <th className="text-right py-2 px-1 font-bold w-[7%]">Рабат</th>
-                                <th className="text-right py-2 px-1 font-bold w-[11%]">Цена(п)</th>
-                                <th className="text-right py-2 px-1 font-bold w-[12%]">Износ</th>
-                                <th className="text-center py-2 px-1 font-bold w-[7%]">ддв</th>
-                                <th className="text-right py-2 px-1 font-bold w-[14%]">Вкупно</th>
+                                <th className="text-left py-2 px-1 font-bold w-[19%]">Опис на артикал - услуга</th>
+                                <th className="text-right py-2 px-1 font-bold w-[6%]">Кол.</th>
+                                <th className="text-right py-2 px-1 font-bold w-[9%]">Цена</th>
+                                <th className="text-right py-2 px-1 font-bold w-[6%]">Рабат</th>
+                                <th className="text-right py-2 px-1 font-bold w-[10%]">Цена со рабат</th>
+                                <th className="text-right py-2 px-1 font-bold w-[11%]">Износ без ДДВ</th>
+                                <th className="text-center py-2 px-1 font-bold w-[6%]">ддв</th>
+                                <th className="text-right py-2 px-1 font-bold w-[11%]">ДДВ износ</th>
+                                <th className="text-right py-2 px-1 font-bold w-[12%]">Вкупно со ДДВ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -765,6 +766,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <td className="py-2 px-1 text-right">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.base, 2)}</td>
                                     <td className="py-2 px-1 text-center">{item.tax_rate}%</td>
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.tax, 2)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.total, 2)}</td>
                                 </tr>
                             ))}
@@ -776,11 +778,11 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                         Заклучно со реден број {itemsData.length}.
                     </div>
 
-                    {/* Total base */}
+                    {/* Total with VAT */}
                     <div className="flex justify-end mb-3">
                         <div className="border-t border-black pt-2">
-                            <span className="font-bold mr-6">Вкупна цена:</span>
-                            <span className="font-bold">{formatNumber(totalBase, 2)}</span>
+                            <span className="font-bold mr-6">Вкупна цена со ДДВ:</span>
+                            <span className="font-bold">{formatNumber(totalWithVat, 2)}</span>
                         </div>
                     </div>
 

@@ -40,6 +40,7 @@
                 'discounted_price' => round($item->unit_price * (1 - ($item->discount ?? 0) / 100), 2),
                 'base' => $lineBase,
                 'tax_rate' => $item->tax_rate,
+                'tax' => $lineTax,
                 'total' => $lineTotal,
             ];
         }
@@ -113,14 +114,15 @@
         <thead>
             <tr class="border-t border-b border-black">
                 <th class="text-left py-2 px-1 font-bold" style="width: 3%;">Рб</th>
-                <th class="text-left py-2 px-1 font-bold" style="width: 22%;">Опис на артикал - услуга</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 7%;">Кол.</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 10%;">Цена</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 7%;">Рабат</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 11%;">Цена(п)</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 12%;">Износ</th>
-                <th class="text-center py-2 px-1 font-bold" style="width: 7%;">ддв</th>
-                <th class="text-right py-2 px-1 font-bold" style="width: 14%;">Вкупно</th>
+                <th class="text-left py-2 px-1 font-bold" style="width: 19%;">Опис на артикал - услуга</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 6%;">Кол.</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 9%;">Цена</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 6%;">Рабат</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 10%;">Цена со рабат</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 11%;">Износ без ДДВ</th>
+                <th class="text-center py-2 px-1 font-bold" style="width: 6%;">ддв</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 11%;">ДДВ износ</th>
+                <th class="text-right py-2 px-1 font-bold" style="width: 12%;">Вкупно со ДДВ</th>
             </tr>
         </thead>
         <tbody>
@@ -134,6 +136,7 @@
                 <td class="py-2 px-1 text-right">{{ number_format($item['discounted_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['base'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-center">{{ number_format($item['tax_rate'], 0) }}%</td>
+                <td class="py-2 px-1 text-right">{{ number_format($item['tax'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['total'], 2, ',', '.') }}</td>
             </tr>
             @endforeach
@@ -145,12 +148,12 @@
         Заклучно со реден број {{ count($itemsData) }}.
     </div>
 
-    {{-- Вкупна цена (total base before VAT) --}}
+    {{-- Вкупна цена (total with VAT) --}}
     <div class="flex justify-end mb-3">
         <table class="text-[9px]">
             <tr class="border-t border-black">
-                <td class="py-2 pr-6 font-bold">Вкупна цена:</td>
-                <td class="py-2 text-right font-bold">{{ number_format($totalBase, 2, ',', '.') }}</td>
+                <td class="py-2 pr-6 font-bold">Вкупна цена со ДДВ:</td>
+                <td class="py-2 text-right font-bold">{{ number_format($totalWithVat, 2, ',', '.') }}</td>
             </tr>
         </table>
     </div>

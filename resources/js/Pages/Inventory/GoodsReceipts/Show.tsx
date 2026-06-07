@@ -12,7 +12,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
 import { Button } from '@/Components/ui/button';
-import { ArrowLeft, Package, Pencil } from 'lucide-react';
+import { ArrowLeft, Package, Pencil, Download } from 'lucide-react';
 
 interface Movement {
     id: number;
@@ -66,12 +66,25 @@ export default function GoodsReceiptShow({ receipt, movements }: Props) {
                             <p className="text-sm text-gray-500">{formatDate(receipt.date)}</p>
                         </div>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                        <Link href={`/goods-receipts/${receipt.id}/edit`} className="gap-1.5">
-                            <Pencil className="w-4 h-4" />
-                            {t('inventory.edit_goods_receipt')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm">
+                            <a
+                                href={`/goods-receipts/${receipt.id}/pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="gap-1.5"
+                            >
+                                <Download className="w-4 h-4" />
+                                {t('inventory.download_pdf')}
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/goods-receipts/${receipt.id}/edit`} className="gap-1.5">
+                                <Pencil className="w-4 h-4" />
+                                {t('inventory.edit_goods_receipt')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

@@ -36,7 +36,7 @@ import Pagination from '@/Components/Pagination';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDate, formatNumber } from '@/lib/utils';
-import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, Download, Send, RefreshCw, Printer } from 'lucide-react';
+import { Plus, Eye, Copy, Pencil, Trash2, FileText, RotateCcw, Download, Send, RefreshCw, Printer, Calculator } from 'lucide-react';
 import ActionDropdown from '@/Components/ActionDropdown';
 import EmptyState from '@/Components/EmptyState';
 import SortableTableHead from '@/Components/SortableTableHead';
@@ -400,6 +400,13 @@ export default function InvoicesIndex({ invoices, clients, showDeleted, filters 
                                                                 label: t('invoices.print_pdf'),
                                                                 icon: Printer,
                                                                 href: `/invoices/${invoice.id}/pdf/preview`,
+                                                                external: true,
+                                                                target: '_blank',
+                                                            },
+                                                            {
+                                                                label: t('invoices.output_calculation'),
+                                                                icon: Calculator,
+                                                                href: `/invoices/${invoice.id}/output-calculation/preview`,
                                                                 external: true,
                                                                 target: '_blank',
                                                             },

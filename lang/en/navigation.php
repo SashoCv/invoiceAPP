@@ -40,6 +40,8 @@ return [
     'goods_issues' => 'Dispatch Notes',
     'purchase_prices' => 'Purchases & Sales',
     'profitability' => 'Profitability',
+    'trade_ledger' => 'Trade Ledger',
+    'daily_financial_report' => 'Daily Financial Report',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Sales',
     'shopify_orders' => 'Orders',
