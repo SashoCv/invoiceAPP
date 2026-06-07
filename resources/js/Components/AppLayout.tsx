@@ -30,6 +30,7 @@ import {
     AlertTriangle,
     Clock,
     DollarSign,
+    BookText,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
@@ -107,6 +108,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/purchase-prices',
                     icon: DollarSign,
                     active: currentPath.startsWith('/purchase-prices'),
+                },
+                {
+                    name: t('navigation.trade_ledger'),
+                    href: '/trade-ledger',
+                    icon: BookText,
+                    active: currentPath.startsWith('/trade-ledger'),
+                },
+                {
+                    name: t('navigation.daily_financial_report'),
+                    href: '/daily-financial-report',
+                    icon: TrendingUp,
+                    active: currentPath.startsWith('/daily-financial-report'),
                 },
             ],
         },

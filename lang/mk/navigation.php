@@ -40,6 +40,8 @@ return [
     'goods_issues' => 'Испратници',
     'purchase_prices' => 'Набавки и продажби',
     'profitability' => 'Профитабилност',
+    'trade_ledger' => 'Евиденција во трговија',
+    'daily_financial_report' => 'Дневен финансиски извештај',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Продажби',
     'shopify_orders' => 'Нарачки',

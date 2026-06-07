@@ -17,7 +17,7 @@ import Pagination from '@/Components/Pagination';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
 import type { PaginatedData } from '@/types';
-import { Plus, Package, Eye, Search, ClipboardList } from 'lucide-react';
+import { Plus, Package, Eye, Search, ClipboardList, FileSpreadsheet, Download } from 'lucide-react';
 
 interface GoodsReceipt {
     id: number;
@@ -51,6 +51,11 @@ export default function GoodsReceiptsIndex({ receipts, totalCost, filters }: Pro
 
     const hasFilters = filters.date_from || filters.date_to;
 
+    const exportExcelParams = new URLSearchParams();
+    if (filters.date_from) exportExcelParams.set('date_from', filters.date_from);
+    if (filters.date_to) exportExcelParams.set('date_to', filters.date_to);
+    const exportExcelUrl = `/goods-receipts/export/csv?${exportExcelParams.toString()}`;
+
     const clearFilters = () => {
         setDateFrom('');
         setDateTo('');
@@ -66,12 +71,20 @@ export default function GoodsReceiptsIndex({ receipts, totalCost, filters }: Pro
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t('inventory.goods_receipts')}</h1>
                     </div>
-                    <Button asChild>
-                        <Link href="/goods-receipts/create" className="flex items-center gap-1.5">
-                            <Plus className="w-4 h-4" />
-                            {t('inventory.new_goods_receipt')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button asChild variant="outline">
+                            <a href={exportExcelUrl} className="flex items-center gap-1.5">
+                                <FileSpreadsheet className="w-4 h-4" />
+                                {t('inventory.export_excel')}
+                            </a>
+                        </Button>
+                        <Button asChild>
+                            <Link href="/goods-receipts/create" className="flex items-center gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                {t('inventory.new_goods_receipt')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Summary Card */}
@@ -152,7 +165,7 @@ export default function GoodsReceiptsIndex({ receipts, totalCost, filters }: Pro
                                             <TableHead>{t('inventory.receipt_date')}</TableHead>
                                             <TableHead>{t('inventory.receipt_notes')}</TableHead>
                                             <TableHead className="text-right">{t('inventory.total_cost')}</TableHead>
-                                            <TableHead className="w-[80px]" />
+                                            <TableHead className="w-[110px]" />
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -171,11 +184,22 @@ export default function GoodsReceiptsIndex({ receipts, totalCost, filters }: Pro
                                                     {formatNumber(receipt.total_cost)} MKD
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/goods-receipts/${receipt.id}`}>
-                                                            <Eye className="w-4 h-4" />
-                                                        </Link>
-                                                    </Button>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button variant="ghost" size="sm" asChild title={t('inventory.download_pdf')}>
+                                                            <a
+                                                                href={`/goods-receipts/${receipt.id}/pdf`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </a>
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <Link href={`/goods-receipts/${receipt.id}`}>
+                                                                <Eye className="w-4 h-4" />
+                                                            </Link>
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}

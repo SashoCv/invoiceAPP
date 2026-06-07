@@ -52,6 +52,9 @@ return [
     'search_placeholder' => 'Име, SKU или опис...',
     'filter' => 'Филтрирај',
     'clear_filters' => 'Исчисти',
+    'as_of_date' => 'Состојба на датум',
+    'stock_as_of' => 'Состојба на лагер на датум',
+    'export_pdf' => 'Извези PDF',
 
     // Actions
     'edit' => 'Уреди',
@@ -189,6 +192,12 @@ return [
     'date_from' => 'Од датум',
     'date_to' => 'До датум',
     'filter' => 'Филтрирај',
+    'print' => 'Печати',
+    'download_pdf' => 'Преземи PDF',
+    'export_excel' => 'Извези во Excel',
+    'amount_base' => 'Износ (без ДДВ)',
+    'vat_rate' => 'ДДВ %',
+    'vat_amount' => 'ДДВ износ',
 
     // Goods Issues
     'goods_issues' => 'Испратници',

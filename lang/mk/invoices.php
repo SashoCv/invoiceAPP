@@ -111,6 +111,7 @@ return [
     'payment_due' => 'Рок за плаќање',
     'tax_number' => 'Даночен број',
     'print_pdf' => 'Печати PDF',
+    'output_calculation' => 'Излезна калкулација',
     'preview' => 'Преглед',
     'download_pdf' => 'Преземи PDF',
 

@@ -52,6 +52,9 @@ return [
     'search_placeholder' => 'Name, SKU or description...',
     'filter' => 'Filter',
     'clear_filters' => 'Clear',
+    'as_of_date' => 'Stock as of date',
+    'stock_as_of' => 'Stock as of date',
+    'export_pdf' => 'Export PDF',
 
     // Actions
     'edit' => 'Edit',
@@ -189,6 +192,12 @@ return [
     'date_from' => 'From',
     'date_to' => 'To',
     'filter' => 'Filter',
+    'print' => 'Print',
+    'download_pdf' => 'Download PDF',
+    'export_excel' => 'Export to Excel',
+    'amount_base' => 'Amount (excl. VAT)',
+    'vat_rate' => 'VAT %',
+    'vat_amount' => 'VAT amount',
 
     // Goods Issues
     'goods_issues' => 'Dispatch Notes',

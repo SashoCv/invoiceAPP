@@ -26,7 +26,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
 import {
     Plus, Pencil, Trash2, Warehouse, Eye,
-    ArrowUpDown, Package, Layers
+    ArrowUpDown, Package, Layers, Download, CalendarClock
 } from 'lucide-react';
 import type { Article, Bundle, StockMovement, PaginatedData } from '@/types';
 
@@ -44,6 +44,7 @@ interface InventoryIndexProps {
         movement_type?: string;
         movement_from?: string;
         movement_to?: string;
+        as_of_date?: string;
     };
 }
 
@@ -96,6 +97,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
     // Items filters
     const [search, setSearch] = useState(filters.search || '');
     const [stockStatus, setStockStatus] = useState(filters.stock_status || '__all__');
+    const [asOfDate, setAsOfDate] = useState(filters.as_of_date || '');
     const [deleteItem, setDeleteItem] = useState<Article | null>(null);
     const [deleteBundle, setDeleteBundle] = useState<Bundle | null>(null);
 
@@ -112,20 +114,28 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
     const [movementFrom, setMovementFrom] = useState(filters.movement_from || '');
     const [movementTo, setMovementTo] = useState(filters.movement_to || '');
 
-    const hasItemFilters = search || (stockStatus && stockStatus !== '__all__');
+    const hasItemFilters = search || (stockStatus && stockStatus !== '__all__') || asOfDate;
     const hasMovementFilters = (movementType && movementType !== '__all__') || movementFrom || movementTo;
 
-    const handleItemFilter = (e: React.FormEvent) => {
-        e.preventDefault();
+    const buildItemParams = () => {
         const params: Record<string, string> = {};
         if (search) params.search = search;
         if (stockStatus && stockStatus !== '__all__') params.stock_status = stockStatus;
-        router.get('/inventory', params, { preserveState: true });
+        if (asOfDate) params.as_of_date = asOfDate;
+        return params;
     };
+
+    const handleItemFilter = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get('/inventory', buildItemParams(), { preserveState: true });
+    };
+
+    const exportPdfUrl = `/inventory/export/pdf?${new URLSearchParams(buildItemParams()).toString()}`;
 
     const clearItemFilters = () => {
         setSearch('');
         setStockStatus('__all__');
+        setAsOfDate('');
         router.get('/inventory', {});
     };
 
@@ -185,7 +195,13 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
 
                     {/* Items Tab */}
                     <TabsContent value="items">
-                        <div className="flex justify-end mb-4">
+                        <div className="flex flex-wrap justify-end gap-2 mb-4">
+                            <Button variant="outline" asChild className="flex items-center gap-2">
+                                <a href={exportPdfUrl} target="_blank" rel="noopener noreferrer">
+                                    <Download className="w-4 h-4" />
+                                    {t('inventory.export_pdf')}
+                                </a>
+                            </Button>
                             <Button
                                 disabled={!isActive || untrackedArticles.length === 0}
                                 onClick={() => setAddDialogOpen(true)}
@@ -199,7 +215,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                         <Card className="mb-6">
                             <CardContent className="pt-6">
                                 <form onSubmit={handleItemFilter}>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <Input
                                             placeholder={t('inventory.search_placeholder')}
                                             value={search}
@@ -216,6 +232,15 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                                 <SelectItem value="out_of_stock">{t('inventory.out_of_stock')}</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <div>
+                                            <Input
+                                                type="date"
+                                                value={asOfDate}
+                                                max={new Date().toISOString().slice(0, 10)}
+                                                onChange={(e) => setAsOfDate(e.target.value)}
+                                                title={t('inventory.as_of_date')}
+                                            />
+                                        </div>
                                         <div className="flex items-end gap-2">
                                             <Button type="submit">{t('inventory.filter')}</Button>
                                             {hasItemFilters && (
@@ -228,6 +253,13 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                 </form>
                             </CardContent>
                         </Card>
+
+                        {filters.as_of_date && (
+                            <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                <CalendarClock className="w-4 h-4 shrink-0" />
+                                <span>{t('inventory.stock_as_of')}: <strong>{formatDate(filters.as_of_date)}</strong></span>
+                            </div>
+                        )}
 
                         <Card>
                             {items.data.length === 0 ? (

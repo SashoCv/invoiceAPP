@@ -39,6 +39,7 @@
                 'discounted_price' => round($item->unit_price * (1 - ($item->discount ?? 0) / 100), 2),
                 'base' => $lineBase,
                 'tax_rate' => $item->tax_rate,
+                'tax' => $lineTax,
                 'total' => $lineTotal,
             ];
         }
@@ -105,14 +106,15 @@
     <thead>
         <tr>
             <th style="width: 3%; text-align: left; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Рб</th>
-            <th style="width: 22%; text-align: left; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Опис на артикал - услуга</th>
-            <th class="right" style="width: 7%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Кол.</th>
-            <th class="right" style="width: 10%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена</th>
-            <th class="right" style="width: 7%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Рабат</th>
-            <th class="right" style="width: 11%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена(п)</th>
-            <th class="right" style="width: 12%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Износ</th>
-            <th style="width: 7%; text-align: center; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">ддв</th>
-            <th class="right" style="width: 14%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Вкупно</th>
+            <th style="width: 19%; text-align: left; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Опис на артикал - услуга</th>
+            <th class="right" style="width: 6%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Кол.</th>
+            <th class="right" style="width: 9%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена</th>
+            <th class="right" style="width: 6%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Рабат</th>
+            <th class="right" style="width: 10%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена со рабат</th>
+            <th class="right" style="width: 11%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Износ без ДДВ</th>
+            <th style="width: 6%; text-align: center; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">ддв</th>
+            <th class="right" style="width: 11%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">ДДВ износ</th>
+            <th class="right" style="width: 12%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Вкупно со ДДВ</th>
         </tr>
     </thead>
     <tbody>
@@ -126,6 +128,7 @@
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['discounted_price'], 2, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['base'], 2, ',', '.') }}</td>
             <td style="text-align: center; padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['tax_rate'], 0) }}%</td>
+            <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['tax'], 2, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['total'], 2, ',', '.') }}</td>
         </tr>
         @endforeach
@@ -136,10 +139,10 @@
     Заклучно со реден број {{ count($itemsData) }}.
 </div>
 
-{{-- Total base --}}
+{{-- Total with VAT --}}
 <div style="text-align: right; border-top: 1px solid #000; padding-top: 5px; margin-bottom: 15px;">
-    <span style="font-weight: bold;">Вкупна цена:</span>
-    <span style="font-weight: bold; margin-left: 15px;">{{ number_format($totalBase, 2, ',', '.') }}</span>
+    <span style="font-weight: bold;">Вкупна цена со ДДВ:</span>
+    <span style="font-weight: bold; margin-left: 15px;">{{ number_format($totalWithVat, 2, ',', '.') }}</span>
 </div>
 
 {{-- Tax breakdown --}}

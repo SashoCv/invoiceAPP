@@ -111,6 +111,7 @@ return [
     'payment_due' => 'Payment Due',
     'tax_number' => 'Tax Number',
     'print_pdf' => 'Print PDF',
+    'output_calculation' => 'Output calculation',
     'preview' => 'Preview',
     'download_pdf' => 'Download PDF',
 

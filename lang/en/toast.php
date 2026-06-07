@@ -90,4 +90,8 @@ return [
     'invoice_sent_email' => 'Invoice sent successfully via email',
     'proforma_sent_email' => 'Proforma invoice sent successfully via email',
     'offer_sent_email' => 'Offer sent successfully via email',
+
+    // Trade ledger
+    'fiscal_report_saved' => 'Daily fiscal report saved',
+    'fiscal_report_deleted' => 'Daily fiscal report deleted',
 ];
