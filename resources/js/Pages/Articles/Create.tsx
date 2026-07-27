@@ -134,7 +134,7 @@ export default function CreateArticle() {
                                     <Input
                                         id="price"
                                         type="number"
-                                        step="0.01"
+                                        step="0.0001"
                                         value={data.price}
                                         onChange={(e) => setData('price', parseFloat(e.target.value) || 0)}
                                         className="mt-1"

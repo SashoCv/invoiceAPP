@@ -454,7 +454,7 @@ export default function WarehouseDashboard({
                                                     {formatNumber(item.stock_quantity)} {item.unit}
                                                 </TableCell>
                                                 <TableCell className="text-right text-gray-500">
-                                                    {formatNumber(item.price)}
+                                                    {formatNumber(item.price, 4)}
                                                 </TableCell>
                                                 <TableCell className="text-right font-bold text-gray-900">
                                                     {formatNumber(item.stock_value ?? item.stock_quantity * item.price, 0)}

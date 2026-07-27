@@ -151,14 +151,14 @@ export default function GoodsReceiptShow({ receipt, movements }: Props) {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right text-gray-600">
-                                            {movement.cost_price ? formatNumber(movement.cost_price) : '-'}
+                                            {movement.cost_price ? formatNumber(movement.cost_price, 4) : '-'}
                                         </TableCell>
                                         <TableCell className="text-right text-gray-600">
                                             {movement.tax_rate ? `${movement.tax_rate}%` : '0%'}
                                         </TableCell>
                                         <TableCell className="text-right font-bold text-gray-900">
                                             {movement.cost_price
-                                                ? formatNumber(movement.quantity * movement.cost_price * (1 + (movement.tax_rate || 0) / 100))
+                                                ? formatNumber(movement.quantity * movement.cost_price * (1 + (movement.tax_rate || 0) / 100), 4)
                                                 : '-'}
                                         </TableCell>
                                         <TableCell className="text-right text-gray-500">

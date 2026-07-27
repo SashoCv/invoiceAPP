@@ -193,7 +193,7 @@
                     <td>{{ $row['name'] }}</td>
                     <td>{{ $row['unit'] }}</td>
                     <td class="right">{{ number_format($row['quantity'], 2, ',', ' ') }}</td>
-                    <td class="right">{{ number_format($row['price'], 2, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($row['price'], 4, ',', ' ') }}</td>
                     <td class="right">{{ number_format($row['value'], 2, ',', ' ') }}</td>
                 </tr>
                 @empty

@@ -144,6 +144,27 @@ class PdfService
 
         $agency = $goodsIssue->user->agency;
 
+        $items = $goodsIssue->movements->map(function ($movement) {
+            $quantity = (float) $movement->quantity;
+            $costPrice = (float) ($movement->cost_price ?? 0);
+            $taxRate = (float) ($movement->tax_rate ?? 0);
+            $base = $quantity * $costPrice;
+            $vat = $base * $taxRate / 100;
+
+            return [
+                'name' => $movement->article->name ?? '-',
+                'unit' => $movement->article->unit ?? '',
+                'quantity' => $quantity,
+                'quantity_before' => (float) $movement->quantity_before,
+                'quantity_after' => (float) $movement->quantity_after,
+                'cost_price' => $costPrice,
+                'tax_rate' => $taxRate,
+                'base' => $base,
+                'vat' => $vat,
+                'total' => $base + $vat,
+            ];
+        });
+
         $data = [
             'title' => 'Испратница ' . $goodsIssue->issue_number,
             'docTitle' => 'ИСПРАТНИЦА',
@@ -152,7 +173,10 @@ class PdfService
             'notes' => $goodsIssue->notes,
             'client' => $goodsIssue->client,
             'agency' => $agency,
-            'movements' => $goodsIssue->movements,
+            'items' => $items,
+            'subtotal' => $items->sum('base'),
+            'totalVat' => $items->sum('vat'),
+            'grandTotal' => $items->sum('total'),
         ];
 
         return $this->generateGoodsIssuePdfFile($data, "goods_issue_{$goodsIssue->id}");
@@ -290,9 +314,18 @@ class PdfService
      */
     public function generateOutputCalculationPdf(Invoice $invoice): string
     {
-        $invoice->load(['items.article', 'client', 'user.agency']);
+        $invoice->load(['items.article', 'items.bundle.bundleItems.article', 'client', 'user.agency']);
 
-        $articleIds = $invoice->items->pluck('article_id')->filter()->unique()->values();
+        $articleIds = $invoice->items->pluck('article_id')->filter();
+
+        // Bundle line items have no article_id of their own — their cost is derived
+        // from their component articles, so those need average costs too.
+        foreach ($invoice->items as $item) {
+            if ($item->bundle) {
+                $articleIds = $articleIds->merge($item->bundle->bundleItems->pluck('article_id'));
+            }
+        }
+        $articleIds = $articleIds->unique()->values();
 
         $avgCosts = $articleIds->isEmpty()
             ? collect()
@@ -312,7 +345,20 @@ class PdfService
             $taxRate = (float) $item->tax_rate;
             $discountPct = (float) $item->discount;
 
-            $avgCost = (float) ($avgCosts[$item->article_id] ?? 0); // покупна цена по единица, без ДДВ
+            if ($item->bundle) {
+                // Bundle cost = sum of each component's average cost × its quantity in the set.
+                $avgCost = 0.0;
+                foreach ($item->bundle->bundleItems as $bundleItem) {
+                    $avgCost += (float) ($avgCosts[$bundleItem->article_id] ?? 0) * (float) $bundleItem->quantity;
+                }
+                $code = $item->code ?: ($item->bundle->code ?: ($item->bundle->sku ?? ''));
+                $unit = 'компл.';
+            } else {
+                $avgCost = (float) ($avgCosts[$item->article_id] ?? 0); // покупна цена по единица, без ДДВ
+                $code = $item->code ?: ($item->article->code ?? '');
+                $unit = $item->article->unit ?? '';
+            }
+
             $purchaseAmount = $avgCost * $qty;
             $transferredTax = $purchaseAmount * $taxRate / 100;
 
@@ -326,9 +372,9 @@ class PdfService
             $margin = $salesNoTax - $purchaseAmount;
 
             $row = [
-                'code' => $item->code ?: ($item->article->code ?? ''),
-                'unit' => $item->article->unit ?? '',
-                'name' => $item->description ?: ($item->article->name ?? ''),
+                'code' => $code,
+                'unit' => $unit,
+                'name' => $item->description ?: ($item->bundle->name ?? $item->article->name ?? ''),
                 'quantity' => $qty,
                 'purchase_unit' => $avgCost,
                 'purchase_amount' => round($purchaseAmount, 2),

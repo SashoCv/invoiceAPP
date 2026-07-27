@@ -19,6 +19,8 @@ interface Movement {
     quantity: number;
     quantity_before: number;
     quantity_after: number;
+    cost_price: number | null;
+    tax_rate: number;
     article: { id: number; name: string; unit: string } | null;
 }
 
@@ -39,6 +41,11 @@ interface Props {
 
 export default function GoodsIssueShow({ issue, movements }: Props) {
     const { t } = useTranslation();
+
+    const totalCost = movements.reduce((sum, m) => {
+        if (!m.cost_price) return sum;
+        return sum + m.quantity * m.cost_price * (1 + (m.tax_rate || 0) / 100);
+    }, 0);
 
     return (
         <AppLayout>
@@ -87,7 +94,7 @@ export default function GoodsIssueShow({ issue, movements }: Props) {
                     </div>
                 </div>
 
-                <div className={`grid grid-cols-1 gap-4 mb-6 ${issue.client ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                <div className={`grid grid-cols-1 gap-4 mb-6 ${issue.client ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                     <Card>
                         <CardContent className="pt-6">
                             <p className="text-sm text-gray-500">{t('inventory.receipt_date')}</p>
@@ -106,6 +113,12 @@ export default function GoodsIssueShow({ issue, movements }: Props) {
                         <CardContent className="pt-6">
                             <p className="text-sm text-gray-500">{t('inventory.receipt_items')}</p>
                             <p className="text-lg font-bold text-gray-900">{movements.length}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <p className="text-sm text-gray-500">{t('inventory.total_cost')}</p>
+                            <p className="text-lg font-bold text-emerald-600">{formatNumber(totalCost)} MKD</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -129,6 +142,9 @@ export default function GoodsIssueShow({ issue, movements }: Props) {
                                 <TableRow>
                                     <TableHead>{t('inventory.name')}</TableHead>
                                     <TableHead className="text-right">{t('inventory.quantity')}</TableHead>
+                                    <TableHead className="text-right">{t('inventory.cost_price')}</TableHead>
+                                    <TableHead className="text-right">{t('expenses.tax_rate')}</TableHead>
+                                    <TableHead className="text-right">{t('inventory.line_total')}</TableHead>
                                     <TableHead className="text-right">{t('inventory.movement_before')}</TableHead>
                                     <TableHead className="text-right">{t('inventory.movement_after')}</TableHead>
                                 </TableRow>
@@ -148,6 +164,17 @@ export default function GoodsIssueShow({ issue, movements }: Props) {
                                             {movement.article?.unit && (
                                                 <span className="text-gray-500 ml-1">{movement.article.unit}</span>
                                             )}
+                                        </TableCell>
+                                        <TableCell className="text-right text-gray-600">
+                                            {movement.cost_price ? formatNumber(movement.cost_price, 4) : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right text-gray-600">
+                                            {movement.tax_rate ? `${movement.tax_rate}%` : '0%'}
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold text-gray-900">
+                                            {movement.cost_price
+                                                ? formatNumber(movement.quantity * movement.cost_price * (1 + (movement.tax_rate || 0) / 100), 4)
+                                                : '-'}
                                         </TableCell>
                                         <TableCell className="text-right text-gray-500">
                                             {formatNumber(movement.quantity_before)}

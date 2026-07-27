@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\GoodsIssue;
+use App\Models\StockMovement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -74,7 +75,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'client_id' => ['nullable', 'exists:clients,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
         $user = $request->user();
@@ -99,7 +100,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => 0,
+                'cost_price' => $this->avgCostPrice($article->id),
+                'tax_rate' => $article->tax_rate,
                 'reference_type' => 'goods_issue',
                 'reference_id' => $issue->id,
                 'notes' => $validated['notes'] ?? null,
@@ -163,7 +165,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'client_id' => ['nullable', 'exists:clients,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
-            'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
         $user = $request->user();
@@ -193,7 +195,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => 0,
+                'cost_price' => $this->avgCostPrice($article->id),
+                'tax_rate' => $article->tax_rate,
                 'reference_type' => 'goods_issue',
                 'reference_id' => $goodsIssue->id,
                 'notes' => $validated['notes'] ?? null,
@@ -208,5 +211,19 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         return redirect()->route('goods-issues.show', $goodsIssue)
             ->with('success', __('toast.goods_issue_updated'));
+    }
+
+    /**
+     * Weighted average cost from goods receipts — same basis used by the
+     * output calculation / profitability reports, so a gratis issue is
+     * valued at what the goods actually cost, not at 0.
+     */
+    private function avgCostPrice(int $articleId): float
+    {
+        return (float) (StockMovement::where('article_id', $articleId)
+            ->where('type', 'receipt')
+            ->where('cost_price', '>', 0)
+            ->selectRaw('SUM(cost_price * quantity) / SUM(quantity) as avg_cost')
+            ->value('avg_cost') ?? 0);
     }
 }

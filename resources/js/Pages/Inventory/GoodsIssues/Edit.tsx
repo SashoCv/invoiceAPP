@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, sanitizeIntegerInput } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, PackageMinus } from 'lucide-react';
 
 interface ArticleOption {
@@ -62,7 +62,7 @@ export default function EditGoodsIssue({ issue, articles, clients, movements }: 
     const [items, setItems] = useState<IssueItem[]>(
         movements.map((m) => ({
             article_id: String(m.article_id),
-            quantity: String(m.quantity),
+            quantity: String(Math.trunc(Number(m.quantity))),
         })),
     );
 
@@ -84,6 +84,10 @@ export default function EditGoodsIssue({ issue, articles, clients, movements }: 
     };
 
     const updateItem = (index: number, field: keyof IssueItem, value: string) => {
+        if (field === 'quantity') {
+            value = sanitizeIntegerInput(value);
+        }
+
         const updated = [...items];
         updated[index] = { ...updated[index], [field]: value };
         setItems(updated);
@@ -98,7 +102,7 @@ export default function EditGoodsIssue({ issue, articles, clients, movements }: 
             .filter((item) => item.article_id && item.quantity)
             .map((item) => ({
                 article_id: Number(item.article_id),
-                quantity: parseFloat(item.quantity),
+                quantity: parseInt(item.quantity, 10),
             }));
 
         if (formItems.length === 0) {
@@ -242,11 +246,13 @@ export default function EditGoodsIssue({ issue, articles, clients, movements }: 
                                                 <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.quantity')}</Label>
                                                 <Input
                                                     type="number"
-                                                    step="0.01"
-                                                    min="0.01"
+                                                    step="1"
+                                                    min="1"
+                                                    inputMode="numeric"
                                                     value={item.quantity}
                                                     onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                                     placeholder="0"
+                                                    className="h-10 text-base"
                                                     error={errors[`items.${index}.quantity`]}
                                                 />
                                             </div>

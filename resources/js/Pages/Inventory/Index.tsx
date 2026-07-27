@@ -303,7 +303,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                                     <TableCell>
                                                         <span className="font-medium">{formatNumber(item.stock_quantity, 0)}</span>
                                                     </TableCell>
-                                                    <TableCell>{formatNumber(item.price)}</TableCell>
+                                                    <TableCell>{formatNumber(item.price, 4)}</TableCell>
                                                     <TableCell>
                                                         <StockStatusBadge status={item.stock_status} t={t} />
                                                     </TableCell>
@@ -391,7 +391,7 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                                 <TableCell>
                                                     <Badge variant="secondary">{bundle.bundle_items?.length || 0}</Badge>
                                                 </TableCell>
-                                                <TableCell>{formatNumber(bundle.price)}</TableCell>
+                                                <TableCell>{formatNumber(bundle.price, 4)}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={bundle.is_active ? 'default' : 'secondary'}>
                                                         {bundle.is_active ? t('inventory.active') : t('inventory.inactive')}

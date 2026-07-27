@@ -240,10 +240,10 @@
                     <td>{{ $item['name'] }}</td>
                     <td>{{ $item['unit'] }}</td>
                     <td class="right">{{ number_format($item['quantity'], 2, ',', ' ') }}</td>
-                    <td class="right">{{ number_format($item['cost_price'], 2, ',', ' ') }}</td>
-                    <td class="right">{{ number_format($item['base'], 2, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['cost_price'], 4, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['base'], 4, ',', ' ') }}</td>
                     <td class="right">{{ number_format($item['tax_rate'], 0) }}%</td>
-                    <td class="right">{{ number_format($item['vat'], 2, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['vat'], 4, ',', ' ') }}</td>
                 </tr>
                 @endforeach
             </tbody>

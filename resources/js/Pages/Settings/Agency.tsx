@@ -35,6 +35,7 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
         website: agency?.website || '',
         tax_number: agency?.tax_number || '',
         registration_number: agency?.registration_number || '',
+        authorized_person: agency?.authorized_person || '',
         display_currency: agency?.display_currency || 'MKD',
         logo: null as File | null,
         remove_logo: false,
@@ -220,6 +221,19 @@ export default function AgencyPage({ agency }: AgencyPageProps) {
                                         className="mt-1"
                                     />
                                 </div>
+                            </div>
+
+                            {/* Authorized Person */}
+                            <div>
+                                <Label htmlFor="authorized_person">{t('settings.authorized_person')}</Label>
+                                <p className="text-xs text-gray-500 mb-1">{t('settings.authorized_person_hint')}</p>
+                                <Input
+                                    id="authorized_person"
+                                    value={data.authorized_person}
+                                    onChange={(e) => setData('authorized_person', e.target.value)}
+                                    className="mt-1"
+                                    error={errors.authorized_person}
+                                />
                             </div>
 
                             {/* Display Currency */}

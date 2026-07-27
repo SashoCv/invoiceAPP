@@ -354,7 +354,7 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
                                                     <SelectContent>
                                                         {articles.map((a) => (
                                                             <SelectItem key={a.id} value={a.id.toString()}>
-                                                                {a.name} - {formatNumber(a.price)} {data.currency}
+                                                                {a.name} - {formatNumber(a.price, 4)} {data.currency}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -376,7 +376,7 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
                                                     <SelectContent>
                                                         {bundles.map((b) => (
                                                             <SelectItem key={b.id} value={b.id.toString()}>
-                                                                {b.name} - {formatNumber(b.price)} {data.currency}
+                                                                {b.name} - {formatNumber(b.price, 4)} {data.currency}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -390,10 +390,12 @@ export default function EditProforma({ proforma, clients, articles, bundles = []
                                                 <Label>{t('proforma.quantity')}</Label>
                                                 <Input
                                                     type="number"
-                                                    step="0.01"
+                                                    step="1"
+                                                    min="1"
+                                                    inputMode="numeric"
                                                     value={item.quantity}
-                                                    onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                                    className="mt-1"
+                                                    onChange={(e) => updateItem(index, 'quantity', Math.trunc(parseFloat(e.target.value)) || 0)}
+                                                    className="mt-1 h-10 text-base"
                                                 />
                                             </div>
                                             <div>

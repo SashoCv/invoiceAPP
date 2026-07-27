@@ -24,17 +24,20 @@ return [
     'daily_turnover' => 'Daily turnover',
     'period_total' => 'Period total',
     'grand_total' => 'Grand total',
+    'grand_total_hint' => 'Cumulative from January 1st through the end of the selected period',
+    'margin_hint' => 'Difference (Sales − Purchase value) = :amount MKD. Goods issues (gratis/promotions/advertising) carry no purchase value here (already recorded on the receipt) and no daily turnover (nothing was paid), but their sales column shows the cost value of what was given away — for a record of how much was distributed as gratis.',
     'no_rows' => 'No records for the selected period',
 
     // Document types
     'type_receipt' => 'Goods receipt',
     'type_issue' => 'Goods issue',
     'type_invoice' => 'Invoice',
+    'type_shopify' => 'Shopify',
     'type_fiscal' => 'Daily fiscal report',
 
     // Daily fiscal reports
     'fiscal_reports' => 'Daily fiscal reports',
-    'fiscal_reports_hint' => 'Daily turnover is computed automatically from invoices and Shopify. Enter a manual daily fiscal (Z) report to override the amount for that day.',
+    'fiscal_reports_hint' => 'Daily turnover is computed automatically from invoices (sent/paid/overdue) and paid Shopify orders. Enter a manual daily fiscal (Z) report to override the amount for that day.',
     'add_fiscal_report' => 'Add daily report',
     'edit_fiscal_report' => 'Edit daily report',
     'fiscal_date' => 'Date',

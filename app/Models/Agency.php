@@ -20,6 +20,7 @@ class Agency extends Model
         'website',
         'tax_number',
         'registration_number',
+        'authorized_person',
         'logo',
         'display_currency',
     ];

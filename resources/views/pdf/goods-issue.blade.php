@@ -153,10 +153,43 @@
             background-color: #f9fafb;
         }
 
+        .totals {
+            width: 100%;
+        }
+
+        .totals-table {
+            width: 280px;
+            float: right;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 6px 8px;
+            font-size: 10pt;
+        }
+
+        .totals-table .label {
+            text-align: right;
+            color: #6b7280;
+        }
+
+        .totals-table .value {
+            text-align: right;
+            font-weight: bold;
+            width: 130px;
+        }
+
+        .grand-total td {
+            border-top: 2px solid #ea580c;
+            font-size: 11pt;
+            color: #ea580c;
+        }
+
         .notes-section {
+            clear: both;
             border-top: 1px solid #e5e7eb;
             padding-top: 15px;
-            margin-top: 15px;
+            margin-top: 25px;
         }
 
         .notes-text {
@@ -222,34 +255,58 @@
                     </tr>
                     <tr>
                         <td class="label">Број на ставки:</td>
-                        <td class="value">{{ count($movements) }}</td>
+                        <td class="value">{{ count($items) }}</td>
                     </tr>
                 </table>
             </div>
         </div>
 
         {{-- Items Table --}}
-        @if(count($movements) > 0)
+        @if(count($items) > 0)
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 50%;">Име</th>
-                    <th class="right" style="width: 16%;">Количина</th>
-                    <th class="right" style="width: 17%;">Пред</th>
-                    <th class="right" style="width: 17%;">После</th>
+                    <th style="width: 30%;">Артикл</th>
+                    <th style="width: 8%;">Ед.</th>
+                    <th class="right" style="width: 10%;">Количина</th>
+                    <th class="right" style="width: 13%;">Набавна цена</th>
+                    <th class="right" style="width: 13%;">Износ</th>
+                    <th class="right" style="width: 9%;">ДДВ %</th>
+                    <th class="right" style="width: 17%;">ДДВ износ</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($movements as $movement)
+                @foreach($items as $item)
                 <tr>
-                    <td>{{ $movement->article->name ?? '-' }}</td>
-                    <td class="right">{{ number_format($movement->quantity, 2, ',', ' ') }} {{ $movement->article->unit ?? '' }}</td>
-                    <td class="right">{{ number_format($movement->quantity_before, 2, ',', ' ') }}</td>
-                    <td class="right">{{ number_format($movement->quantity_after, 2, ',', ' ') }}</td>
+                    <td>{{ $item['name'] }}</td>
+                    <td>{{ $item['unit'] }}</td>
+                    <td class="right">{{ number_format($item['quantity'], 2, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['cost_price'], 4, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['base'], 4, ',', ' ') }}</td>
+                    <td class="right">{{ number_format($item['tax_rate'], 0) }}%</td>
+                    <td class="right">{{ number_format($item['vat'], 4, ',', ' ') }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
+
+        {{-- Totals --}}
+        <div class="totals">
+            <table class="totals-table">
+                <tr>
+                    <td class="label">Износ (основа):</td>
+                    <td class="value">{{ number_format($subtotal, 2, ',', ' ') }} ден.</td>
+                </tr>
+                <tr>
+                    <td class="label">ДДВ:</td>
+                    <td class="value">{{ number_format($totalVat, 2, ',', ' ') }} ден.</td>
+                </tr>
+                <tr class="grand-total">
+                    <td class="label">Вкупно:</td>
+                    <td class="value">{{ number_format($grandTotal, 2, ',', ' ') }} ден.</td>
+                </tr>
+            </table>
+        </div>
         @endif
 
         {{-- Notes --}}

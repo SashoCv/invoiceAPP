@@ -343,7 +343,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'notes' => ['nullable', 'string'],
             'items' => ['nullable', 'array'],
             'items.*.description' => ['required_with:items', 'string', 'max:255'],
-            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0.01'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
             'items.*.unit_price' => ['required_with:items', 'numeric'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
@@ -386,7 +386,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'notes' => ['nullable', 'string'],
             'items' => ['nullable', 'array'],
             'items.*.description' => ['required_with:items', 'string', 'max:255'],
-            'items.*.quantity' => ['required_with:items', 'numeric', 'min:0.01'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
             'items.*.unit_price' => ['required_with:items', 'numeric'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);

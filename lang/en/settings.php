@@ -51,6 +51,8 @@ return [
     'website' => 'Website',
     'tax_number' => 'Tax Number',
     'registration_number' => 'Registration Number',
+    'authorized_person' => 'Authorized Person',
+    'authorized_person_hint' => 'Full name of the authorized person shown on invoices.',
     'logo' => 'Logo',
     'upload_logo' => 'Upload Logo',
     'remove_logo' => 'Remove Logo',

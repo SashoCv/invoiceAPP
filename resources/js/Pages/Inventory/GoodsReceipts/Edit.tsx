@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, sanitizeIntegerInput } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
 
 interface ArticleOption {
@@ -58,7 +58,7 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
     const [items, setItems] = useState<ReceiptItem[]>(
         movements.map((m) => ({
             article_id: String(m.article_id),
-            quantity: String(m.quantity),
+            quantity: String(Math.trunc(Number(m.quantity))),
             cost_price: String(m.cost_price ?? ''),
             tax_rate: String((m as any).tax_rate ?? '18'),
         })),
@@ -81,6 +81,10 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
     };
 
     const updateItem = (index: number, field: keyof ReceiptItem, value: string) => {
+        if (field === 'quantity') {
+            value = sanitizeIntegerInput(value);
+        }
+
         const updated = [...items];
         updated[index] = { ...updated[index], [field]: value };
 
@@ -113,7 +117,7 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
             .filter((item) => item.article_id && item.quantity && item.cost_price)
             .map((item) => ({
                 article_id: Number(item.article_id),
-                quantity: parseFloat(item.quantity),
+                quantity: parseInt(item.quantity, 10),
                 cost_price: parseFloat(item.cost_price),
                 tax_rate: parseFloat(item.tax_rate) || 0,
             }));
@@ -243,11 +247,13 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
                                                 <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.quantity')}</Label>
                                                 <Input
                                                     type="number"
-                                                    step="0.01"
-                                                    min="0.01"
+                                                    step="1"
+                                                    min="1"
+                                                    inputMode="numeric"
                                                     value={item.quantity}
                                                     onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                                     placeholder="0"
+                                                    className="h-10 text-base"
                                                     error={errors[`items.${index}.quantity`]}
                                                 />
                                             </div>
@@ -259,7 +265,7 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
                                                     min="0"
                                                     value={item.cost_price}
                                                     onChange={(e) => updateItem(index, 'cost_price', e.target.value)}
-                                                    placeholder="0.00"
+                                                    placeholder="0.0000"
                                                     error={errors[`items.${index}.cost_price`]}
                                                 />
                                             </div>
@@ -278,13 +284,13 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
                                             <div>
                                                 <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.selling_price')}</Label>
                                                 <div className="h-9 flex items-center text-sm text-gray-500 px-3 bg-gray-100 rounded-md">
-                                                    {article ? formatNumber(article.price) : '-'}
+                                                    {article ? formatNumber(article.price, 4) : '-'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <Label className="md:hidden text-xs text-gray-500 mb-1">{t('inventory.line_total')}</Label>
                                                 <div className="h-9 flex items-center justify-end text-sm font-bold text-gray-900">
-                                                    {formatNumber(lineTotal)}
+                                                    {formatNumber(lineTotal, 4)}
                                                 </div>
                                             </div>
                                             <div className="flex items-start justify-end w-8">

@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/Components/ui/tabs';
 import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import EmptyState from '@/Components/EmptyState';
 import { useTranslation } from '@/hooks/use-translation';
-import { formatNumber, formatDate } from '@/lib/utils';
+import { formatNumber, formatDate, sanitizeIntegerInput } from '@/lib/utils';
 import {
     Plus,
     Pencil,
@@ -423,6 +423,10 @@ export default function ExpensesIndex({
     };
 
     const updateIncomingItem = (index: number, field: string, value: string) => {
+        if (field === 'quantity') {
+            value = sanitizeIntegerInput(value);
+        }
+
         setIncomingForm(prev => {
             const newItems = [...prev.items];
             newItems[index] = { ...newItems[index], [field]: value };
@@ -1437,15 +1441,16 @@ export default function ExpensesIndex({
                                             />
                                             <Input
                                                 type="number"
-                                                step="0.01"
-                                                min="0.01"
+                                                step="1"
+                                                min="1"
+                                                inputMode="numeric"
                                                 value={item.quantity}
                                                 onChange={(e) => updateIncomingItem(index, 'quantity', e.target.value)}
-                                                className="h-8 text-sm"
+                                                className="h-9 text-sm"
                                             />
                                             <Input
                                                 type="number"
-                                                step="0.01"
+                                                step="0.0001"
                                                 min="0"
                                                 value={item.unit_price}
                                                 onChange={(e) => updateIncomingItem(index, 'unit_price', e.target.value)}

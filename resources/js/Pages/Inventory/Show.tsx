@@ -129,7 +129,7 @@ export default function ShowInventoryItem({ item, movements }: ShowProps) {
                         <CardContent className="pt-6">
                             <div className="text-sm text-gray-500">{t('inventory.price')}</div>
                             <div className="mt-1 text-3xl font-bold text-gray-900">
-                                {formatNumber(item.price)}
+                                {formatNumber(item.price, 4)}
                             </div>
                             <div className="mt-1 text-sm text-gray-500">
                                 {t('inventory.tax_rate')}: {formatNumber(item.tax_rate)}%

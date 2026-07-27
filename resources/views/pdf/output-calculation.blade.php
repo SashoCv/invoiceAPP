@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Излезна калкулација {{ $documentNumber }}</title>
-    @php $fmt = fn ($n) => number_format((float) $n, 2, ',', ' '); @endphp
+    @php
+        $fmt = fn ($n) => number_format((float) $n, 2, ',', ' ');
+        $fmtUnit = fn ($n) => number_format((float) $n, 4, ',', ' ');
+    @endphp
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -132,11 +135,11 @@
                 <tr>
                     <td>{{ $row['code'] ?: '-' }}<br>{{ $row['unit'] }}</td>
                     <td>{{ $row['name'] }}<br>{{ $fmt($row['quantity']) }}</td>
-                    <td class="right">{{ $fmt($row['purchase_unit']) }}</td>
+                    <td class="right">{{ $fmtUnit($row['purchase_unit']) }}</td>
                     <td class="right">{{ $fmt($row['purchase_amount']) }}</td>
                     <td class="right">{{ $fmt($row['transferred_tax']) }}</td>
                     <td class="right">{{ $fmt($row['discount']) }}</td>
-                    <td class="right">{{ $fmt($row['sales_unit']) }}</td>
+                    <td class="right">{{ $fmtUnit($row['sales_unit']) }}</td>
                     <td class="right">{{ $fmt($row['sales_amount']) }}</td>
                     <td class="right">{{ $fmt($row['calc_tax']) }}</td>
                     <td class="right">{{ $fmt($row['margin']) }}</td>

@@ -231,8 +231,8 @@
         <div class="text-center">
             <div class="border-t border-black w-40 mb-1"></div>
             <div>Овластено лице</div>
-            @if($agency && $agency->name)
-                <div class="text-[7px] mt-0.5">{{ auth()->user()?->name ?? '' }}</div>
+            @if($agency && $agency->authorized_person)
+                <div class="text-[8px] font-bold mt-0.5">{{ $agency->authorized_person }}</div>
             @endif
         </div>
     </div>

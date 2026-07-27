@@ -27,7 +27,7 @@ class StockMovement extends Model
         'quantity' => 'decimal:2',
         'quantity_before' => 'decimal:2',
         'quantity_after' => 'decimal:2',
-        'cost_price' => 'decimal:2',
+        'cost_price' => 'decimal:4',
         'tax_rate' => 'decimal:2',
         'created_at' => 'datetime',
     ];

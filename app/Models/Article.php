@@ -29,7 +29,7 @@ class Article extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price' => 'decimal:4',
         'tax_rate' => 'decimal:2',
         'is_active' => 'boolean',
         'track_inventory' => 'boolean',

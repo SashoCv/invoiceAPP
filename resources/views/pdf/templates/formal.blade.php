@@ -207,5 +207,8 @@
     <div style="display: table-cell; width: 33%; text-align: center;">
         <div style="border-top: 1px solid #000; width: 150px; margin: 0 auto 5px;"></div>
         <div>Овластено лице</div>
+        @if($agency && $agency->authorized_person)
+            <div style="font-size: 8pt; font-weight: bold; margin-top: 2px;">{{ $agency->authorized_person }}</div>
+        @endif
     </div>
 </div>

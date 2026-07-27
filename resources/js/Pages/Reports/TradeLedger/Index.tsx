@@ -27,7 +27,7 @@ import { formatNumber, formatDate } from '@/lib/utils';
 import { Download, Plus, Pencil, Trash2, BookText } from 'lucide-react';
 
 interface LedgerRow {
-    type: 'receipt' | 'issue' | 'invoice' | 'fiscal';
+    type: 'receipt' | 'issue' | 'invoice' | 'shopify' | 'fiscal';
     row_no: number;
     booking_date: string;
     doc_number: string;
@@ -197,7 +197,7 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                     <TableHead>{t('ledger.document_date')}</TableHead>
                                     <TableHead className="text-right">{t('ledger.purchase_value')}</TableHead>
                                     <TableHead className="text-right">{t('ledger.sales_value')}</TableHead>
-                                    <TableHead className="text-right">{t('ledger.daily_turnover')}</TableHead>
+                                    <TableHead className="text-right bg-indigo-50 border-l-2 border-indigo-200">{t('ledger.daily_turnover')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -208,18 +208,29 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    rows.map((row) => (
-                                        <TableRow key={row.row_no}>
-                                            <TableCell className="text-gray-500">{row.row_no}</TableCell>
-                                            <TableCell>{formatDate(row.booking_date)}</TableCell>
-                                            <TableCell className="font-medium text-gray-900">{typeLabel(row.type)}</TableCell>
-                                            <TableCell className="text-gray-600">{row.doc_number}</TableCell>
-                                            <TableCell>{formatDate(row.doc_date)}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(row.purchase_value, 2)}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(row.sales_value, 2)}</TableCell>
-                                            <TableCell className="text-right">{formatNumber(row.daily_turnover, 2)}</TableCell>
-                                        </TableRow>
-                                    ))
+                                    rows.map((row) => {
+                                        const isFiscal = row.type === 'fiscal';
+                                        return (
+                                            <TableRow key={row.row_no} className={isFiscal ? 'bg-indigo-50/60' : undefined}>
+                                                <TableCell className={isFiscal ? 'text-indigo-500 font-semibold' : 'text-gray-500'}>{row.row_no}</TableCell>
+                                                <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : undefined}>{row.booking_date}</TableCell>
+                                                <TableCell className={isFiscal ? 'font-bold text-indigo-900' : 'font-medium text-gray-900'}>{typeLabel(row.type)}</TableCell>
+                                                <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : 'text-gray-600'}>{row.doc_number}</TableCell>
+                                                <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : undefined}>{row.doc_date}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.purchase_value, 2)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.sales_value, 2)}</TableCell>
+                                                <TableCell
+                                                    className={
+                                                        isFiscal
+                                                            ? 'text-right font-bold text-indigo-900 bg-indigo-100 border-l-2 border-indigo-200'
+                                                            : 'text-right text-gray-500 bg-indigo-50/40 border-l-2 border-indigo-200'
+                                                    }
+                                                >
+                                                    {formatNumber(row.daily_turnover, 2)}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                             <tfoot className="bg-gray-50 font-semibold text-gray-900">
@@ -227,13 +238,21 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                     <TableCell colSpan={5} className="text-right">{t('ledger.period_total')}</TableCell>
                                     <TableCell className="text-right">{formatNumber(periodTotals.purchase_value, 2)}</TableCell>
                                     <TableCell className="text-right">{formatNumber(periodTotals.sales_value, 2)}</TableCell>
-                                    <TableCell className="text-right">{formatNumber(periodTotals.daily_turnover, 2)}</TableCell>
+                                    <TableCell className="text-right bg-indigo-100 border-l-2 border-indigo-200">{formatNumber(periodTotals.daily_turnover, 2)}</TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-right text-indigo-700">{t('ledger.grand_total')}</TableCell>
+                                    <TableCell colSpan={5} className="text-right text-indigo-700">
+                                        <div>{t('ledger.grand_total')}</div>
+                                        <div className="text-xs font-normal text-indigo-400">{t('ledger.grand_total_hint')}</div>
+                                    </TableCell>
                                     <TableCell className="text-right text-indigo-700">{formatNumber(grandTotals.purchase_value, 2)}</TableCell>
                                     <TableCell className="text-right text-indigo-700">{formatNumber(grandTotals.sales_value, 2)}</TableCell>
-                                    <TableCell className="text-right text-indigo-700">{formatNumber(grandTotals.daily_turnover, 2)}</TableCell>
+                                    <TableCell className="text-right text-indigo-700 bg-indigo-100 border-l-2 border-indigo-200">{formatNumber(grandTotals.daily_turnover, 2)}</TableCell>
+                                </TableRow>
+                                <TableRow className="bg-transparent">
+                                    <TableCell colSpan={8} className="text-xs font-normal text-gray-400 pt-1 pb-2">
+                                        {t('ledger.margin_hint', { amount: formatNumber(grandTotals.sales_value - grandTotals.purchase_value, 2) })}
+                                    </TableCell>
                                 </TableRow>
                             </tfoot>
                         </Table>

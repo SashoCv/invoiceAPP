@@ -27,3 +27,12 @@ export function formatNumber(num: number, decimals: number = 2): string {
         maximumFractionDigits: decimals,
     }).format(num);
 }
+
+/** Sanitizes a quantity input's raw string value to a whole number, truncating
+ * any decimal part instead of stripping the "." and concatenating digits
+ * (so typing "5.5" ends up "5", not "55"). Keeps '' while the field is empty. */
+export function sanitizeIntegerInput(value: string): string {
+    if (value === '') return '';
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) ? '' : String(n);
+}

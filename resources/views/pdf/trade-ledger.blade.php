@@ -9,6 +9,7 @@
             'receipt' => 'Прием од магацин',
             'issue' => 'Испратница',
             'invoice' => 'Фактура',
+            'shopify' => 'Shopify',
             'fiscal' => 'Дн. фис. извештај',
         ];
         $fmt = fn ($n) => number_format((float) $n, 2, ',', ' ');
@@ -71,6 +72,11 @@
         .right { text-align: right; }
         .center { text-align: center; }
 
+        .col-turnover { background-color: #eef2ff; border-left: 2px solid #c7d2fe !important; }
+
+        .fiscal-row td { font-weight: bold; background-color: #e0e7ff; }
+        .fiscal-row td.col-turnover { background-color: #c7d2fe; }
+
         .colnum td {
             text-align: center;
             font-size: 7pt;
@@ -131,7 +137,7 @@
                     <th rowspan="2" style="width: 9%;">Датум на документот</th>
                     <th rowspan="2" style="width: 13%;">Набавна вред. на стоките</th>
                     <th rowspan="2" style="width: 13%;">Продажна вред. на стоките</th>
-                    <th rowspan="2" style="width: 12%;">Дневен промет</th>
+                    <th rowspan="2" class="col-turnover" style="width: 12%;">Дневен промет</th>
                 </tr>
                 <tr>
                     <th style="width: 24%;">Назив</th>
@@ -143,7 +149,7 @@
             </thead>
             <tbody>
                 @forelse($rows as $row)
-                <tr>
+                <tr @if($row['type'] === 'fiscal') class="fiscal-row" @endif>
                     <td class="center">{{ $row['row_no'] }}</td>
                     <td class="center">{{ $row['booking_date'] }}</td>
                     <td>{{ $typeLabels[$row['type']] ?? $row['type'] }}</td>
@@ -151,7 +157,7 @@
                     <td class="center">{{ $row['doc_date'] }}</td>
                     <td class="right">{{ $row['purchase_value'] > 0 ? $fmt($row['purchase_value']) : '0,00' }}</td>
                     <td class="right">{{ $row['sales_value'] > 0 ? $fmt($row['sales_value']) : '0,00' }}</td>
-                    <td class="right">{{ $row['daily_turnover'] > 0 ? $fmt($row['daily_turnover']) : '0,00' }}</td>
+                    <td class="right col-turnover">{{ $row['daily_turnover'] > 0 ? $fmt($row['daily_turnover']) : '0,00' }}</td>
                 </tr>
                 @empty
                 <tr>
@@ -163,16 +169,20 @@
                     <td colspan="5" class="right">Вкупно за период</td>
                     <td class="right">{{ $fmt($periodTotals['purchase_value']) }}</td>
                     <td class="right">{{ $fmt($periodTotals['sales_value']) }}</td>
-                    <td class="right">{{ $fmt($periodTotals['daily_turnover']) }}</td>
+                    <td class="right col-turnover">{{ $fmt($periodTotals['daily_turnover']) }}</td>
                 </tr>
                 <tr class="total">
                     <td colspan="5" class="right">Вкупно</td>
                     <td class="right">{{ $fmt($grandTotals['purchase_value']) }}</td>
                     <td class="right">{{ $fmt($grandTotals['sales_value']) }}</td>
-                    <td class="right">{{ $fmt($grandTotals['daily_turnover']) }}</td>
+                    <td class="right col-turnover">{{ $fmt($grandTotals['daily_turnover']) }}</td>
                 </tr>
             </tbody>
         </table>
+
+        <div style="font-size: 7pt; color: #6b7280; margin-top: 4px;">
+            Разлика (Продажна − Набавна вредност) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['purchase_value']) }} ден. Испратниците (гратис/промоции/реклама) немаат набавна вредност тука (веќе е книжена на приемницата) и не влегуваат во дневен промет (не се плаќаат), но продажната колона кај нив ја покажува вредноста на дадената стока по набавна цена — за евиденција колку сте дале гратис.
+        </div>
 
         {{-- Signature --}}
         <div class="signature">

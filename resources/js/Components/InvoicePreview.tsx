@@ -845,6 +845,9 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                 <div className="text-center">
                     <div className="border-t border-black w-40 mb-1" />
                     <div>Овластено лице</div>
+                    {agency?.authorized_person && (
+                        <div className="text-[8px] font-bold mt-0.5">{agency.authorized_person}</div>
+                    )}
                 </div>
             </div>
         </div>

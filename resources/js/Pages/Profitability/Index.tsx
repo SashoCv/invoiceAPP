@@ -326,8 +326,8 @@ export default function Index({
                                             <TableRow key={article.id}>
                                                 <TableCell className="font-medium">{article.name}</TableCell>
                                                 <TableCell className="text-gray-500">{article.unit}</TableCell>
-                                                <TableCell className="border-l">{formatNumber(article.selling_price, 0)}</TableCell>
-                                                <TableCell>{article.avg_cost !== null ? formatNumber(article.avg_cost, 0) : '-'}</TableCell>
+                                                <TableCell className="border-l">{formatNumber(article.selling_price, 4)}</TableCell>
+                                                <TableCell>{article.avg_cost !== null ? formatNumber(article.avg_cost, 4) : '-'}</TableCell>
                                                 <TableCell><MarginBadge value={article.theoretical_margin} /></TableCell>
                                                 <TableCell className="border-l">{article.qty_sold > 0 ? formatNumber(article.qty_sold, 0) : '-'}</TableCell>
                                                 <TableCell>{article.revenue > 0 ? formatNumber(article.revenue, 0) : '-'}</TableCell>

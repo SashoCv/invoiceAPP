@@ -222,7 +222,7 @@ export default function ArticlesIndex({ articles, filters }: ArticlesIndexProps)
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <span className="text-sm font-medium text-gray-900">
-                                                    {formatNumber(article.price, 2)}
+                                                    {formatNumber(article.price, 4)}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">

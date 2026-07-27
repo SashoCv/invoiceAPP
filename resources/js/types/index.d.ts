@@ -38,6 +38,7 @@ export interface Agency {
     website: string;
     tax_number: string;
     registration_number: string;
+    authorized_person: string | null;
     logo: string | null;
     display_currency: string;
     created_at: string;

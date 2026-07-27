@@ -66,33 +66,57 @@
                     <table class="text-sm">
                         <tbody>
                             <tr><td class="text-gray-500 pr-4 py-0.5">Датум:</td><td class="font-medium">{{ $issueDate }}</td></tr>
-                            <tr><td class="text-gray-500 pr-4 py-0.5">Број на ставки:</td><td class="font-medium">{{ count($movements) }}</td></tr>
+                            <tr><td class="text-gray-500 pr-4 py-0.5">Број на ставки:</td><td class="font-medium">{{ count($items) }}</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
             {{-- Items Table --}}
-            @if(count($movements) > 0)
+            @if(count($items) > 0)
             <div class="mb-6">
                 <table class="w-full">
                     <thead>
                         <tr class="bg-orange-600 text-white">
-                            <th class="text-left px-4 py-3 text-sm font-semibold">Име</th>
+                            <th class="text-left px-4 py-3 text-sm font-semibold">Артикл</th>
                             <th class="text-right px-4 py-3 text-sm font-semibold">Количина</th>
-                            <th class="text-right px-4 py-3 text-sm font-semibold">Пред</th>
-                            <th class="text-right px-4 py-3 text-sm font-semibold">После</th>
+                            <th class="text-right px-4 py-3 text-sm font-semibold">Набавна цена</th>
+                            <th class="text-right px-4 py-3 text-sm font-semibold">Износ</th>
+                            <th class="text-right px-4 py-3 text-sm font-semibold">ДДВ %</th>
+                            <th class="text-right px-4 py-3 text-sm font-semibold">ДДВ износ</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($movements as $index => $movement)
+                        @foreach($items as $index => $item)
                         <tr class="{{ $index % 2 === 1 ? 'bg-gray-50' : 'bg-white' }}">
-                            <td class="px-4 py-3 text-sm border-b border-gray-200">{{ $movement->article->name ?? '-' }}</td>
-                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200 font-medium">{{ number_format($movement->quantity, 2, ',', ' ') }} {{ $movement->article->unit ?? '' }}</td>
-                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200 text-gray-500">{{ number_format($movement->quantity_before, 2, ',', ' ') }}</td>
-                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200 text-gray-500">{{ number_format($movement->quantity_after, 2, ',', ' ') }}</td>
+                            <td class="px-4 py-3 text-sm border-b border-gray-200">{{ $item['name'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200 font-medium">{{ number_format($item['quantity'], 2, ',', ' ') }} {{ $item['unit'] }}</td>
+                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item['cost_price'], 4, ',', ' ') }}</td>
+                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item['base'], 2, ',', ' ') }}</td>
+                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item['tax_rate'], 0) }}%</td>
+                            <td class="px-4 py-3 text-sm text-right border-b border-gray-200">{{ number_format($item['vat'], 2, ',', ' ') }}</td>
                         </tr>
                         @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Totals --}}
+            <div class="flex justify-end mb-6">
+                <table class="w-72">
+                    <tbody>
+                        <tr>
+                            <td class="text-right text-gray-500 py-1.5 px-2">Износ (основа):</td>
+                            <td class="text-right font-semibold py-1.5 px-2">{{ number_format($subtotal, 2, ',', ' ') }} ден.</td>
+                        </tr>
+                        <tr>
+                            <td class="text-right text-gray-500 py-1.5 px-2">ДДВ:</td>
+                            <td class="text-right font-semibold py-1.5 px-2">{{ number_format($totalVat, 2, ',', ' ') }} ден.</td>
+                        </tr>
+                        <tr class="border-t-2 border-orange-600">
+                            <td class="text-right text-orange-600 font-bold py-1.5 px-2 text-base">Вкупно:</td>
+                            <td class="text-right text-orange-600 font-bold py-1.5 px-2 text-base">{{ number_format($grandTotal, 2, ',', ' ') }} ден.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

@@ -19,7 +19,7 @@ class IncomingInvoiceItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:2',
-        'unit_price' => 'decimal:2',
+        'unit_price' => 'decimal:4',
         'tax_rate' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',

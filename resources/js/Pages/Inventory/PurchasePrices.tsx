@@ -198,7 +198,7 @@ export default function PurchasePrices({ articles, filters }: Props) {
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="text-right">{article.purchased_qty > 0 ? formatNumber(article.purchased_qty, 0) : '-'}</TableCell>
-                                                    <TableCell className="text-right">{article.purchased_qty > 0 ? formatNumber(article.avg_purchase_price) : '-'}</TableCell>
+                                                    <TableCell className="text-right">{article.purchased_qty > 0 ? formatNumber(article.avg_purchase_price, 4) : '-'}</TableCell>
                                                     <TableCell className="text-right border-r font-medium">{article.purchased_qty > 0 ? formatNumber(article.total_purchase_cost) : '-'}</TableCell>
                                                     <TableCell className="text-right">
                                                         {article.total_sold_qty > 0 ? (

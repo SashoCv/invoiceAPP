@@ -52,6 +52,8 @@ return [
     'website' => 'Веб страна',
     'tax_number' => 'ЕДБ (Единствен даночен број)',
     'registration_number' => 'ЕМБС (Матичен број)',
+    'authorized_person' => 'Овластено лице',
+    'authorized_person_hint' => 'Име и презиме на овластеното лице кое ќе се прикажува на фактурите.',
     'logo' => 'Лого',
     'upload_logo' => 'Прикачи лого',
     'remove_logo' => 'Отстрани лого',

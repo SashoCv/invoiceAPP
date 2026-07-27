@@ -16,10 +16,13 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 /**
  * Образец ЕТ — Евиденција во трговија (Trade ledger).
  *
- * Each accounting document (goods receipt, goods issue, invoice) is one row with
- * its purchase value (набавна) and sales value (продажна). The daily till turnover
- * (дневен промет) is recorded as a "Дн. фис. извештај" row per day, computed from
- * invoices + Shopify sales, or overridden by a manually entered fiscal (Z) report.
+ * Each accounting document (goods receipt, goods issue, invoice, Shopify orders
+ * aggregated per day) is one row with its purchase value (набавна) and sales value
+ * (продажна). Invoice and Shopify rows also carry their own amount in дневен промет
+ * for visibility, but that column's period/grand total only sums the "Дн. фис.
+ * извештај" row per day — the actual day total, computed from invoices
+ * (sent/paid/overdue only) + Shopify sales, or overridden by a manually entered
+ * fiscal (Z) report — so nothing is double-counted.
  */
 class TradeLedgerController extends Controller implements HasMiddleware
 {
@@ -172,33 +175,48 @@ class TradeLedgerController extends Controller implements HasMiddleware
             $rows->push($this->row($receipt->date, 'receipt', $receipt->receipt_number, $receipt->date, $purchase, $sales, 0));
         }
 
-        // 2. Goods issues → Испратница
-        foreach ($user->goodsIssues()->with('movements.article')->whereBetween('date', [$yearStart, $to])->get() as $issue) {
-            $purchase = 0;
-            $sales = 0;
-            foreach ($issue->movements as $m) {
-                $qty = (float) $m->quantity;
-                $purchase += $qty * (float) ($m->cost_price ?? 0);
-                $sales += $qty * (float) ($m->article->price ?? 0);
-            }
-            $rows->push($this->row($issue->date, 'issue', $issue->issue_number, $issue->date, $purchase, $sales, 0));
+        // 2. Goods issues → Испратница. These are gratis (промоции/спонзорства/реклама).
+        // No purchase happens here (the goods were already bought, recorded on their
+        // "Прием" row) — набавна = 0, to avoid double-counting that cost. No cash
+        // changes hands either — дневен промет = 0. But продажна вредност shows what
+        // was actually given away (at average cost), so you can see how much value
+        // went out as gratis/promotions.
+        foreach ($user->goodsIssues()->with('movements')->whereBetween('date', [$yearStart, $to])->get() as $issue) {
+            $givenAway = $issue->movements->sum(fn ($m) => (float) $m->quantity * (float) ($m->cost_price ?? 0));
+            $rows->push($this->row($issue->date, 'issue', $issue->issue_number, $issue->date, 0, $givenAway, 0));
         }
 
-        // 3. Invoices → Фактура (sales value = invoice total)
-        foreach ($user->invoices()->whereBetween('issue_date', [$yearStart, $to])->get() as $invoice) {
-            $rows->push($this->row($invoice->issue_date, 'invoice', $invoice->invoice_number, $invoice->issue_date, 0, (float) $invoice->total, 0));
-        }
-
-        // 4. Daily turnover → Дн. фис. извештај (manual overrides auto invoices + Shopify)
-        $invoiceByDay = $user->invoices()
+        // 3. Invoices → Фактура (sales value = invoice total). Only real, issued
+        // invoices count — drafts and cancelled ones aren't actual sales.
+        foreach ($user->invoices()
+            ->whereIn('status', ['sent', 'paid', 'overdue'])
             ->whereBetween('issue_date', [$yearStart, $to])
-            ->selectRaw('DATE(issue_date) as d, SUM(total) as t')
-            ->groupBy('d')->pluck('t', 'd');
+            ->get() as $invoice) {
+            $rows->push($this->row($invoice->issue_date, 'invoice', $invoice->invoice_number, $invoice->issue_date, 0, (float) $invoice->total, (float) $invoice->total));
+        }
 
+        // 3b. Shopify → "Shopify" row, one per day (aggregated), sales value = that
+        // day's paid orders total. Shown just like an invoice row so продажна
+        // вредност is visible per document, not only folded into дневен промет.
         $shopifyByDay = $user->shopifyOrders()
             ->where('financial_status', 'paid')
             ->whereBetween('ordered_at', [$yearStart, $to])
             ->selectRaw('DATE(ordered_at) as d, SUM(total_price) as t')
+            ->groupBy('d')->pluck('t', 'd');
+
+        foreach ($shopifyByDay as $day => $total) {
+            $date = Carbon::parse($day);
+            $amount = (float) $total;
+            if ($amount > 0) {
+                $rows->push($this->row($date, 'shopify', '—', $date, 0, $amount, $amount));
+            }
+        }
+
+        // 4. Дневен промет → Дн. фис. извештај (manual overrides auto invoices + Shopify)
+        $invoiceByDay = $user->invoices()
+            ->whereIn('status', ['sent', 'paid', 'overdue'])
+            ->whereBetween('issue_date', [$yearStart, $to])
+            ->selectRaw('DATE(issue_date) as d, SUM(total) as t')
             ->groupBy('d')->pluck('t', 'd');
 
         $manualByDay = $user->dailyFiscalReports()
@@ -225,7 +243,7 @@ class TradeLedgerController extends Controller implements HasMiddleware
         }
 
         // Sort: by booking date, documents before the daily fiscal report of the same day
-        $typeOrder = ['receipt' => 0, 'issue' => 1, 'invoice' => 2, 'fiscal' => 3];
+        $typeOrder = ['receipt' => 0, 'issue' => 1, 'invoice' => 2, 'shopify' => 3, 'fiscal' => 4];
         $sorted = $rows->sort(function ($a, $b) use ($typeOrder) {
             $cmp = $a['_sortDate'] <=> $b['_sortDate'];
             if ($cmp !== 0) return $cmp;
@@ -266,7 +284,11 @@ class TradeLedgerController extends Controller implements HasMiddleware
         return [
             'purchase_value' => round($rows->sum('purchase_value'), 2),
             'sales_value' => round($rows->sum('sales_value'), 2),
-            'daily_turnover' => round($rows->sum('daily_turnover'), 2),
+            // Invoice rows also carry their own amount in daily_turnover (for display,
+            // so you can see each invoice's contribution) — only the "fiscal" row per
+            // day is the real day total, so that's the only type summed here to avoid
+            // double-counting the same money twice.
+            'daily_turnover' => round($rows->where('type', 'fiscal')->sum('daily_turnover'), 2),
         ];
     }
 }
