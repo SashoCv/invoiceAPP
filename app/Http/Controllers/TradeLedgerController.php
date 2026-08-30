@@ -169,7 +169,8 @@ class TradeLedgerController extends Controller implements HasMiddleware
             $sales = 0;
             foreach ($receipt->movements as $m) {
                 $qty = (float) $m->quantity;
-                $purchase += $qty * (float) ($m->cost_price ?? 0);
+                $taxRate = (float) ($m->tax_rate ?? 0);
+                $purchase += $qty * (float) ($m->cost_price ?? 0) * (1 + $taxRate / 100);
                 $sales += $qty * (float) ($m->article->price ?? 0);
             }
             $rows->push($this->row($receipt->date, 'receipt', $receipt->receipt_number, $receipt->date, $purchase, $sales, 0));
