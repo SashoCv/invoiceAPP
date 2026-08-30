@@ -17,6 +17,7 @@ class ProformaInvoiceItem extends Model
         'unit_price',
         'tax_rate',
         'discount',
+        'additional_discount',
         'tax_amount',
         'total',
     ];
@@ -26,6 +27,7 @@ class ProformaInvoiceItem extends Model
         'unit_price' => 'decimal:2',
         'tax_rate' => 'decimal:2',
         'discount' => 'decimal:2',
+        'additional_discount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total' => 'decimal:2',
     ];
@@ -49,10 +51,10 @@ class ProformaInvoiceItem extends Model
     {
         static::saving(function ($item) {
             $subtotal = $item->quantity * $item->unit_price;
-            $discountAmount = $subtotal * ($item->discount / 100);
-            $afterDiscount = $subtotal - $discountAmount;
-            $item->tax_amount = $afterDiscount * ($item->tax_rate / 100);
-            $item->total = $afterDiscount + $item->tax_amount;
+            $afterDiscount = $subtotal * (1 - $item->discount / 100);
+            $afterAdditionalDiscount = $afterDiscount * (1 - ($item->additional_discount ?? 0) / 100);
+            $item->tax_amount = $afterAdditionalDiscount * ($item->tax_rate / 100);
+            $item->total = $afterAdditionalDiscount + $item->tax_amount;
         });
     }
 }

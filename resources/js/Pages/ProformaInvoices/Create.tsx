@@ -29,6 +29,7 @@ interface ProformaItem {
     unit_price: number;
     tax_rate: number;
     discount: number;
+    additional_discount: number;
     item_source: ItemSource;
 }
 
@@ -45,7 +46,7 @@ interface CreateProformaProps {
 export default function CreateProforma({ clients, articles, bundles = [], currentYear, nextSequence, proforma, isDuplicate }: CreateProformaProps) {
     const { t } = useTranslation();
 
-    const defaultItem: ProformaItem = { article_id: '', bundle_id: '', description: '', code: '', quantity: 1, unit_price: 0, tax_rate: 18, discount: 0, item_source: 'article' };
+    const defaultItem: ProformaItem = { article_id: '', bundle_id: '', description: '', code: '', quantity: 1, unit_price: 0, tax_rate: 18, discount: 0, additional_discount: 0, item_source: 'article' };
 
     const mapExistingItem = (item: any): ProformaItem => {
         const source: ItemSource = item.bundle_id ? 'bundle' : 'article';
@@ -58,6 +59,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
             unit_price: item.unit_price,
             tax_rate: item.tax_rate,
             discount: item.discount ?? 0,
+            additional_discount: item.additional_discount ?? 0,
             item_source: source,
         };
     };
@@ -86,7 +88,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
 
     const addItem = () => {
         const client = clients.find(c => c.id.toString() === data.client_id);
-        setData('items', [...data.items, { ...defaultItem, discount: client?.discount ?? 0 }]);
+        setData('items', [...data.items, { ...defaultItem, discount: client?.discount ?? 0, additional_discount: client?.additional_discount ?? 0 }]);
     };
 
     const removeItem = (index: number) => {
@@ -153,7 +155,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
 
     const calculateItemTotal = (item: ProformaItem) => {
         const base = item.quantity * item.unit_price;
-        const discounted = base * (1 - (item.discount || 0) / 100);
+        const discounted = base * (1 - (item.discount || 0) / 100) * (1 - (item.additional_discount || 0) / 100);
         const tax = discounted * (item.tax_rate / 100);
         return discounted + tax;
     };
@@ -161,11 +163,12 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
     const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
     const discountAmount = data.items.reduce((sum, item) => {
         const base = item.quantity * item.unit_price;
-        return sum + base * ((item.discount || 0) / 100);
+        const discounted = base * (1 - (item.discount || 0) / 100) * (1 - (item.additional_discount || 0) / 100);
+        return sum + (base - discounted);
     }, 0);
     const taxAmount = data.items.reduce((sum, item) => {
         const base = item.quantity * item.unit_price;
-        const discounted = base * (1 - (item.discount || 0) / 100);
+        const discounted = base * (1 - (item.discount || 0) / 100) * (1 - (item.additional_discount || 0) / 100);
         return sum + discounted * (item.tax_rate / 100);
     }, 0);
     const total = subtotal - discountAmount + taxAmount;
@@ -179,7 +182,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
         <AppLayout>
             <Head title={t('proforma.create_title')} />
 
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-6">
                     <Button variant="ghost" size="sm" asChild className="mb-4">
@@ -207,11 +210,12 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                     <Select value={data.client_id} onValueChange={(v) => {
                                         const client = clients.find(c => c.id.toString() === v);
                                         const clientDiscount = client?.discount ?? 0;
+                                        const clientAdditionalDiscount = client?.additional_discount ?? 0;
                                         setData(prev => ({
                                             ...prev,
                                             client_id: v,
                                             branch_id: '',
-                                            items: prev.items.map(item => ({ ...item, discount: clientDiscount })),
+                                            items: prev.items.map(item => ({ ...item, discount: clientDiscount, additional_discount: clientAdditionalDiscount })),
                                         }));
                                     }}>
                                         <SelectTrigger className="mt-1" error={errors.client_id}>
@@ -415,7 +419,7 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                         )}
 
                                         {/* Quantity, Price, Discount, Tax, Total */}
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                                             <div>
                                                 <Label>{t('proforma.quantity')}</Label>
                                                 <Input
@@ -447,6 +451,18 @@ export default function CreateProforma({ clients, articles, bundles = [], curren
                                                     max="100"
                                                     value={item.discount}
                                                     onChange={(e) => updateItem(index, 'discount', parseFloat(e.target.value) || 0)}
+                                                    className="mt-1"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>{t('proforma.additional_discount')}</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="100"
+                                                    value={item.additional_discount}
+                                                    onChange={(e) => updateItem(index, 'additional_discount', parseFloat(e.target.value) || 0)}
                                                     className="mt-1"
                                                 />
                                             </div>

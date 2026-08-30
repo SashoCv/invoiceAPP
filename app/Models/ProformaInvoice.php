@@ -106,7 +106,8 @@ class ProformaInvoice extends Model
     {
         $this->subtotal = $this->items->sum(function ($item) {
             $lineTotal = $item->quantity * $item->unit_price;
-            return $lineTotal - ($lineTotal * $item->discount / 100);
+            $afterDiscount = $lineTotal * (1 - $item->discount / 100);
+            return $afterDiscount * (1 - ($item->additional_discount ?? 0) / 100);
         });
         $this->tax_amount = $this->items->sum('tax_amount');
         $this->total = $this->subtotal + $this->tax_amount;

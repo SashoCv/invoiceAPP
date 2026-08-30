@@ -25,10 +25,12 @@ class Client extends Model
         'bank_name',
         'bank_account',
         'discount',
+        'additional_discount',
     ];
 
     protected $casts = [
         'discount' => 'decimal:2',
+        'additional_discount' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

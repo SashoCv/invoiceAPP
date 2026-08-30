@@ -344,6 +344,7 @@ class PdfService
             $unitPrice = (float) $item->unit_price;       // selling price, без ДДВ
             $taxRate = (float) $item->tax_rate;
             $discountPct = (float) $item->discount;
+            $additionalDiscountPct = (float) ($item->additional_discount ?? 0);
 
             if ($item->bundle) {
                 // Bundle cost = sum of each component's average cost × its quantity in the set.
@@ -365,8 +366,9 @@ class PdfService
             // Recompute from price/qty/discount/tax (same basis as InvoiceItem::booted)
             // so the calculation is always self-consistent regardless of stored totals.
             $grossNoTax = $qty * $unitPrice;
-            $discountAmount = $grossNoTax * $discountPct / 100;
-            $salesNoTax = $grossNoTax - $discountAmount;           // продажна без ДДВ (по рабат)
+            $afterDiscount = $grossNoTax * (1 - $discountPct / 100);
+            $salesNoTax = $afterDiscount * (1 - $additionalDiscountPct / 100); // продажна без ДДВ (по рабат)
+            $discountAmount = $grossNoTax - $salesNoTax;
             $calcTax = $salesNoTax * $taxRate / 100;               // пресметан данок
             $salesWithTax = $salesNoTax + $calcTax;                // продажна со ДДВ (по рабат)
             $margin = $salesNoTax - $purchaseAmount;

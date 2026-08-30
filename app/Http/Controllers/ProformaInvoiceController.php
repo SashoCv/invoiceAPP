@@ -133,6 +133,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.additional_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.code' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -175,6 +176,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
                 'discount' => $item['discount'] ?? 0,
+                'additional_discount' => $item['additional_discount'] ?? 0,
             ]);
         }
 
@@ -236,6 +238,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'items.*.additional_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.code' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -277,6 +280,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
                 'unit_price' => $item['unit_price'],
                 'tax_rate' => $item['tax_rate'],
                 'discount' => $item['discount'] ?? 0,
+                'additional_discount' => $item['additional_discount'] ?? 0,
             ]);
         }
 
@@ -431,6 +435,7 @@ class ProformaInvoiceController extends Controller implements HasMiddleware
                 'unit_price' => $item->unit_price,
                 'tax_rate' => $item->tax_rate,
                 'discount' => $item->discount,
+                'additional_discount' => $item->additional_discount,
             ]);
 
             // Deduct stock for articles with inventory tracking

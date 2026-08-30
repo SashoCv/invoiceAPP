@@ -70,6 +70,7 @@ return [
     // Totals
     'subtotal' => 'Меѓузбир',
     'discount' => 'Рабат %',
+    'additional_discount' => 'Доп. попуст %',
     'tax' => 'ДДВ',
 
     // Actions

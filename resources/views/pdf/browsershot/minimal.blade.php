@@ -67,6 +67,7 @@
 
     {{-- Minimal Items - only show if has items --}}
     @if($hasItems && count($items) > 0)
+    @php $showAdditionalDiscount = collect($items)->contains(fn($i) => ($i->additional_discount ?? 0) > 0); @endphp
     <div class="mb-12">
         <table class="w-full">
             <thead>
@@ -75,6 +76,7 @@
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Кол.</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Рабат</th>
+                    @if($showAdditionalDiscount)<th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Доп. попуст</th>@endif
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена со попуст</th>
                     <th class="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Износ</th>
                 </tr>
@@ -83,8 +85,8 @@
                 @foreach($items as $item)
                 @php
                     $itemSubtotal = $item->quantity * $item->unit_price;
-                    $itemDiscount = $itemSubtotal * ($item->discount / 100);
-                    $afterDiscount = round($itemSubtotal - $itemDiscount, 2);
+                    $effDiscount = 1 - (1 - $item->discount / 100) * (1 - ($item->additional_discount ?? 0) / 100);
+                    $afterDiscount = round($itemSubtotal * (1 - $effDiscount), 2);
                     $itemTax = round($afterDiscount * ($item->tax_rate / 100), 2);
                     $itemTotal = $afterDiscount + $itemTax;
                 @endphp
@@ -93,7 +95,8 @@
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->quantity, 0, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-600">{{ number_format($item->discount, 0) }}%</td>
-                    <td class="py-5 text-right text-gray-600">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
+                    @if($showAdditionalDiscount)<td class="py-5 text-right text-gray-600">{{ ($item->additional_discount ?? 0) > 0 ? number_format($item->additional_discount, 0) . '%' : '-' }}</td>@endif
+                    <td class="py-5 text-right text-gray-600">{{ number_format($item->unit_price * (1 - $effDiscount), 2, ',', ' ') }}</td>
                     <td class="py-5 text-right text-gray-900">{{ number_format($itemTotal, 2, ',', ' ') }}</td>
                 </tr>
                 @endforeach

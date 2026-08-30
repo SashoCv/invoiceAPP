@@ -11,11 +11,13 @@
     $tax18Amount = 0;
     $totalBase = 0;
     $totalWithVat = 0;
+    $showAdditionalDiscount = $hasItems ? collect($items)->contains(fn($i) => ($i->additional_discount ?? 0) > 0) : false;
 
     if ($hasItems && count($items) > 0) {
         foreach ($items as $item) {
             $lineSubtotal = $item->quantity * $item->unit_price;
-            $lineDiscount = $lineSubtotal * (($item->discount ?? 0) / 100);
+            $effDiscountPct = 1 - (1 - ($item->discount ?? 0) / 100) * (1 - ($item->additional_discount ?? 0) / 100);
+            $lineDiscount = $lineSubtotal * $effDiscountPct;
             $lineBase = round($lineSubtotal - $lineDiscount, 2); // Износ (before VAT)
             $lineTax = round($lineBase * ($item->tax_rate / 100), 2);
             $lineTotal = $lineBase + $lineTax; // Вкупно (with VAT)
@@ -37,7 +39,8 @@
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'discount' => $item->discount ?? 0,
-                'discounted_price' => round($item->unit_price * (1 - ($item->discount ?? 0) / 100), 2),
+                'additional_discount' => $item->additional_discount ?? 0,
+                'discounted_price' => round($item->unit_price * (1 - $effDiscountPct), 2),
                 'base' => $lineBase,
                 'tax_rate' => $item->tax_rate,
                 'tax' => $lineTax,
@@ -118,6 +121,7 @@
                 <th class="text-right py-2 px-1 font-bold" style="width: 6%;">Кол.</th>
                 <th class="text-right py-2 px-1 font-bold" style="width: 9%;">Цена</th>
                 <th class="text-right py-2 px-1 font-bold" style="width: 6%;">Рабат</th>
+                @if($showAdditionalDiscount)<th class="text-right py-2 px-1 font-bold" style="width: 6%;">Доп. попуст</th>@endif
                 <th class="text-right py-2 px-1 font-bold" style="width: 10%;">Цена со рабат</th>
                 <th class="text-right py-2 px-1 font-bold" style="width: 11%;">Износ без ДДВ</th>
                 <th class="text-center py-2 px-1 font-bold" style="width: 6%;">ддв</th>
@@ -133,6 +137,7 @@
                 <td class="py-2 px-1 text-right">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['unit_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['discount'], 0) }}%</td>
+                @if($showAdditionalDiscount)<td class="py-2 px-1 text-right">{{ $item['additional_discount'] > 0 ? number_format($item['additional_discount'], 0) . '%' : '-' }}</td>@endif
                 <td class="py-2 px-1 text-right">{{ number_format($item['discounted_price'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-right">{{ number_format($item['base'], 2, ',', '.') }}</td>
                 <td class="py-2 px-1 text-center">{{ number_format($item['tax_rate'], 0) }}%</td>

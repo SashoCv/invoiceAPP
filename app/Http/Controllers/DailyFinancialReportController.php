@@ -161,13 +161,13 @@ class DailyFinancialReportController extends Controller
             ->whereNull('invoices.deleted_at')
             ->whereNotNull('invoice_items.article_id')
             ->whereBetween('invoices.issue_date', [$from, $to])
-            ->select('invoice_items.article_id', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.discount', 'invoice_items.tax_rate')
+            ->select('invoice_items.article_id', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.discount', 'invoice_items.additional_discount', 'invoice_items.tax_rate')
             ->get();
 
         $map = [];
         foreach ($items as $it) {
             $qty = (float) $it->quantity;
-            $base = round($qty * (float) $it->unit_price * (1 - (float) $it->discount / 100), 2);
+            $base = round($qty * (float) $it->unit_price * (1 - (float) $it->discount / 100) * (1 - (float) ($it->additional_discount ?? 0) / 100), 2);
             $tax = round($base * (float) $it->tax_rate / 100, 2);
             $this->accumulate($map, $it->article_id, $qty, $base, $tax, $base + $tax);
         }

@@ -82,6 +82,7 @@ export interface Client {
     bank_name?: string;
     bank_account?: string;
     discount?: number;
+    additional_discount?: number;
     notes: string | null;
     branches?: ClientBranch[];
     created_at: string;
@@ -172,6 +173,7 @@ export interface InvoiceItem {
     unit_price: number;
     tax_rate: number;
     discount?: number;
+    additional_discount?: number;
     tax_amount?: number;
     total: number;
 }
@@ -212,6 +214,7 @@ export interface ProformaInvoiceItem {
     unit_price: number;
     tax_rate: number;
     discount?: number;
+    additional_discount?: number;
     tax_amount?: number;
     total: number;
 }
@@ -255,6 +258,7 @@ export interface OfferItem {
     unit_price: number;
     tax_rate: number;
     discount?: number;
+    additional_discount?: number;
     tax_amount?: number;
     total: number;
 }

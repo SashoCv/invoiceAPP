@@ -58,6 +58,7 @@ return [
     // Totals
     'subtotal' => 'Subtotal',
     'discount' => 'Discount %',
+    'additional_discount' => 'Extra discount %',
     'tax' => 'Tax',
 
     // Actions

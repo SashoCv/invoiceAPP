@@ -43,6 +43,8 @@ return [
     'country' => 'Country',
     'discount' => 'Discount (%)',
     'discount_placeholder' => 'Default discount for this client',
+    'additional_discount' => 'Additional discount (%)',
+    'additional_discount_placeholder' => 'Extra discount applied on top of the discount above',
 
     // Actions
     'back_to_list' => 'Back to list',

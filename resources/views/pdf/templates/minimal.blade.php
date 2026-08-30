@@ -44,6 +44,7 @@
 
 {{-- Items Table --}}
 @if(count($items) > 0)
+@php $showAdditionalDiscount = collect($items)->contains(fn($i) => ($i->additional_discount ?? 0) > 0); @endphp
 <table class="items-table">
     <thead>
         <tr>
@@ -51,6 +52,7 @@
             <th class="right" style="width: 8%;">Кол.</th>
             <th class="right" style="width: 13%;">Цена</th>
             <th class="right" style="width: 9%;">Рабат</th>
+            @if($showAdditionalDiscount)<th class="right" style="width: 9%;">Доп. попуст</th>@endif
             <th class="right" style="width: 14%;">Цена со попуст</th>
             <th class="right" style="width: 16%;">Износ</th>
         </tr>
@@ -61,9 +63,11 @@
             <td>{{ $item->code ? '[' . $item->code . '] ' : '' }}{{ $item->description }}</td>
             <td class="right">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
             <td class="right">{{ number_format($item->unit_price, 2, ',', ' ') }}</td>
+            @php $effDiscount = 1 - (1 - $item->discount / 100) * (1 - ($item->additional_discount ?? 0) / 100); @endphp
             <td class="right">{{ number_format($item->discount, 0) }}%</td>
-            <td class="right">{{ number_format($item->unit_price * (1 - $item->discount / 100), 2, ',', ' ') }}</td>
-            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $item->discount / 100) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
+            @if($showAdditionalDiscount)<td class="right">{{ ($item->additional_discount ?? 0) > 0 ? number_format($item->additional_discount, 0) . '%' : '-' }}</td>@endif
+            <td class="right">{{ number_format($item->unit_price * (1 - $effDiscount), 2, ',', ' ') }}</td>
+            <td class="right">{{ number_format($item->quantity * $item->unit_price * (1 - $effDiscount) * (1 + $item->tax_rate / 100), 2, ',', ' ') }}</td>
         </tr>
         @endforeach
     </tbody>

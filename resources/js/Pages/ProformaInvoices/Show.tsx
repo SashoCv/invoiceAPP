@@ -53,6 +53,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
     const { t } = useTranslation();
     const [previewOpen, setPreviewOpen] = useState(false);
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
+    const hasAdditionalDiscount = !!proforma.items?.some((item) => (item.additional_discount || 0) > 0);
     const [sendForm, setSendForm] = useState({
         to: '',
         subject: '',
@@ -293,6 +294,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                                     <TableHead className="text-right">{t('proforma.quantity')}</TableHead>
                                     <TableHead className="text-right">{t('proforma.unit_price')}</TableHead>
                                     <TableHead className="text-right">{t('proforma.discount')}</TableHead>
+                                    {hasAdditionalDiscount && <TableHead className="text-right">{t('proforma.additional_discount')}</TableHead>}
                                     <TableHead className="text-right">{t('proforma.tax_rate')}</TableHead>
                                     <TableHead className="text-right">{t('proforma.total')}</TableHead>
                                 </TableRow>
@@ -300,7 +302,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                             <TableBody>
                                 {proforma.items?.map((item, index) => {
                                     const itemSubtotal = item.quantity * item.unit_price;
-                                    const afterDiscount = itemSubtotal * (1 - (item.discount || 0) / 100);
+                                    const afterDiscount = itemSubtotal * (1 - (item.discount || 0) / 100) * (1 - (item.additional_discount || 0) / 100);
                                     const itemTax = afterDiscount * (item.tax_rate / 100);
                                     const itemTotal = afterDiscount + itemTax;
                                     return (
@@ -309,6 +311,9 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                                             <TableCell className="text-right">{formatNumber(item.quantity, 2)}</TableCell>
                                             <TableCell className="text-right">{formatNumber(item.unit_price, 2)}</TableCell>
                                             <TableCell className="text-right">{Number(item.discount || 0).toFixed(0)}%</TableCell>
+                                            {hasAdditionalDiscount && (
+                                                <TableCell className="text-right">{item.additional_discount ? `${Number(item.additional_discount).toFixed(0)}%` : '-'}</TableCell>
+                                            )}
                                             <TableCell className="text-right">{item.tax_rate}%</TableCell>
                                             <TableCell className="text-right font-medium">{formatNumber(itemTotal, 2)}</TableCell>
                                         </TableRow>
@@ -317,7 +322,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                             </TableBody>
                             <TableFooter>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-right font-medium">
+                                    <TableCell colSpan={hasAdditionalDiscount ? 6 : 5} className="text-right font-medium">
                                         {t('proforma.subtotal')}:
                                     </TableCell>
                                     <TableCell className="text-right font-medium whitespace-nowrap">
@@ -325,7 +330,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-right font-medium">
+                                    <TableCell colSpan={hasAdditionalDiscount ? 6 : 5} className="text-right font-medium">
                                         {t('proforma.tax')}:
                                     </TableCell>
                                     <TableCell className="text-right font-medium whitespace-nowrap">
@@ -333,7 +338,7 @@ export default function ShowProforma({ proforma }: ShowProformaProps) {
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-right text-lg font-bold">
+                                    <TableCell colSpan={hasAdditionalDiscount ? 6 : 5} className="text-right text-lg font-bold">
                                         {t('proforma.total')}:
                                     </TableCell>
                                     <TableCell className="text-right text-lg font-bold whitespace-nowrap">

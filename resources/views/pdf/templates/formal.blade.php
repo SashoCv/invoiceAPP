@@ -10,11 +10,13 @@
     $tax18Amount = 0;
     $totalBase = 0;
     $totalWithVat = 0;
+    $showAdditionalDiscount = $hasItemsFlag ? collect($items)->contains(fn($i) => ($i->additional_discount ?? 0) > 0) : false;
 
     if ($hasItemsFlag && count($items) > 0) {
         foreach ($items as $item) {
             $lineSubtotal = $item->quantity * $item->unit_price;
-            $lineDiscount = $lineSubtotal * (($item->discount ?? 0) / 100);
+            $effDiscountPct = 1 - (1 - ($item->discount ?? 0) / 100) * (1 - ($item->additional_discount ?? 0) / 100);
+            $lineDiscount = $lineSubtotal * $effDiscountPct;
             $lineBase = round($lineSubtotal - $lineDiscount, 2);
             $lineTax = round($lineBase * ($item->tax_rate / 100), 2);
             $lineTotal = $lineBase + $lineTax;
@@ -36,7 +38,8 @@
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'discount' => $item->discount ?? 0,
-                'discounted_price' => round($item->unit_price * (1 - ($item->discount ?? 0) / 100), 2),
+                'additional_discount' => $item->additional_discount ?? 0,
+                'discounted_price' => round($item->unit_price * (1 - $effDiscountPct), 2),
                 'base' => $lineBase,
                 'tax_rate' => $item->tax_rate,
                 'tax' => $lineTax,
@@ -110,6 +113,7 @@
             <th class="right" style="width: 6%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Кол.</th>
             <th class="right" style="width: 9%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена</th>
             <th class="right" style="width: 6%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Рабат</th>
+            @if($showAdditionalDiscount)<th class="right" style="width: 6%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Доп. попуст</th>@endif
             <th class="right" style="width: 10%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Цена со рабат</th>
             <th class="right" style="width: 11%; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">Износ без ДДВ</th>
             <th style="width: 6%; text-align: center; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 3px;">ддв</th>
@@ -125,6 +129,7 @@
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['quantity'], 0, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['unit_price'], 2, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['discount'], 0) }}%</td>
+            @if($showAdditionalDiscount)<td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ $item['additional_discount'] > 0 ? number_format($item['additional_discount'], 0) . '%' : '-' }}</td>@endif
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['discounted_price'], 2, ',', '.') }}</td>
             <td class="right" style="padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['base'], 2, ',', '.') }}</td>
             <td style="text-align: center; padding: 5px 3px; border-bottom: 1px solid #ddd;">{{ number_format($item['tax_rate'], 0) }}%</td>

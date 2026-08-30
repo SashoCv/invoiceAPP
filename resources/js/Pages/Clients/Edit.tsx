@@ -53,6 +53,7 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
         bank_name: client.bank_name || '',
         bank_account: client.bank_account || '',
         discount: client.discount ?? 0,
+        additional_discount: client.additional_discount ?? 0,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -174,6 +175,21 @@ export default function ClientEdit({ client, contracts }: ClientEditProps) {
                                         placeholder={t('clients.discount_placeholder')}
                                         className="mt-1"
                                         error={errors.discount}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="additional_discount">{t('clients.additional_discount')}</Label>
+                                    <Input
+                                        id="additional_discount"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        value={data.additional_discount}
+                                        onChange={(e) => setData('additional_discount', parseFloat(e.target.value) || 0)}
+                                        placeholder={t('clients.additional_discount_placeholder')}
+                                        className="mt-1"
+                                        error={errors.additional_discount}
                                     />
                                 </div>
                             </div>

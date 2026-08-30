@@ -117,6 +117,7 @@ class ClientController extends Controller implements HasMiddleware
             'bank_name' => ['nullable', 'string', 'max:255'],
             'bank_account' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'additional_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $request->user()->clients()->create($validated);
@@ -244,6 +245,7 @@ class ClientController extends Controller implements HasMiddleware
             'bank_name' => ['nullable', 'string', 'max:255'],
             'bank_account' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'additional_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         $client->update($validated);

@@ -56,6 +56,13 @@ const isOffer = (doc: Invoice | ProformaInvoice | Offer): doc is Offer => {
     return 'offer_number' in doc;
 };
 
+// Compounded discount: additional_discount applies on top of the already-discounted price
+const effectiveDiscount = (item: any): number =>
+    1 - (1 - (item.discount || 0) / 100) * (1 - (item.additional_discount || 0) / 100);
+
+const hasAdditionalDiscountIn = (items: any[] | undefined): boolean =>
+    !!items?.some((i) => (i.additional_discount || 0) > 0);
+
 // ============ CLASSIC TEMPLATE ============
 function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePreviewProps, 'template'>) {
     const currencySymbol = getCurrencySymbol(document.currency);
@@ -159,7 +166,9 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
             )}
 
             {/* Items Table - only show if has items */}
-            {hasItems && document.items && document.items.length > 0 && (
+            {hasItems && document.items && document.items.length > 0 && (() => {
+                const showAdditionalDiscount = hasAdditionalDiscountIn(document.items);
+                return (
                 <div className="mb-6">
                     <table className="w-full">
                         <thead>
@@ -168,6 +177,7 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Кол.</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Цена</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Рабат</th>
+                                {showAdditionalDiscount && <th className="text-right px-4 py-3 text-sm font-semibold">Доп. попуст</th>}
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Цена со попуст</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">ДДВ</th>
                                 <th className="text-right px-4 py-3 text-sm font-semibold">Вкупно</th>
@@ -176,8 +186,8 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                         <tbody>
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
-                                const discountAmount = subtotal * ((item.discount || 0) / 100);
-                                const afterDiscount = Math.round((subtotal - discountAmount) * 100) / 100;
+                                const effDiscount = effectiveDiscount(item);
+                                const afterDiscount = Math.round(subtotal * (1 - effDiscount) * 100) / 100;
                                 const tax = Math.round(afterDiscount * (item.tax_rate / 100) * 100) / 100;
                                 const total = afterDiscount + tax;
                                 return (
@@ -186,7 +196,10 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.quantity, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{Number(item.discount || 0).toFixed(0)}%</td>
-                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                        {showAdditionalDiscount && (
+                                            <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{item.additional_discount ? `${Number(item.additional_discount).toFixed(0)}%` : '-'}</td>
+                                        )}
+                                        <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{formatNumber(item.unit_price * (1 - effDiscount), 2)}</td>
                                         <td className="px-4 py-3 text-sm text-right border-b border-gray-200">{item.tax_rate}%</td>
                                         <td className="px-4 py-3 text-sm text-right font-medium border-b border-gray-200">{formatNumber(total, 2)}</td>
                                     </tr>
@@ -195,7 +208,8 @@ function ClassicTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                         </tbody>
                     </table>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Totals - only show if has items */}
             {hasItems && (
@@ -356,7 +370,9 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                 )}
 
                 {/* Items Table - only show if has items */}
-                {hasItems && document.items && document.items.length > 0 && (
+                {hasItems && document.items && document.items.length > 0 && (() => {
+                    const showAdditionalDiscount = hasAdditionalDiscountIn(document.items);
+                    return (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
                         <table className="w-full">
                             <thead>
@@ -365,6 +381,7 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Кол.</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Цена</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Рабат</th>
+                                    {showAdditionalDiscount && <th className="text-right px-4 py-4 text-sm font-semibold">Доп. попуст</th>}
                                     <th className="text-right px-4 py-4 text-sm font-semibold">Цена со попуст</th>
                                     <th className="text-right px-4 py-4 text-sm font-semibold">ДДВ</th>
                                     <th className="text-right px-6 py-4 text-sm font-semibold">Вкупно</th>
@@ -373,8 +390,8 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                             <tbody>
                                 {document.items.map((item, index) => {
                                     const subtotal = item.quantity * item.unit_price;
-                                    const discountAmount = subtotal * ((item.discount || 0) / 100);
-                                    const afterDiscount = subtotal - discountAmount;
+                                    const effDiscount = effectiveDiscount(item);
+                                    const afterDiscount = subtotal * (1 - effDiscount);
                                     const tax = afterDiscount * (item.tax_rate / 100);
                                     const total = afterDiscount + tax;
                                     return (
@@ -383,7 +400,10 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.quantity, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
-                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                            {showAdditionalDiscount && (
+                                                <td className="px-4 py-4 text-sm text-right text-gray-600">{item.additional_discount ? `${Number(item.additional_discount).toFixed(0)}%` : '-'}</td>
+                                            )}
+                                            <td className="px-4 py-4 text-sm text-right text-gray-600">{formatNumber(item.unit_price * (1 - effDiscount), 2)}</td>
                                             <td className="px-4 py-4 text-sm text-right text-gray-600">{item.tax_rate}%</td>
                                             <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{formatNumber(total, 2)}</td>
                                         </tr>
@@ -422,7 +442,8 @@ function ModernTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                             </div>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
 
                 {/* Bank & Notes */}
                 <div className="grid grid-cols-2 gap-4">
@@ -537,7 +558,9 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
             )}
 
             {/* Minimal Items - only show if has items */}
-            {hasItems && document.items && document.items.length > 0 && (
+            {hasItems && document.items && document.items.length > 0 && (() => {
+                const showAdditionalDiscount = hasAdditionalDiscountIn(document.items);
+                return (
                 <div className="mb-12">
                     <table className="w-full">
                         <thead>
@@ -546,6 +569,7 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Кол.</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Рабат</th>
+                                {showAdditionalDiscount && <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Доп. попуст</th>}
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Цена со попуст</th>
                                 <th className="text-right py-4 text-xs uppercase tracking-[0.2em] text-gray-400 font-normal">Износ</th>
                             </tr>
@@ -553,8 +577,8 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                         <tbody>
                             {document.items.map((item, index) => {
                                 const subtotal = item.quantity * item.unit_price;
-                                const discountAmount = subtotal * ((item.discount || 0) / 100);
-                                const afterDiscount = Math.round((subtotal - discountAmount) * 100) / 100;
+                                const effDiscount = effectiveDiscount(item);
+                                const afterDiscount = Math.round(subtotal * (1 - effDiscount) * 100) / 100;
                                 const tax = Math.round(afterDiscount * (item.tax_rate / 100) * 100) / 100;
                                 const total = afterDiscount + tax;
                                 return (
@@ -563,7 +587,10 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.quantity, 0)}</td>
                                         <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price, 2)}</td>
                                         <td className="py-5 text-right text-gray-600">{Number(item.discount || 0).toFixed(0)}%</td>
-                                        <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                        {showAdditionalDiscount && (
+                                            <td className="py-5 text-right text-gray-600">{item.additional_discount ? `${Number(item.additional_discount).toFixed(0)}%` : '-'}</td>
+                                        )}
+                                        <td className="py-5 text-right text-gray-600">{formatNumber(item.unit_price * (1 - effDiscount), 2)}</td>
                                         <td className="py-5 text-right text-gray-900">{formatNumber(total, 2)}</td>
                                     </tr>
                                 );
@@ -571,7 +598,8 @@ function MinimalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePr
                         </tbody>
                     </table>
                 </div>
-            )}
+                );
+            })()}
 
             {/* Minimal Totals - only show if has items */}
             {hasItems && (
@@ -649,6 +677,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
     const currencySymbol = getCurrencySymbol(document.currency);
     const offer = isOffer(document) ? document : null;
     const hasItems = offer ? offer.has_items : true;
+    const showAdditionalDiscount = hasAdditionalDiscountIn(document.items);
 
     const getDocumentNumber = () => {
         if ('invoice_number' in document) return document.invoice_number;
@@ -669,8 +698,8 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
 
     const itemsData = (document.items || []).map((item: any) => {
         const lineSubtotal = item.quantity * item.unit_price;
-        const lineDiscount = lineSubtotal * ((item.discount || 0) / 100);
-        const lineBase = Math.round((lineSubtotal - lineDiscount) * 100) / 100;
+        const lineEffDiscount = effectiveDiscount(item);
+        const lineBase = Math.round(lineSubtotal * (1 - lineEffDiscount) * 100) / 100;
         const lineTax = Math.round(lineBase * (item.tax_rate / 100) * 100) / 100;
         const lineTotal = lineBase + lineTax;
 
@@ -685,7 +714,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
             tax18Amount += lineTax;
         }
 
-        return { ...item, base: lineBase, tax: lineTax, total: lineTotal };
+        return { ...item, base: lineBase, tax: lineTax, total: lineTotal, effDiscount: lineEffDiscount };
     });
 
     const totalTax = tax5Amount + tax18Amount;
@@ -748,6 +777,7 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                 <th className="text-right py-2 px-1 font-bold w-[6%]">Кол.</th>
                                 <th className="text-right py-2 px-1 font-bold w-[9%]">Цена</th>
                                 <th className="text-right py-2 px-1 font-bold w-[6%]">Рабат</th>
+                                {showAdditionalDiscount && <th className="text-right py-2 px-1 font-bold w-[6%]">Доп. попуст</th>}
                                 <th className="text-right py-2 px-1 font-bold w-[10%]">Цена со рабат</th>
                                 <th className="text-right py-2 px-1 font-bold w-[11%]">Износ без ДДВ</th>
                                 <th className="text-center py-2 px-1 font-bold w-[6%]">ддв</th>
@@ -763,7 +793,10 @@ function FormalTemplate({ document, type, agency, bankAccount }: Omit<InvoicePre
                                     <td className="py-2 px-1 text-right">{formatNumber(item.quantity, 0)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.unit_price, 2)}</td>
                                     <td className="py-2 px-1 text-right">{Number(item.discount || 0).toFixed(0)}%</td>
-                                    <td className="py-2 px-1 text-right">{formatNumber(item.unit_price * (1 - (item.discount || 0) / 100), 2)}</td>
+                                    {showAdditionalDiscount && (
+                                        <td className="py-2 px-1 text-right">{item.additional_discount ? `${Number(item.additional_discount).toFixed(0)}%` : '-'}</td>
+                                    )}
+                                    <td className="py-2 px-1 text-right">{formatNumber(item.unit_price * (1 - item.effDiscount), 2)}</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.base, 2)}</td>
                                     <td className="py-2 px-1 text-center">{item.tax_rate}%</td>
                                     <td className="py-2 px-1 text-right">{formatNumber(item.tax, 2)}</td>

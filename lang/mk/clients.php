@@ -43,6 +43,8 @@ return [
     'country' => 'Држава',
     'discount' => 'Рабат (%)',
     'discount_placeholder' => 'Стандарден попуст за овој клиент',
+    'additional_discount' => 'Дополнителен попуст (%)',
+    'additional_discount_placeholder' => 'Дополнителен попуст врз веќе намалената цена',
 
     // Actions
     'back_to_list' => 'Назад кон листа',
