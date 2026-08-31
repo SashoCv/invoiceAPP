@@ -76,9 +76,9 @@ class TemplateController extends Controller implements HasMiddleware
         ];
 
         $sampleItems = collect([
-            (object) ['description' => 'Веб дизајн услуги', 'quantity' => 1, 'unit_price' => 30000, 'tax_rate' => 18, 'discount' => 0],
-            (object) ['description' => 'Хостинг (годишен)', 'quantity' => 1, 'unit_price' => 12000, 'tax_rate' => 18, 'discount' => 0],
-            (object) ['description' => 'Одржување на веб страна', 'quantity' => 2, 'unit_price' => 4000, 'tax_rate' => 18, 'discount' => 0],
+            (object) ['description' => 'Веб дизајн услуги', 'code' => null, 'quantity' => 1, 'unit_price' => 30000, 'tax_rate' => 18, 'discount' => 0, 'additional_discount' => 0],
+            (object) ['description' => 'Хостинг (годишен)', 'code' => null, 'quantity' => 1, 'unit_price' => 12000, 'tax_rate' => 18, 'discount' => 0, 'additional_discount' => 0],
+            (object) ['description' => 'Одржување на веб страна', 'code' => null, 'quantity' => 2, 'unit_price' => 4000, 'tax_rate' => 18, 'discount' => 0, 'additional_discount' => 0],
         ]);
 
         $sampleBankAccount = (object) [
@@ -99,6 +99,7 @@ class TemplateController extends Controller implements HasMiddleware
             'tax_number' => 'MK9876543210',
             'website' => null,
             'logo' => null,
+            'authorized_person' => null,
         ];
 
         if ($isOffer) {

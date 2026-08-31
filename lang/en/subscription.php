@@ -34,6 +34,6 @@ return [
     'feature_templates' => 'Custom templates',
     'feature_multi_currency' => 'Multi-currency support',
     'contact_to_subscribe' => 'To subscribe, please contact us:',
-    'email_contact' => 'info@invoiceapp.mk',
+    'email_contact' => 'sasocvetanoski@nexsollabs.com',
     'phone_contact' => '+389 XX XXX XXX',
 ];

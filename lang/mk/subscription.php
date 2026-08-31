@@ -34,6 +34,6 @@ return [
     'feature_templates' => 'Прилагодени темплејти',
     'feature_multi_currency' => 'Повеќе валути',
     'contact_to_subscribe' => 'За претплата, контактирајте не:',
-    'email_contact' => 'info@invoiceapp.mk',
+    'email_contact' => 'sasocvetanoski@nexsollabs.com',
     'phone_contact' => '+389 XX XXX XXX',
 ];
