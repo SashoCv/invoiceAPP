@@ -31,6 +31,7 @@ import {
     Clock,
     DollarSign,
     BookText,
+    Scale,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
@@ -120,6 +121,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/daily-financial-report',
                     icon: TrendingUp,
                     active: currentPath.startsWith('/daily-financial-report'),
+                },
+                {
+                    name: t('navigation.accounting_reports'),
+                    href: '/accounting-reports',
+                    icon: Scale,
+                    active: currentPath.startsWith('/accounting-reports'),
                 },
             ],
         },

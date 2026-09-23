@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StockMovement;
 use App\Services\PdfService;
+use App\Services\StockValuationService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,12 +14,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  * Дневен финансиски извештај — дневна продажба на артикли.
  *  - ЕТ (на мало): продажби од Shopify
  *  - МЕГТ (на големо): продажби од фактури
- * Grouped per article over a date range.
+ * Grouped per article over a date range; values from StockValuationService.
  */
 class DailyFinancialReportController extends Controller
 {
-    private const RETAIL_VAT = 18; // retail (Shopify) prices are gross; default tariff for splitting VAT
-
     public function index(Request $request): Response
     {
         [$from, $to] = $this->resolvePeriod($request);
@@ -91,45 +88,53 @@ class DailyFinancialReportController extends Controller
         return [$from->startOfDay(), $to->endOfDay()];
     }
 
+    /**
+     * Per-article sales for the period, taken from the stock replay so набавна вредност,
+     * quantities and sales match the accounting reports (Излезни калкулации) exactly:
+     * retail = Е-трговија (Shopify), wholesale = Фактури; bundles are broken into their
+     * components with the line's sales split by retail price.
+     */
     private function buildReport($user, Carbon $from, Carbon $to, string $type): array
     {
-        $perArticle = $type === 'wholesale'
-            ? $this->wholesaleByArticle($user, $from, $to)
-            : $this->retailByArticle($user, $from, $to);
+        $docType = $type === 'wholesale' ? 'invoice' : 'shopify';
+        $valuation = app(StockValuationService::class);
 
-        $articleIds = array_keys($perArticle);
-        if (empty($articleIds)) {
+        $perArticle = [];
+        foreach ($valuation->eventsBetween($user->id, $from->toDateString(), $to->toDateString()) as $e) {
+            if ($e['doc_type'] !== $docType) {
+                continue;
+            }
+            $a = &$perArticle[$e['article_id']];
+            $a ??= ['qty' => 0, 'purchase' => 0, 'sales_no_tax' => 0, 'tax' => 0];
+            $a['qty'] += $e['qty'];
+            $a['purchase'] += $e['cost_value'];
+            $a['sales_no_tax'] += $e['sales_no_tax'];
+            $a['tax'] += $e['sales_tax'];
+            unset($a);
+        }
+
+        if (empty($perArticle)) {
             return ['rows' => [], 'totals' => $this->emptyTotals()];
         }
 
-        $avgCosts = StockMovement::whereIn('article_id', $articleIds)
-            ->where('type', 'receipt')
-            ->where('cost_price', '>', 0)
-            ->selectRaw('article_id, SUM(cost_price * quantity) / SUM(quantity) as avg_cost')
-            ->groupBy('article_id')
-            ->pluck('avg_cost', 'article_id');
-
-        $articles = $user->articles()->whereIn('id', $articleIds)->get()->keyBy('id');
+        $articles = $user->articles()->withTrashed()->whereIn('id', array_keys($perArticle))->get()->keyBy('id');
 
         $rows = [];
         foreach ($perArticle as $articleId => $agg) {
             $article = $articles->get($articleId);
-            $qty = $agg['qty'];
-            $avgCost = (float) ($avgCosts[$articleId] ?? 0);
-            $purchase = round($avgCost * $qty, 2);
+            $purchase = round($agg['purchase'], 2);
             $salesNoTax = round($agg['sales_no_tax'], 2);
             $tax = round($agg['tax'], 2);
-            $salesWithTax = round($agg['sales_with_tax'], 2);
 
             $rows[] = [
                 'code' => $article->code ?? '',
                 'name' => $article->name ?? ('#' . $articleId),
                 'unit' => $article->unit ?? '',
-                'quantity' => $qty,
+                'quantity' => round($agg['qty'], 2),
                 'purchase_value' => $purchase,
                 'sales_no_tax' => $salesNoTax,
                 'tax' => $tax,
-                'sales_with_tax' => $salesWithTax,
+                'sales_with_tax' => round($salesNoTax + $tax, 2),
                 'margin' => round($salesNoTax - $purchase, 2),
             ];
         }
@@ -147,71 +152,6 @@ class DailyFinancialReportController extends Controller
         ];
 
         return ['rows' => $rows, 'totals' => $totals];
-    }
-
-    /**
-     * Wholesale (МЕГТ) — sales from invoices, recomputed from line fields so
-     * values are consistent regardless of stored totals. [article_id => agg].
-     */
-    private function wholesaleByArticle($user, Carbon $from, Carbon $to): array
-    {
-        $items = DB::table('invoice_items')
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->where('invoices.user_id', $user->id)
-            ->whereNull('invoices.deleted_at')
-            ->whereNotNull('invoice_items.article_id')
-            ->whereBetween('invoices.issue_date', [$from, $to])
-            ->select('invoice_items.article_id', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.discount', 'invoice_items.additional_discount', 'invoice_items.tax_rate')
-            ->get();
-
-        $map = [];
-        foreach ($items as $it) {
-            $qty = (float) $it->quantity;
-            $base = round($qty * (float) $it->unit_price * (1 - (float) $it->discount / 100) * (1 - (float) ($it->additional_discount ?? 0) / 100), 2);
-            $tax = round($base * (float) $it->tax_rate / 100, 2);
-            $this->accumulate($map, $it->article_id, $qty, $base, $tax, $base + $tax);
-        }
-
-        return $map;
-    }
-
-    /**
-     * Retail (ЕТ) — sales from paid Shopify orders. Line revenue is gross (со ДДВ);
-     * VAT split out at the standard retail tariff. [article_id => agg].
-     */
-    private function retailByArticle($user, Carbon $from, Carbon $to): array
-    {
-        $items = DB::table('shopify_order_items')
-            ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
-            ->where('shopify_orders.user_id', $user->id)
-            ->where('shopify_orders.financial_status', 'paid')
-            ->whereNotNull('shopify_order_items.article_id')
-            ->whereBetween('shopify_orders.ordered_at', [$from, $to])
-            ->select('shopify_order_items.article_id', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount')
-            ->get();
-
-        $rate = self::RETAIL_VAT;
-        $map = [];
-        foreach ($items as $it) {
-            $qty = (float) $it->quantity;
-            $gross = round($qty * (float) $it->price - (float) $it->total_discount, 2); // со ДДВ
-            $noTax = round($gross / (1 + $rate / 100), 2);
-            $tax = round($gross - $noTax, 2);
-            $this->accumulate($map, $it->article_id, $qty, $noTax, $tax, $gross);
-        }
-
-        return $map;
-    }
-
-    private function accumulate(array &$map, $articleId, float $qty, float $noTax, float $tax, float $withTax): void
-    {
-        if (!isset($map[$articleId])) {
-            $map[$articleId] = ['qty' => 0, 'sales_no_tax' => 0, 'tax' => 0, 'sales_with_tax' => 0];
-        }
-        $map[$articleId]['qty'] += $qty;
-        $map[$articleId]['sales_no_tax'] += $noTax;
-        $map[$articleId]['tax'] += $tax;
-        $map[$articleId]['sales_with_tax'] += $withTax;
     }
 
     private function emptyTotals(): array

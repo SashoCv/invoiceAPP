@@ -73,7 +73,9 @@ class Bundle extends Model
                 $bundleItem->article->addStock(
                     $totalRestore,
                     "Restored from bundle: {$this->name} (x{$bundleQuantity})",
-                    'adjustment'
+                    'adjustment',
+                    $referenceType,
+                    $referenceId
                 );
             }
         }

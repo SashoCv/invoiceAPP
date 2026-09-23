@@ -27,8 +27,9 @@ import { formatNumber, formatDate } from '@/lib/utils';
 import { Download, Plus, Pencil, Trash2, BookText } from 'lucide-react';
 
 interface LedgerRow {
-    type: 'receipt' | 'issue' | 'invoice' | 'shopify' | 'fiscal';
+    type: 'carryover' | 'opening' | 'receipt' | 'surplus' | 'return' | 'issue' | 'shortage' | 'invoice' | 'shopify' | 'leveling' | 'fiscal';
     row_no: number;
+    date_iso: string;
     booking_date: string;
     doc_number: string;
     doc_date: string;
@@ -215,10 +216,22 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                                 <TableCell className={isFiscal ? 'text-indigo-500 font-semibold' : 'text-gray-500'}>{row.row_no}</TableCell>
                                                 <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : undefined}>{row.booking_date}</TableCell>
                                                 <TableCell className={isFiscal ? 'font-bold text-indigo-900' : 'font-medium text-gray-900'}>{typeLabel(row.type)}</TableCell>
-                                                <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : 'text-gray-600'}>{row.doc_number}</TableCell>
+                                                <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : 'text-gray-600'}>
+                                                    {row.type === 'leveling' ? (
+                                                        <a
+                                                            href={`/trade-ledger/leveling/${row.date_iso}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-indigo-600 hover:underline"
+                                                            title={t('ledger.leveling_open')}
+                                                        >
+                                                            {row.doc_number}
+                                                        </a>
+                                                    ) : row.doc_number}
+                                                </TableCell>
                                                 <TableCell className={isFiscal ? 'font-semibold text-indigo-900' : undefined}>{row.doc_date}</TableCell>
                                                 <TableCell className="text-right">{formatNumber(row.purchase_value, 2)}</TableCell>
-                                                <TableCell className="text-right">{formatNumber(row.sales_value, 2)}</TableCell>
+                                                <TableCell className={`text-right ${row.sales_value < 0 ? 'text-red-600' : ''}`}>{formatNumber(row.sales_value, 2)}</TableCell>
                                                 <TableCell
                                                     className={
                                                         isFiscal
@@ -251,7 +264,7 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                 </TableRow>
                                 <TableRow className="bg-transparent">
                                     <TableCell colSpan={8} className="text-xs font-normal text-gray-400 pt-1 pb-2">
-                                        {t('ledger.margin_hint', { amount: formatNumber(grandTotals.sales_value - grandTotals.purchase_value, 2) })}
+                                        {t('ledger.margin_hint', { amount: formatNumber(grandTotals.sales_value - grandTotals.daily_turnover, 2) })}
                                     </TableCell>
                                 </TableRow>
                             </tfoot>

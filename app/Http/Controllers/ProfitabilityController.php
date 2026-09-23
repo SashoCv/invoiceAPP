@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bundle;
 use App\Models\InvoiceItem;
-use App\Models\StockMovement;
 use App\Services\CurrencyConverter;
+use App\Services\StockValuationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Профитабилност по артикл. Sales (без ДДВ) and the набавна вредност of the goods sold
+ * come from StockValuationService, so revenue, cost and РУЦ match the accounting
+ * reports (Излезни калкулации) and the Дневен финансиски извештај.
+ */
 class ProfitabilityController extends Controller
 {
     public function index(Request $request): Response
@@ -19,6 +23,7 @@ class ProfitabilityController extends Controller
         $user = $request->user();
         $displayCurrency = $user->agency?->display_currency ?? 'MKD';
         $converter = new CurrencyConverter();
+        $toDisplay = fn (float $mkd) => $displayCurrency === 'MKD' ? $mkd : $converter->convert($mkd, 'MKD', $displayCurrency);
 
         // Date range filter
         $from = $request->get('from', Carbon::now()->startOfYear()->format('Y-m-d'));
@@ -26,153 +31,58 @@ class ProfitabilityController extends Controller
         $fromDate = Carbon::parse($from)->startOfDay();
         $toDate = Carbon::parse($to)->endOfDay();
 
-        // Theoretical data: all articles with avg cost from receipts (all-time)
-        $articles = $user->articles()
-            ->withAvg(['stockMovements as avg_cost_price' => function ($q) {
-                $q->where('type', 'receipt')->where('cost_price', '>', 0);
-            }], 'cost_price')
-            ->get(['id', 'name', 'unit', 'price']);
+        $valuation = app(StockValuationService::class);
 
-        // Load bundles for distributing bundle sales
-        $bundles = Bundle::where('user_id', $user->id)
-            ->with('bundleItems.article')
-            ->get()
-            ->keyBy('id');
-
-        $distributeBundleSale = function (int $bundleId, float $bundleQty, float $lineRevenue) use ($bundles): array {
-            $bundle = $bundles->get($bundleId);
-            if (!$bundle || $bundle->bundleItems->isEmpty()) return [];
-
-            $totalComponentValue = 0;
-            foreach ($bundle->bundleItems as $bi) {
-                if ($bi->article) {
-                    $totalComponentValue += (float) $bi->article->price * $bi->quantity;
-                }
-            }
-
-            $result = [];
-            foreach ($bundle->bundleItems as $bi) {
-                if (!$bi->article) continue;
-                $articleQty = $bundleQty * $bi->quantity;
-                $articleRevenue = $totalComponentValue > 0
-                    ? $lineRevenue * ((float) $bi->article->price * $bi->quantity / $totalComponentValue)
-                    : 0;
-                $result[$bi->article_id] = [
-                    'qty' => $articleQty,
-                    'revenue' => $articleRevenue,
-                ];
-            }
-            return $result;
-        };
-
-        // === REVENUE ===
-
-        // 1. Direct invoice article sales (net = total - tax)
-        $invoiceDirectItems = InvoiceItem::query()
-            ->whereNotNull('article_id')
-            ->whereNull('bundle_id')
-            ->whereHas('invoice', function ($q) use ($user, $fromDate, $toDate) {
-                $q->where('user_id', $user->id)
-                    ->where('status', 'paid')
-                    ->whereBetween('issue_date', [$fromDate, $toDate]);
-            })
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->select('invoice_items.article_id', 'invoice_items.quantity', 'invoice_items.total', 'invoice_items.tax_amount', 'invoices.currency', 'invoices.issue_date')
-            ->get();
-
+        // Sales, cost of goods sold and purchases per article in the period
         $revenueByArticle = [];
+        $costByArticle = [];
         $qtySoldByArticle = [];
-
-        foreach ($invoiceDirectItems as $item) {
-            $articleId = $item->article_id;
-            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
-            $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $converted;
-            $qtySoldByArticle[$articleId] = ($qtySoldByArticle[$articleId] ?? 0) + $item->quantity;
-        }
-
-        // 2. Invoice bundle sales (distributed to components)
-        $invoiceBundleItems = InvoiceItem::query()
-            ->whereNotNull('bundle_id')
-            ->whereHas('invoice', function ($q) use ($user, $fromDate, $toDate) {
-                $q->where('user_id', $user->id)
-                    ->where('status', 'paid')
-                    ->whereBetween('issue_date', [$fromDate, $toDate]);
-            })
-            ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->select('invoice_items.bundle_id', 'invoice_items.quantity', 'invoice_items.total', 'invoice_items.tax_amount', 'invoices.currency', 'invoices.issue_date')
-            ->get();
-
-        foreach ($invoiceBundleItems as $item) {
-            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
-            $distributed = $distributeBundleSale($item->bundle_id, (float) $item->quantity, $converted);
-            foreach ($distributed as $articleId => $data) {
-                $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $data['revenue'];
-                $qtySoldByArticle[$articleId] = ($qtySoldByArticle[$articleId] ?? 0) + $data['qty'];
+        $qtyPurchasedByArticle = [];
+        foreach ($valuation->eventsBetween($user->id, $fromDate->toDateString(), $toDate->toDateString()) as $e) {
+            $a = $e['article_id'];
+            if ($e['doc_type'] === 'receipt') {
+                $qtyPurchasedByArticle[$a] = ($qtyPurchasedByArticle[$a] ?? 0) + $e['qty'];
+            } elseif (in_array($e['doc_type'], ['invoice', 'shopify'], true)) {
+                $revenueByArticle[$a] = ($revenueByArticle[$a] ?? 0) + $e['sales_no_tax'];
+                $costByArticle[$a] = ($costByArticle[$a] ?? 0) + $e['cost_value'];
+                $qtySoldByArticle[$a] = ($qtySoldByArticle[$a] ?? 0) + $e['qty'];
             }
         }
 
-        // 3. Shopify direct article sales
-        $shopifyDirectItems = DB::table('shopify_order_items')
-            ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
-            ->where('shopify_orders.user_id', $user->id)
-            ->whereBetween('shopify_orders.ordered_at', [$fromDate, $toDate])
-            ->whereNotNull('shopify_order_items.article_id')
-            ->whereNull('shopify_order_items.bundle_id')
-            ->select('shopify_order_items.article_id', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at')
-            ->get();
+        // Current average purchase cost (moving weighted average at the end of the period)
+        $balances = $valuation->balancesAt($user->id, $toDate->toDateString());
 
-        foreach ($shopifyDirectItems as $item) {
-            $articleId = $item->article_id;
-            $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
-            $converted = $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
-            $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $converted;
-            $qtySoldByArticle[$articleId] = ($qtySoldByArticle[$articleId] ?? 0) + $item->quantity;
-        }
+        $articles = $user->articles()->get(['id', 'name', 'unit', 'price']);
 
-        // 4. Shopify bundle sales
-        $shopifyBundleItems = DB::table('shopify_order_items')
-            ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
-            ->where('shopify_orders.user_id', $user->id)
-            ->whereBetween('shopify_orders.ordered_at', [$fromDate, $toDate])
-            ->whereNotNull('shopify_order_items.bundle_id')
-            ->select('shopify_order_items.bundle_id', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at')
-            ->get();
+        // === Revenue not tied to stock (без ДДВ) ===
+        $unlinkedRevenue = [];
 
-        foreach ($shopifyBundleItems as $item) {
-            $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
-            $converted = $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
-            $distributed = $distributeBundleSale($item->bundle_id, (float) $item->quantity, $converted);
-            foreach ($distributed as $articleId => $data) {
-                $revenueByArticle[$articleId] = ($revenueByArticle[$articleId] ?? 0) + $data['revenue'];
-                $qtySoldByArticle[$articleId] = ($qtySoldByArticle[$articleId] ?? 0) + $data['qty'];
-            }
-        }
-
-        // 5. Unlinked invoice items (no article, no bundle) - with details
+        // Invoice lines without an article/bundle (services etc.)
         $invoiceUnlinkedItems = InvoiceItem::query()
             ->whereNull('article_id')
             ->whereNull('bundle_id')
             ->whereHas('invoice', function ($q) use ($user, $fromDate, $toDate) {
                 $q->where('user_id', $user->id)
-                    ->where('status', 'paid')
+                    ->where('status', '!=', 'cancelled')
                     ->whereBetween('issue_date', [$fromDate, $toDate]);
             })
             ->join('invoices', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->select('invoice_items.description', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.total', 'invoices.currency', 'invoices.issue_date', 'invoices.invoice_number')
+            ->select('invoice_items.description', 'invoice_items.quantity', 'invoice_items.unit_price', 'invoice_items.discount', 'invoice_items.additional_discount', 'invoices.currency', 'invoices.issue_date', 'invoices.invoice_number')
             ->get();
 
-        $unlinkedRevenue = [];
         foreach ($invoiceUnlinkedItems as $item) {
-            $converted = $converter->convert($item->total, $item->currency, $displayCurrency, $item->issue_date);
+            $base = StockValuationService::invoiceLineBase((float) $item->quantity, (float) $item->unit_price, (float) $item->discount, (float) ($item->additional_discount ?? 0));
             $unlinkedRevenue[] = [
                 'source' => __('profitability.source_invoice') . ' ' . $item->invoice_number,
                 'description' => $item->description,
                 'qty' => (float) $item->quantity,
-                'amount' => round($converted, 2),
+                'amount' => round($converter->convert($base, $item->currency, $displayCurrency, $item->issue_date), 2),
             ];
         }
 
-        // 6. Unmapped Shopify items (no article, no bundle) - with details
+        // Unmapped Shopify items (no article, no bundle)
+        $netOfRetailVat = fn (float $gross) => $gross / (1 + StockValuationService::RETAIL_VAT / 100);
+
         $shopifyUnmappedItems = DB::table('shopify_order_items')
             ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
             ->where('shopify_orders.user_id', $user->id)
@@ -184,31 +94,25 @@ class ProfitabilityController extends Controller
 
         foreach ($shopifyUnmappedItems as $item) {
             $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
-            $converted = $converter->convert($lineTotal, $item->currency, $displayCurrency, $item->ordered_at);
             $unlinkedRevenue[] = [
                 'source' => 'Shopify #' . $item->order_number,
                 'description' => $item->title,
                 'qty' => (float) $item->quantity,
-                'amount' => round($converted, 2),
+                'amount' => round($converter->convert($netOfRetailVat($lineTotal), $item->currency, $displayCurrency, $item->ordered_at), 2),
             ];
         }
 
-        // 7. Shopify shipping & other (order total - sum of items)
+        // Shopify shipping & other (order total - sum of items)
         $shopifyOrders = \App\Models\ShopifyOrder::where('user_id', $user->id)
             ->whereBetween('ordered_at', [$fromDate, $toDate])
             ->with('items')
             ->get();
 
-        $shopifyOrderTotals = 0;
-        $shopifyItemTotals = 0;
+        $shopifyShippingOther = 0;
         foreach ($shopifyOrders as $order) {
-            $shopifyOrderTotals += $converter->convert((float) $order->total_price, $order->currency, $displayCurrency, $order->ordered_at);
-            foreach ($order->items as $item) {
-                $lineTotal = ($item->price * $item->quantity) - $item->total_discount;
-                $shopifyItemTotals += $converter->convert($lineTotal, $order->currency, $displayCurrency, $order->ordered_at);
-            }
+            $itemsTotal = $order->items->sum(fn ($item) => ($item->price * $item->quantity) - $item->total_discount);
+            $shopifyShippingOther += $converter->convert($netOfRetailVat((float) $order->total_price - $itemsTotal), $order->currency, $displayCurrency, $order->ordered_at);
         }
-        $shopifyShippingOther = $shopifyOrderTotals - $shopifyItemTotals;
 
         if (abs($shopifyShippingOther) > 0.01) {
             $unlinkedRevenue[] = [
@@ -219,35 +123,16 @@ class ProfitabilityController extends Controller
             ];
         }
 
-        // === COST ===
-        $costItems = StockMovement::query()
-            ->where('user_id', $user->id)
-            ->where('type', 'receipt')
-            ->where('cost_price', '>', 0)
-            ->whereBetween('created_at', [$fromDate, $toDate])
-            ->selectRaw('article_id, SUM(cost_price * quantity) as total_cost, SUM(quantity) as total_qty')
-            ->groupBy('article_id')
-            ->get();
-
-        $costByArticle = [];
-        $qtyPurchasedByArticle = [];
-        foreach ($costItems as $item) {
-            $articleId = $item->article_id;
-            $converted = $converter->convert($item->total_cost, 'MKD', $displayCurrency);
-            $costByArticle[$articleId] = $converted;
-            $qtyPurchasedByArticle[$articleId] = $item->total_qty;
-        }
-
         // Assemble per-article data
         $articleData = [];
         $totalRevenue = 0;
         $totalCost = 0;
 
         foreach ($articles as $article) {
-            $avgCost = $article->avg_cost_price;
-            $sellingPrice = (float) $article->price;
-            $revenue = $revenueByArticle[$article->id] ?? 0;
-            $cost = $costByArticle[$article->id] ?? 0;
+            $bal = $balances[$article->id] ?? null;
+            $avgCost = $bal && $bal['qty'] > 0 ? $bal['value'] / $bal['qty'] : null;
+            $revenue = $toDisplay($revenueByArticle[$article->id] ?? 0);
+            $cost = $toDisplay($costByArticle[$article->id] ?? 0);
             $qtySold = $qtySoldByArticle[$article->id] ?? 0;
             $qtyPurchased = $qtyPurchasedByArticle[$article->id] ?? 0;
 
@@ -255,8 +140,8 @@ class ProfitabilityController extends Controller
                 continue;
             }
 
-            $sellingPriceConverted = $converter->convert($sellingPrice, 'MKD', $displayCurrency);
-            $avgCostConverted = $avgCost ? $converter->convert($avgCost, 'MKD', $displayCurrency) : null;
+            $sellingPriceConverted = $toDisplay((float) $article->price);
+            $avgCostConverted = $avgCost ? $toDisplay($avgCost) : null;
 
             $theoreticalMargin = ($avgCostConverted && $sellingPriceConverted > 0)
                 ? round((($sellingPriceConverted - $avgCostConverted) / $sellingPriceConverted) * 100, 1)
@@ -275,7 +160,7 @@ class ProfitabilityController extends Controller
                 'name' => $article->name,
                 'unit' => $article->unit,
                 'selling_price' => round($sellingPriceConverted, 2),
-                'avg_cost' => $avgCostConverted ? round($avgCostConverted, 2) : null,
+                'avg_cost' => $avgCostConverted ? round($avgCostConverted, 4) : null,
                 'theoretical_margin' => $theoreticalMargin,
                 'qty_sold' => round($qtySold, 2),
                 'revenue' => round($revenue, 2),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\StockMovement;
 use Carbon\Carbon;
+use App\Services\StockValuationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -20,7 +21,16 @@ class WarehouseDashboardController extends Controller
         $trackedArticles = $user->articles()->where('track_inventory', true);
 
         $totalItems = (clone $trackedArticles)->count();
-        $totalStockValue = (float) (clone $trackedArticles)->selectRaw('SUM(stock_quantity * price) as value')->value('value') ?? 0;
+
+        // Stock valued at набавна цена (moving weighted average) — same basis as the accounting reports
+        $unitCost = [];
+        foreach (app(StockValuationService::class)->balancesAt($user->id, now()->toDateString()) as $articleId => $bal) {
+            if ($bal['qty'] > 0) {
+                $unitCost[$articleId] = $bal['value'] / $bal['qty'];
+            }
+        }
+        $totalStockValue = (float) (clone $trackedArticles)->where('stock_quantity', '>', 0)->get(['id', 'stock_quantity'])
+            ->sum(fn ($a) => (float) $a->stock_quantity * ($unitCost[$a->id] ?? 0));
         $lowStockCount = (int) (clone $trackedArticles)
             ->where('stock_quantity', '>', 0)
             ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
@@ -41,10 +51,14 @@ class WarehouseDashboardController extends Controller
         $topItemsByValue = $user->articles()
             ->where('track_inventory', true)
             ->where('stock_quantity', '>', 0)
-            ->selectRaw('id, name, unit, stock_quantity, price, (stock_quantity * price) as stock_value')
-            ->orderByDesc('stock_value')
-            ->limit(10)
-            ->get();
+            ->get(['id', 'name', 'unit', 'stock_quantity', 'price'])
+            ->each(function ($a) use ($unitCost) {
+                $a->price = round($unitCost[$a->id] ?? 0, 4);
+                $a->stock_value = round((float) $a->stock_quantity * $a->price, 2);
+            })
+            ->sortByDesc('stock_value')
+            ->take(10)
+            ->values();
 
         // Low stock items (need attention)
         $lowStockItems = $user->articles()

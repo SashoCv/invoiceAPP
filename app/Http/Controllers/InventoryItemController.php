@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\StockMovement;
 use App\Services\PdfService;
+use App\Services\StockValuationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -181,15 +182,24 @@ class InventoryItemController extends Controller implements HasMiddleware
 
         $reportDate = $asOfDate ?? now();
 
-        $rows = $items->map(function (Article $item) {
-            $value = (float) $item->stock_quantity * (float) $item->price;
+        // Valued at набавна цена (moving weighted average on the report date) — same basis
+        // as the accounting reports' лагер листа
+        $unitCost = [];
+        foreach (app(StockValuationService::class)->balancesAt($request->user()->id, $reportDate->toDateString()) as $articleId => $bal) {
+            if ($bal['qty'] > 0) {
+                $unitCost[$articleId] = $bal['value'] / $bal['qty'];
+            }
+        }
+
+        $rows = $items->map(function (Article $item) use ($unitCost) {
+            $price = round($unitCost[$item->id] ?? 0, 4);
             return [
                 'code' => $item->code,
                 'name' => $item->name,
                 'unit' => $item->unit,
                 'quantity' => (float) $item->stock_quantity,
-                'price' => (float) $item->price,
-                'value' => $value,
+                'price' => $price,
+                'value' => round((float) $item->stock_quantity * $price, 2),
             ];
         });
 

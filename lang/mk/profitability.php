@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Профитабилност',
-    'subtitle' => 'Профитни маржи по артикл и анализа (цени со ДДВ)',
+    'subtitle' => 'Профитни маржи по артикл и анализа (цени без ДДВ, набавна по подвижна просечна цена)',
 
     // Period filter
     'from' => 'Од',
@@ -14,20 +14,20 @@ return [
     'total_cost' => 'Вкупен трошок',
     'total_profit' => 'Вкупен профит',
     'overall_margin' => 'Вкупна маржа',
-    'from_paid_invoices' => 'фактури + Shopify (со ДДВ)',
-    'from_goods_receipts' => 'од приемници',
+    'from_paid_invoices' => 'фактури + Shopify (без ДДВ)',
+    'from_goods_receipts' => 'набавна вредност на продаденото',
     'revenue_minus_cost' => 'приход - трошок',
 
     // Table headers
     'article' => 'Артикл',
     'unit' => 'Единица',
     'selling_price' => 'Продажна цена',
-    'avg_cost' => 'Просечен трошок',
+    'avg_cost' => 'Просечна набавна цена',
     'theoretical_margin' => 'Маржа',
     'qty_sold' => 'Продадено',
     'revenue' => 'Приход',
     'qty_purchased' => 'Набавено',
-    'cost' => 'Трошок',
+    'cost' => 'Набавна вредност',
     'profit' => 'Профит',
     'actual_margin' => 'Маржа',
 

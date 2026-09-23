@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Profitability',
-    'subtitle' => 'Per-article profit margins and analysis (prices incl. VAT)',
+    'subtitle' => 'Per-article profit margins and analysis (prices excl. VAT, moving average cost)',
 
     // Period filter
     'from' => 'From',
@@ -14,20 +14,20 @@ return [
     'total_cost' => 'Total Cost',
     'total_profit' => 'Total Profit',
     'overall_margin' => 'Overall Margin',
-    'from_paid_invoices' => 'invoices + Shopify (incl. VAT)',
-    'from_goods_receipts' => 'from goods receipts',
+    'from_paid_invoices' => 'invoices + Shopify (excl. VAT)',
+    'from_goods_receipts' => 'cost of goods sold',
     'revenue_minus_cost' => 'revenue - cost',
 
     // Table headers
     'article' => 'Article',
     'unit' => 'Unit',
     'selling_price' => 'Selling Price',
-    'avg_cost' => 'Avg Cost',
+    'avg_cost' => 'Avg purchase cost',
     'theoretical_margin' => 'Margin',
     'qty_sold' => 'Qty Sold',
     'revenue' => 'Revenue',
     'qty_purchased' => 'Qty Purchased',
-    'cost' => 'Cost',
+    'cost' => 'Cost of goods sold',
     'profit' => 'Profit',
     'actual_margin' => 'Margin',
 

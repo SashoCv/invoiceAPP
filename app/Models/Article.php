@@ -61,6 +61,14 @@ class Article extends Model
         return $this->price * (1 + $this->tax_rate / 100);
     }
 
+    /**
+     * Retail (продажна) price per unit including VAT — the price goods enter Образец ЕТ at.
+     */
+    public function retailPriceWithTax(): float
+    {
+        return round((float) $this->price * (1 + (float) $this->tax_rate / 100), 4);
+    }
+
     public function getStockStatusAttribute(): string
     {
         if (!$this->track_inventory) {
@@ -102,7 +110,7 @@ class Article extends Model
         ]);
     }
 
-    public function addStock(float $quantity, ?string $notes = null, string $type = 'receipt'): StockMovement
+    public function addStock(float $quantity, ?string $notes = null, string $type = 'receipt', ?string $referenceType = null, ?int $referenceId = null): StockMovement
     {
         $before = $this->stock_quantity;
         $this->stock_quantity += $quantity;
@@ -114,6 +122,8 @@ class Article extends Model
             'quantity' => $quantity,
             'quantity_before' => $before,
             'quantity_after' => $this->stock_quantity,
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
             'notes' => $notes,
         ]);
     }

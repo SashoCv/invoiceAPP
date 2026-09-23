@@ -11,6 +11,12 @@
             'invoice' => 'Фактура',
             'shopify' => 'Shopify',
             'fiscal' => 'Дн. фис. извештај',
+            'carryover' => 'Пренос (почетна состојба)',
+            'opening' => 'Почетна состојба',
+            'surplus' => 'Вишок / рачен влез',
+            'return' => 'Поврат',
+            'shortage' => 'Кусок / рачен излез',
+            'leveling' => 'Нивелација',
         ];
         $fmt = fn ($n) => number_format((float) $n, 2, ',', ' ');
     @endphp
@@ -155,9 +161,9 @@
                     <td>{{ $typeLabels[$row['type']] ?? $row['type'] }}</td>
                     <td>{{ $row['doc_number'] }}</td>
                     <td class="center">{{ $row['doc_date'] }}</td>
-                    <td class="right">{{ $row['purchase_value'] > 0 ? $fmt($row['purchase_value']) : '0,00' }}</td>
-                    <td class="right">{{ $row['sales_value'] > 0 ? $fmt($row['sales_value']) : '0,00' }}</td>
-                    <td class="right col-turnover">{{ $row['daily_turnover'] > 0 ? $fmt($row['daily_turnover']) : '0,00' }}</td>
+                    <td class="right">{{ $fmt($row['purchase_value']) }}</td>
+                    <td class="right">{{ $fmt($row['sales_value']) }}</td>
+                    <td class="right col-turnover">{{ $fmt($row['daily_turnover']) }}</td>
                 </tr>
                 @empty
                 <tr>
@@ -181,7 +187,7 @@
         </table>
 
         <div style="font-size: 7pt; color: #6b7280; margin-top: 4px;">
-            Разлика (Продажна − Набавна вредност) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['purchase_value']) }} ден. Испратниците (гратис/промоции/реклама) немаат набавна вредност тука (веќе е книжена на приемницата) и не влегуваат во дневен промет (не се плаќаат), но продажната колона кај нив ја покажува вредноста на дадената стока по набавна цена — за евиденција колку сте дале гратис.
+            Залиха по продажни цени (кол. 6 − кол. 7) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['daily_turnover']) }} ден. Нивелацијата (разлика меѓу полната продажна цена и продадената цена — попусти) се книжи дневно со минус во кол. 6. Испратниците (промоции, гратис) и кусоците влегуваат во дневниот промет по продажна вредност.
         </div>
 
         {{-- Signature --}}

@@ -110,6 +110,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
                 'quantity_after' => $article->stock_quantity,
                 'cost_price' => $item['cost_price'],
                 'tax_rate' => $taxRate,
+                'retail_price' => $article->retailPriceWithTax(),
                 'reference_type' => 'goods_receipt',
                 'reference_id' => $receipt->id,
                 'notes' => $validated['notes'] ?? null,
@@ -163,6 +164,8 @@ class GoodsReceiptController extends Controller implements HasMiddleware
 
         // Reverse old movements
         $oldMovements = $goodsReceipt->movements;
+        // Editing keeps the retail price the goods were received at (ЕТ is kept at that price)
+        $oldRetailPrices = $oldMovements->whereNotNull('retail_price')->pluck('retail_price', 'article_id')->all();
         foreach ($oldMovements as $movement) {
             $article = Article::where('user_id', $user->id)->find($movement->article_id);
             if ($article) {
@@ -194,6 +197,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
                 'quantity_after' => $article->stock_quantity,
                 'cost_price' => $item['cost_price'],
                 'tax_rate' => $taxRate,
+                'retail_price' => $oldRetailPrices[$article->id] ?? $article->retailPriceWithTax(),
                 'reference_type' => 'goods_receipt',
                 'reference_id' => $goodsReceipt->id,
                 'notes' => $validated['notes'] ?? null,

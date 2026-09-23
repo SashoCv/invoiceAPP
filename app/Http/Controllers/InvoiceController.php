@@ -291,8 +291,11 @@ class InvoiceController extends Controller implements HasMiddleware
             ]);
         }
 
-        // Restore stock from old items before replacing (using article_id from existing items)
-        $this->restoreStockForInvoice($invoice);
+        // Restore stock from old items before replacing (a cancelled invoice already gave its stock back)
+        $wasCancelled = $invoice->status === 'cancelled';
+        if (!$wasCancelled) {
+            $this->restoreStockForInvoice($invoice);
+        }
 
         $invoice->update([
             'invoice_number' => Invoice::formatInvoiceNumber($validated['invoice_prefix'] ?? null, $invoiceYear, $validated['invoice_sequence']),
@@ -324,25 +327,15 @@ class InvoiceController extends Controller implements HasMiddleware
                 'article_id' => $item['article_id'] ?? null,
                 'bundle_id' => $item['bundle_id'] ?? null,
             ]);
-
-            // Deduct stock for articles with inventory tracking
-            if (!empty($item['article_id'])) {
-                $article = Article::find($item['article_id']);
-                if ($article && $article->track_inventory) {
-                    $article->deductStock($item['quantity'], 'invoice', $invoice->id);
-                }
-            }
-
-            // Deduct component stocks for bundles
-            if (!empty($item['bundle_id'])) {
-                $bundle = Bundle::with('bundleItems.article')->find($item['bundle_id']);
-                if ($bundle) {
-                    $bundle->deductComponentStocks($item['quantity'], 'invoice', $invoice->id);
-                }
-            }
         }
 
         $invoice->load('items');
+
+        // A cancelled invoice is not a stock output
+        if ($validated['status'] !== 'cancelled') {
+            $this->deductStockForInvoice($invoice);
+        }
+
         $invoice->calculateTotals();
 
         return redirect()->route('invoices.show', $invoice)->with('success', __('toast.invoice_updated'));
@@ -352,7 +345,9 @@ class InvoiceController extends Controller implements HasMiddleware
     {
         $this->authorize('delete', $invoice);
 
-        $this->restoreStockForInvoice($invoice);
+        if ($invoice->status !== 'cancelled') {
+            $this->restoreStockForInvoice($invoice);
+        }
 
         $invoice->items()->delete();
         $invoice->delete();
@@ -391,10 +386,20 @@ class InvoiceController extends Controller implements HasMiddleware
             'status' => ['required', 'in:draft,sent,unpaid,paid,overdue,cancelled'],
         ]);
 
+        $wasCancelled = $invoice->status === 'cancelled';
+        $isCancelled = $validated['status'] === 'cancelled';
+
         $invoice->update([
             'status' => $validated['status'],
             'paid_date' => $validated['status'] === 'paid' ? now() : null,
         ]);
+
+        // Cancelling gives the stock back; un-cancelling takes it out again
+        if (!$wasCancelled && $isCancelled) {
+            $this->restoreStockForInvoice($invoice);
+        } elseif ($wasCancelled && !$isCancelled) {
+            $this->deductStockForInvoice($invoice);
+        }
 
         return back()->with('success', __('toast.invoice_updated'));
     }
@@ -439,6 +444,11 @@ class InvoiceController extends Controller implements HasMiddleware
 
         $invoice->restore();
 
+        // Deleting gave the stock back, so take it out again
+        if ($invoice->status !== 'cancelled') {
+            $this->deductStockForInvoice($invoice);
+        }
+
         return redirect()->route('invoices.show', $invoice)->with('success', __('toast.invoice_restored'));
     }
 
@@ -466,7 +476,9 @@ class InvoiceController extends Controller implements HasMiddleware
                     $article->addStock(
                         $item->quantity,
                         "Restored: invoice #{$invoice->invoice_number}",
-                        'adjustment'
+                        'adjustment',
+                        'invoice_restore',
+                        $invoice->id
                     );
                 }
             }
@@ -474,7 +486,29 @@ class InvoiceController extends Controller implements HasMiddleware
             if ($item->bundle_id) {
                 $bundle = Bundle::with('bundleItems.article')->find($item->bundle_id);
                 if ($bundle) {
-                    $bundle->restoreComponentStocks($item->quantity, 'invoice', $invoice->id);
+                    $bundle->restoreComponentStocks($item->quantity, 'invoice_restore', $invoice->id);
+                }
+            }
+        }
+    }
+
+    /**
+     * Deduct stock for all items in an invoice that have tracked articles or bundles.
+     */
+    private function deductStockForInvoice(Invoice $invoice): void
+    {
+        foreach ($invoice->items as $item) {
+            if ($item->article_id) {
+                $article = Article::find($item->article_id);
+                if ($article && $article->track_inventory) {
+                    $article->deductStock($item->quantity, 'invoice', $invoice->id);
+                }
+            }
+
+            if ($item->bundle_id) {
+                $bundle = Bundle::with('bundleItems.article')->find($item->bundle_id);
+                if ($bundle) {
+                    $bundle->deductComponentStocks($item->quantity, 'invoice', $invoice->id);
                 }
             }
         }

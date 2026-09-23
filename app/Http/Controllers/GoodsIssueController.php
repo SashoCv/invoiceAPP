@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\GoodsIssue;
 use App\Models\StockMovement;
 use Illuminate\Http\RedirectResponse;
+use App\Services\StockValuationService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -120,6 +121,19 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $goodsIssue->load('client:id,name,company');
         $movements = $goodsIssue->movements()->with('article:id,name,unit')->get();
+
+        // Show the набавна цена the accounting reports use (moving average on the issue date)
+        $cost = [];
+        foreach (app(StockValuationService::class)->documentEvents($goodsIssue->user_id, 'issue:' . $goodsIssue->id) as $e) {
+            $cost[$e['article_id']]['qty'] = ($cost[$e['article_id']]['qty'] ?? 0) + $e['qty'];
+            $cost[$e['article_id']]['value'] = ($cost[$e['article_id']]['value'] ?? 0) + $e['cost_value'];
+        }
+        foreach ($movements as $movement) {
+            $c = $cost[$movement->article_id] ?? null;
+            if ($c && $c['qty'] > 0) {
+                $movement->cost_price = round($c['value'] / $c['qty'], 4);
+            }
+        }
 
         return Inertia::render('Inventory/GoodsIssues/Show', [
             'issue' => $goodsIssue,

@@ -440,7 +440,7 @@ export default function WarehouseDashboard({
                                         <TableRow>
                                             <TableHead>{t('inventory.name')}</TableHead>
                                             <TableHead className="text-right">{t('inventory.stock_quantity')}</TableHead>
-                                            <TableHead className="text-right">{t('inventory.price')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.dashboard_avg_cost')}</TableHead>
                                             <TableHead className="text-right">{t('inventory.dashboard_value')}</TableHead>
                                         </TableRow>
                                     </TableHeader>

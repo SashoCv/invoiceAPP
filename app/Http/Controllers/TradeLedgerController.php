@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DailyFiscalReport;
 use App\Services\PdfService;
+use App\Services\StockValuationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,16 +17,22 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 /**
  * Образец ЕТ — Евиденција во трговија (Trade ledger).
  *
- * Each accounting document (goods receipt, goods issue, invoice, Shopify orders
- * aggregated per day) is one row with its purchase value (набавна) and sales value
- * (продажна). Invoice and Shopify rows also carry their own amount in дневен промет
- * for visibility, but that column's period/grand total only sums the "Дн. фис.
- * извештај" row per day — the actual day total, computed from invoices
- * (sent/paid/overdue only) + Shopify sales, or overridden by a manually entered
- * fiscal (Z) report — so nothing is double-counted.
+ * Kept at продажни цени со ДДВ. Each accounting document is one row: inputs carry
+ * набавна (кол. 5) and продажна (кол. 6) вредност; the daily нивелација lowers кол. 6
+ * by the discounts given; испратници and кусоци go out through дневен промет (кол. 7).
+ * Invoice and Shopify rows show their own amount in дневен промет for visibility, but
+ * only the "Дн. фис. извештај" row per day counts in the totals — the day total from
+ * invoices + Shopify, or a manually entered fiscal (Z) report — so nothing is
+ * double-counted.
  */
 class TradeLedgerController extends Controller implements HasMiddleware
 {
+    /** Row types whose дневен промет counts in the totals (the rest is per-document detail) */
+    private const TURNOVER_TYPES = ['fiscal', 'issue', 'shortage'];
+
+    /** @var array<int, array<int, float>> article VAT rates per user */
+    private array $taxRates = [];
+
     public static function middleware(): array
     {
         return [
@@ -81,6 +88,84 @@ class TradeLedgerController extends Controller implements HasMiddleware
 
         return response()->download($pdfPath, $filename, [
             'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Записник за нивелација for one day — the document behind that day's "НИВ" row in ЕТ.
+     * Per sales document and article: the full продажна вредност со ДДВ the goods were
+     * carried at, what they were sold for, the difference and the ДДВ contained in it.
+     */
+    public function levelingPdf(Request $request, string $date, PdfService $pdfService): BinaryFileResponse
+    {
+        try {
+            $day = Carbon::createFromFormat('Y-m-d', $date);
+        } catch (\Exception $e) {
+            abort(404);
+        }
+
+        $user = $request->user();
+        $valuation = app(StockValuationService::class);
+        $docsMeta = $valuation->documents($user->id);
+        $articles = $user->articles()->withTrashed()->get(['id', 'code', 'name', 'unit', 'tax_rate'])->keyBy('id');
+        $typeLabels = ['invoice' => 'Фактура', 'shopify' => 'Е-трговија'];
+
+        $docs = [];
+        foreach ($valuation->eventsBetween($user->id, $day->toDateString(), $day->toDateString()) as $e) {
+            if (!in_array($e['doc_type'], ['invoice', 'shopify'], true) || abs($e['leveling']) < 0.005) {
+                continue;
+            }
+
+            $article = $articles->get($e['article_id']);
+            $rate = $e['doc_type'] === 'shopify' ? StockValuationService::RETAIL_VAT : (float) ($article->tax_rate ?? 0);
+            $meta = $docsMeta[$e['doc_key']] ?? [];
+
+            $docs[$e['doc_key']] ??= [
+                'label' => $typeLabels[$e['doc_type']] . ' ' . ($meta['number'] ?? ''),
+                'partner' => $meta['partner'] ?? null,
+                'lines' => [],
+            ];
+            $docs[$e['doc_key']]['lines'][] = [
+                'code' => $article->code ?? '',
+                'name' => $article->name ?? ('#' . $e['article_id']),
+                'unit' => $article->unit ?? '',
+                'quantity' => $e['qty'],
+                'full_unit' => $e['retail_unit'],
+                'full_value' => $e['retail_value'],
+                'sold_value' => round($e['sales_no_tax'] + $e['sales_tax'], 2),
+                'difference' => $e['leveling'],
+                // ДДВ содржан во разликата (пресметковна стапка = стапка / (100 + стапка))
+                'difference_tax' => round($e['leveling'] * $rate / (100 + $rate), 2),
+            ];
+        }
+
+        $sum = fn (array $lines, string $f) => round(array_sum(array_column($lines, $f)), 2);
+        $docs = array_values(array_map(function ($d) use ($sum) {
+            foreach (['full_value', 'sold_value', 'difference', 'difference_tax'] as $f) {
+                $d['totals'][$f] = $sum($d['lines'], $f);
+            }
+            return $d;
+        }, $docs));
+
+        $allLines = array_merge(...array_map(fn ($d) => $d['lines'], $docs ?: [['lines' => []]]));
+        $totals = [];
+        foreach (['full_value', 'sold_value', 'difference', 'difference_tax'] as $f) {
+            $totals[$f] = $sum($allLines, $f);
+        }
+
+        $pdfPath = $pdfService->generateLevelingPdf([
+            'agency' => $user->agency,
+            'authorizedPerson' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name,
+            'number' => 'НИВ-' . $day->format('d.m.Y'),
+            'date' => $day->format('d.m.Y'),
+            'printedAt' => now()->format('d.m.Y H:i'),
+            'docs' => $docs,
+            'totals' => $totals,
+        ]);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Nivelacija_' . $day->toDateString() . '.pdf"',
         ])->deleteFileAfterSend(true);
     }
 
@@ -156,72 +241,101 @@ class TradeLedgerController extends Controller implements HasMiddleware
      * Build the full ledger from the start of the period's year up to $to so that
      * row numbers and the cumulative "Вкупно" total are correct, then expose only
      * the rows within [$from, $to] for display.
+     *
+     * Образец ЕТ по продажни цени со ДДВ (Правилник, Сл. весник 51/04, 89/04):
+     *  - кол. 5 набавна вредност со ДДВ (ПЛТ кол. 6 + 7) — приеми, почетна, вишоци
+     *  - кол. 6 продажна вредност со ДДВ (ПЛТ кол. 10) — приеми, почетна, вишоци, поврати,
+     *    and the daily нивелација (red storno, negative) for goods sold below full price
+     *  - кол. 7 дневен промет — invoices + Shopify per day (or the manual Z report), plus
+     *    испратници (промоции, гратис) and кусоци at продажна вредност
+     * Залиха по продажни цени = Σ кол. 6 − Σ кол. 7. All values come from
+     * StockValuationService so they agree with the accounting reports.
      */
     private function buildLedger($user, Carbon $from, Carbon $to): array
     {
-        $yearStart = $from->copy()->startOfYear();
+        $yearStart = $from->copy()->startOfYear()->toDateString();
+        $toDate = $to->toDateString();
+        $valuation = app(StockValuationService::class);
 
         $rows = collect();
 
-        // 1. Goods receipts → Прием од магацин
-        foreach ($user->goodsReceipts()->with('movements.article')->whereBetween('date', [$yearStart, $to])->get() as $receipt) {
-            $purchase = 0;
-            $sales = 0;
-            foreach ($receipt->movements as $m) {
-                $qty = (float) $m->quantity;
-                $taxRate = (float) ($m->tax_rate ?? 0);
-                $purchase += $qty * (float) ($m->cost_price ?? 0) * (1 + $taxRate / 100);
-                $sales += $qty * (float) ($m->article->price ?? 0);
+        // 0. Пренос — stock carried over from before the year, at both prices
+        $carry = $valuation->balancesBefore($user->id, $yearStart);
+        $carryRetail = round(array_sum(array_column($carry, 'retail')), 2);
+        if (abs($carryRetail) >= 0.01) {
+            $taxRates = $user->articles()->withTrashed()->pluck('tax_rate', 'id');
+            $carryPurchase = 0;
+            foreach ($carry as $articleId => $bal) {
+                $carryPurchase += $bal['value'] * (1 + (float) ($taxRates[$articleId] ?? 0) / 100);
             }
-            $rows->push($this->row($receipt->date, 'receipt', $receipt->receipt_number, $receipt->date, $purchase, $sales, 0));
+            $date = Carbon::parse($yearStart);
+            $rows->push($this->row($date, 'carryover', '—', $date, $carryPurchase, $carryRetail, 0));
         }
 
-        // 2. Goods issues → Испратница. These are gratis (промоции/спонзорства/реклама).
-        // No purchase happens here (the goods were already bought, recorded on their
-        // "Прием" row) — набавна = 0, to avoid double-counting that cost. No cash
-        // changes hands either — дневен промет = 0. But продажна вредност shows what
-        // was actually given away (at average cost), so you can see how much value
-        // went out as gratis/promotions.
-        foreach ($user->goodsIssues()->with('movements')->whereBetween('date', [$yearStart, $to])->get() as $issue) {
-            $givenAway = $issue->movements->sum(fn ($m) => (float) $m->quantity * (float) ($m->cost_price ?? 0));
-            $rows->push($this->row($issue->date, 'issue', $issue->issue_number, $issue->date, 0, $givenAway, 0));
+        // 1. Documents from the stock replay, one row per document
+        $docs = $valuation->documents($user->id);
+        $perDoc = [];
+        $levelingByDay = [];
+        foreach ($valuation->eventsBetween($user->id, $yearStart, $toDate) as $e) {
+            $key = $e['doc_key'];
+            $perDoc[$key] ??= ['type' => $e['doc_type'], 'date' => $e['date'], 'purchase' => 0.0, 'retail' => 0.0];
+            $perDoc[$key]['purchase'] += $e['cost_value'] + round($e['cost_value'] * $this->purchaseTaxRate($e, $user) / 100, 2);
+            $perDoc[$key]['retail'] += $e['retail_value'];
+
+            if ($e['leveling'] != 0) {
+                $levelingByDay[$e['date']] = ($levelingByDay[$e['date']] ?? 0) + $e['leveling'];
+            }
         }
 
-        // 3. Invoices → Фактура (sales value = invoice total). Only real, issued
-        // invoices count — drafts and cancelled ones aren't actual sales.
-        foreach ($user->invoices()
-            ->whereIn('status', ['sent', 'paid', 'overdue'])
-            ->whereBetween('issue_date', [$yearStart, $to])
-            ->get() as $invoice) {
-            $rows->push($this->row($invoice->issue_date, 'invoice', $invoice->invoice_number, $invoice->issue_date, 0, (float) $invoice->total, (float) $invoice->total));
+        foreach ($perDoc as $key => $d) {
+            $date = Carbon::parse($d['date']);
+            $number = $docs[$key]['number'] ?? '—';
+
+            match ($d['type']) {
+                // Inputs: набавна (кол. 5) and продажна (кол. 6)
+                'receipt', 'opening', 'surplus' => $rows->push($this->row($date, $d['type'], $number, $date, $d['purchase'], $d['retail'], 0)),
+                // Returned goods go back into stock at продажна вредност
+                'return' => $rows->push($this->row($date, 'return', $number, $date, 0, $d['retail'], 0)),
+                // Промоции / гратис and кусоци leave the stock through дневен промет
+                'issue', 'shortage' => $rows->push($this->row($date, $d['type'], $number, $date, 0, 0, $d['retail'])),
+                default => null, // invoices and Shopify: shown below by amount
+            };
         }
 
-        // 3b. Shopify → "Shopify" row, one per day (aggregated), sales value = that
-        // day's paid orders total. Shown just like an invoice row so продажна
-        // вредност is visible per document, not only folded into дневен промет.
+        // 2. Invoices → Фактура. Every invoice that took goods out of stock (all but
+        // cancelled/deleted) — the same set as the stock and the accounting reports.
+        $invoices = $user->invoices()
+            ->where('status', '!=', 'cancelled')
+            ->whereBetween('issue_date', [$yearStart, $toDate])
+            ->get(['id', 'invoice_number', 'issue_date', 'total']);
+        foreach ($invoices as $invoice) {
+            $rows->push($this->row($invoice->issue_date, 'invoice', $invoice->invoice_number, $invoice->issue_date, 0, 0, (float) $invoice->total));
+        }
+        $invoiceByDay = $invoices->groupBy(fn ($i) => $i->issue_date->toDateString())->map(fn ($g) => $g->sum('total'));
+
+        // 3. Shopify → one row per day
         $shopifyByDay = $user->shopifyOrders()
-            ->where('financial_status', 'paid')
             ->whereBetween('ordered_at', [$yearStart, $to])
             ->selectRaw('DATE(ordered_at) as d, SUM(total_price) as t')
             ->groupBy('d')->pluck('t', 'd');
-
         foreach ($shopifyByDay as $day => $total) {
             $date = Carbon::parse($day);
-            $amount = (float) $total;
-            if ($amount > 0) {
-                $rows->push($this->row($date, 'shopify', '—', $date, 0, $amount, $amount));
+            if ((float) $total > 0) {
+                $rows->push($this->row($date, 'shopify', '—', $date, 0, 0, (float) $total));
             }
         }
 
-        // 4. Дневен промет → Дн. фис. извештај (manual overrides auto invoices + Shopify)
-        $invoiceByDay = $user->invoices()
-            ->whereIn('status', ['sent', 'paid', 'overdue'])
-            ->whereBetween('issue_date', [$yearStart, $to])
-            ->selectRaw('DATE(issue_date) as d, SUM(total) as t')
-            ->groupBy('d')->pluck('t', 'd');
+        // 4. Нивелација — daily difference between full продажна and actual sale price
+        foreach ($levelingByDay as $day => $amount) {
+            if (abs($amount) >= 0.01) {
+                $date = Carbon::parse($day);
+                $rows->push($this->row($date, 'leveling', 'НИВ-' . $date->format('d.m.Y'), $date, 0, $amount, 0));
+            }
+        }
 
+        // 5. Дневен промет → Дн. фис. извештај (manual overrides auto invoices + Shopify)
         $manualByDay = $user->dailyFiscalReports()
-            ->whereBetween('date', [$yearStart, $to])
+            ->whereBetween('date', [$yearStart, $toDate])
             ->get()
             ->keyBy(fn ($r) => $r->date->toDateString());
 
@@ -243,8 +357,11 @@ class TradeLedgerController extends Controller implements HasMiddleware
             }
         }
 
-        // Sort: by booking date, documents before the daily fiscal report of the same day
-        $typeOrder = ['receipt' => 0, 'issue' => 1, 'invoice' => 2, 'shopify' => 3, 'fiscal' => 4];
+        // Sort: by booking date; inputs, then outputs, sales documents, нивелација, day total
+        $typeOrder = [
+            'carryover' => 0, 'opening' => 1, 'receipt' => 2, 'surplus' => 3, 'return' => 4,
+            'issue' => 5, 'shortage' => 6, 'invoice' => 7, 'shopify' => 8, 'leveling' => 9, 'fiscal' => 10,
+        ];
         $sorted = $rows->sort(function ($a, $b) use ($typeOrder) {
             $cmp = $a['_sortDate'] <=> $b['_sortDate'];
             if ($cmp !== 0) return $cmp;
@@ -266,11 +383,26 @@ class TradeLedgerController extends Controller implements HasMiddleware
         ];
     }
 
+    /**
+     * ДДВ on the purchase value (ПЛТ кол. 7): the receipt line's own rate, otherwise the article's.
+     */
+    private function purchaseTaxRate(array $event, $user): float
+    {
+        if ($event['doc_type'] === 'receipt') {
+            return (float) $event['tax_rate'];
+        }
+
+        $this->taxRates[$user->id] ??= $user->articles()->withTrashed()->pluck('tax_rate', 'id')->all();
+
+        return (float) ($this->taxRates[$user->id][$event['article_id']] ?? 0);
+    }
+
     private function row(Carbon $bookingDate, string $type, ?string $number, Carbon $docDate, float $purchase, float $sales, float $turnover): array
     {
         return [
             'type' => $type,
             '_sortDate' => $bookingDate->toDateString(),
+            'date_iso' => $bookingDate->toDateString(),
             'booking_date' => $bookingDate->format('d.m.Y'),
             'doc_number' => $number ?? '',
             'doc_date' => $docDate->format('d.m.Y'),
@@ -288,8 +420,9 @@ class TradeLedgerController extends Controller implements HasMiddleware
             // Invoice rows also carry their own amount in daily_turnover (for display,
             // so you can see each invoice's contribution) — only the "fiscal" row per
             // day is the real day total, so that's the only type summed here to avoid
-            // double-counting the same money twice.
-            'daily_turnover' => round($rows->where('type', 'fiscal')->sum('daily_turnover'), 2),
+            // double-counting the same money twice. Испратници and кусоци carry their
+            // own продажна вредност in this column (goods out without payment).
+            'daily_turnover' => round($rows->whereIn('type', self::TURNOVER_TYPES)->sum('daily_turnover'), 2),
         ];
     }
 }

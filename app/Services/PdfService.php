@@ -7,7 +7,6 @@ use App\Models\ProformaInvoice;
 use App\Models\Offer;
 use App\Models\GoodsIssue;
 use App\Models\GoodsReceipt;
-use App\Models\StockMovement;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Str;
@@ -316,25 +315,19 @@ class PdfService
     {
         $invoice->load(['items.article', 'items.bundle.bundleItems.article', 'client', 'user.agency']);
 
-        $articleIds = $invoice->items->pluck('article_id')->filter();
-
-        // Bundle line items have no article_id of their own — their cost is derived
-        // from their component articles, so those need average costs too.
-        foreach ($invoice->items as $item) {
-            if ($item->bundle) {
-                $articleIds = $articleIds->merge($item->bundle->bundleItems->pluck('article_id'));
-            }
+        // Набавна вредност per invoice line from the stock valuation (moving weighted
+        // average on the invoice date) — the same figures as the accounting reports.
+        // Lines without stock (services, untracked articles) have no purchase value.
+        $lineCost = [];
+        // Нивелација of this invoice in Образец ЕТ: full продажна вредност со ДДВ the goods
+        // were carried at vs. what the invoice sold them for (informative, for tracing to ЕТ)
+        $leveling = ['full' => 0.0, 'sold' => 0.0, 'amount' => 0.0];
+        foreach (app(StockValuationService::class)->documentEvents($invoice->user_id, 'invoice:' . $invoice->id) as $e) {
+            $lineCost[$e['line_id']] = ($lineCost[$e['line_id']] ?? 0) + $e['cost_value'];
+            $leveling['full'] += $e['retail_value'];
+            $leveling['sold'] += $e['sales_no_tax'] + $e['sales_tax'];
+            $leveling['amount'] += $e['leveling'];
         }
-        $articleIds = $articleIds->unique()->values();
-
-        $avgCosts = $articleIds->isEmpty()
-            ? collect()
-            : StockMovement::whereIn('article_id', $articleIds)
-                ->where('type', 'receipt')
-                ->where('cost_price', '>', 0)
-                ->selectRaw('article_id, SUM(cost_price * quantity) / SUM(quantity) as avg_cost')
-                ->groupBy('article_id')
-                ->pluck('avg_cost', 'article_id');
 
         $rows = [];
         $tariffs = [];
@@ -347,20 +340,15 @@ class PdfService
             $additionalDiscountPct = (float) ($item->additional_discount ?? 0);
 
             if ($item->bundle) {
-                // Bundle cost = sum of each component's average cost × its quantity in the set.
-                $avgCost = 0.0;
-                foreach ($item->bundle->bundleItems as $bundleItem) {
-                    $avgCost += (float) ($avgCosts[$bundleItem->article_id] ?? 0) * (float) $bundleItem->quantity;
-                }
                 $code = $item->code ?: ($item->bundle->code ?: ($item->bundle->sku ?? ''));
                 $unit = 'компл.';
             } else {
-                $avgCost = (float) ($avgCosts[$item->article_id] ?? 0); // покупна цена по единица, без ДДВ
                 $code = $item->code ?: ($item->article->code ?? '');
                 $unit = $item->article->unit ?? '';
             }
 
-            $purchaseAmount = $avgCost * $qty;
+            $purchaseAmount = round($lineCost[$item->id] ?? 0, 2);   // набавна вредност, без ДДВ
+            $avgCost = $qty > 0 ? $purchaseAmount / $qty : 0;         // набавна цена по единица
             $transferredTax = $purchaseAmount * $taxRate / 100;
 
             // Recompute from price/qty/discount/tax (same basis as InvoiceItem::booted)
@@ -432,6 +420,8 @@ class PdfService
             'rows' => $rows,
             'tariffs' => array_values($tariffs),
             'totals' => $totals,
+            'leveling' => array_map(fn ($v) => round($v, 2), $leveling),
+            'levelingDate' => $invoice->issue_date?->format('d.m.Y'),
         ];
 
         $tempDir = storage_path('app/temp');
@@ -521,6 +511,64 @@ class PdfService
         $browsershot->save($pdfFile);
 
         return $pdfFile;
+    }
+
+    /**
+     * Generate the daily price-leveling record PDF (Записник за нивелација).
+     */
+    public function generateLevelingPdf(array $data): string
+    {
+        return $this->renderLandscapePdf('pdf.leveling', $data, 'leveling');
+    }
+
+    /**
+     * Render a Blade view to an A4 landscape PDF with the configured engine.
+     */
+    private function renderLandscapePdf(string $view, array $data, string $prefix): string
+    {
+        $tempDir = storage_path('app/temp');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $pdfFile = $tempDir . '/' . $prefix . '_' . Str::random(8) . '.pdf';
+
+        if (config('app.pdf_engine', 'browsershot') === 'dompdf') {
+            file_put_contents($pdfFile, Pdf::loadView($view, $data)->setPaper('a4', 'landscape')->output());
+            return $pdfFile;
+        }
+
+        $browsershot = Browsershot::html(view($view, $data)->render())
+            ->format('A4')
+            ->landscape()
+            ->margins(0, 0, 0, 0)
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->timeout(60);
+
+        if ($nodeBinary = config('app.node_binary')) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+        if ($npmBinary = config('app.npm_binary')) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        $npmPath = base_path('node_modules');
+        if (is_dir($npmPath)) {
+            $browsershot->setNodeModulePath($npmPath);
+        }
+
+        $browsershot->save($pdfFile);
+
+        return $pdfFile;
+    }
+
+    /**
+     * Generate the accounting report PDF (влезни / излезни калкулации, лагер по набавни цени).
+     */
+    public function generateAccountingReportPdf(array $data): string
+    {
+        return $this->renderLandscapePdf('pdf.accounting-report', $data, 'accounting_report');
     }
 
     /**

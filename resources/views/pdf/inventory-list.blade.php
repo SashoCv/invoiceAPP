@@ -182,8 +182,8 @@
                     <th style="width: 38%;">Име</th>
                     <th style="width: 12%;">Ед. мерка</th>
                     <th class="right" style="width: 12%;">Залиха</th>
-                    <th class="right" style="width: 13%;">Цена</th>
-                    <th class="right" style="width: 13%;">Вредност</th>
+                    <th class="right" style="width: 13%;">Набавна цена</th>
+                    <th class="right" style="width: 13%;">Набавна вредност</th>
                 </tr>
             </thead>
             <tbody>

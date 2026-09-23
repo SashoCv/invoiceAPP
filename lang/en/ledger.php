@@ -25,7 +25,7 @@ return [
     'period_total' => 'Period total',
     'grand_total' => 'Grand total',
     'grand_total_hint' => 'Cumulative from January 1st through the end of the selected period',
-    'margin_hint' => 'Difference (Sales − Purchase value) = :amount MKD. Goods issues (gratis/promotions/advertising) carry no purchase value here (already recorded on the receipt) and no daily turnover (nothing was paid), but their sales column shows the cost value of what was given away — for a record of how much was distributed as gratis.',
+    'margin_hint' => 'Stock at retail prices (Sales value − Daily turnover) = :amount MKD. Price leveling is computed automatically every day: the difference between the full retail price and the price the goods were sold at (discounts) is booked as a negative sales value. Goods issues (promotions, giveaways) and shortages enter daily turnover at retail value.',
     'no_rows' => 'No records for the selected period',
 
     // Document types
@@ -34,6 +34,13 @@ return [
     'type_invoice' => 'Invoice',
     'type_shopify' => 'Shopify',
     'type_fiscal' => 'Daily fiscal report',
+    'type_carryover' => 'Carried over (opening)',
+    'type_opening' => 'Opening stock',
+    'type_surplus' => 'Surplus / manual in',
+    'type_return' => 'Return',
+    'type_shortage' => 'Shortage / manual out',
+    'type_leveling' => 'Price leveling',
+    'leveling_open' => 'Open price leveling record',
 
     // Daily fiscal reports
     'fiscal_reports' => 'Daily fiscal reports',

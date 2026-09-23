@@ -18,6 +18,7 @@ class StockMovement extends Model
         'quantity_after',
         'cost_price',
         'tax_rate',
+        'retail_price',
         'reference_type',
         'reference_id',
         'notes',
@@ -29,6 +30,7 @@ class StockMovement extends Model
         'quantity_after' => 'integer',
         'cost_price' => 'decimal:4',
         'tax_rate' => 'decimal:2',
+        'retail_price' => 'decimal:4',
         'created_at' => 'datetime',
     ];
 

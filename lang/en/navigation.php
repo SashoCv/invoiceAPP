@@ -42,6 +42,7 @@ return [
     'profitability' => 'Profitability',
     'trade_ledger' => 'Trade Ledger',
     'daily_financial_report' => 'Daily Financial Report',
+    'accounting_reports' => 'Accounting Reports',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Sales',
     'shopify_orders' => 'Orders',

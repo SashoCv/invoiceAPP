@@ -42,6 +42,7 @@ return [
     'profitability' => 'Профитабилност',
     'trade_ledger' => 'Евиденција во трговија',
     'daily_financial_report' => 'Дневен финансиски извештај',
+    'accounting_reports' => 'Сметководствени извештаи',
     'shopify' => 'Shopify',
     'shopify_sales' => 'Продажби',
     'shopify_orders' => 'Нарачки',

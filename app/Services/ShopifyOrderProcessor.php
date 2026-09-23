@@ -149,7 +149,9 @@ class ShopifyOrderProcessor
                     $orderItem->article->addStock(
                         $quantity,
                         "Shopify refund for order {$order->order_number}",
-                        'adjustment'
+                        'adjustment',
+                        'shopify_refund',
+                        $order->id
                     );
                 }
             }

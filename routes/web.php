@@ -106,9 +106,14 @@ Route::middleware('auth')->group(function () {
     // Trade ledger (Образец ЕТ — Евиденција во трговија)
     Route::get('trade-ledger', [\App\Http\Controllers\TradeLedgerController::class, 'index'])->name('trade-ledger.index');
     Route::get('trade-ledger/pdf', [\App\Http\Controllers\TradeLedgerController::class, 'exportPdf'])->name('trade-ledger.pdf');
+    Route::get('trade-ledger/leveling/{date}', [\App\Http\Controllers\TradeLedgerController::class, 'levelingPdf'])->where('date', '\d{4}-\d{2}-\d{2}')->name('trade-ledger.leveling');
     // Daily financial report (дневна продажба на артикли — ЕТ / МЕГТ)
     Route::get('daily-financial-report', [\App\Http\Controllers\DailyFinancialReportController::class, 'index'])->name('daily-financial-report.index');
     Route::get('daily-financial-report/pdf', [\App\Http\Controllers\DailyFinancialReportController::class, 'exportPdf'])->name('daily-financial-report.pdf');
+
+    Route::get('accounting-reports', [\App\Http\Controllers\AccountingReportController::class, 'index'])->name('accounting-reports.index');
+    Route::get('accounting-reports/pdf', [\App\Http\Controllers\AccountingReportController::class, 'exportPdf'])->name('accounting-reports.pdf');
+    Route::get('accounting-reports/csv', [\App\Http\Controllers\AccountingReportController::class, 'exportCsv'])->name('accounting-reports.csv');
 
     Route::post('trade-ledger/reports', [\App\Http\Controllers\TradeLedgerController::class, 'storeReport'])->name('trade-ledger.reports.store');
     Route::put('trade-ledger/reports/{dailyFiscalReport}', [\App\Http\Controllers\TradeLedgerController::class, 'updateReport'])->name('trade-ledger.reports.update');
