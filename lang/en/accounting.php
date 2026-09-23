@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Accounting Reports',
-    'subtitle' => 'Incoming and outgoing calculations and stock at purchase cost (excl. VAT), per document and per month',
+    'subtitle' => 'Per-document monthly reviews — purchase and sales values with VAT, price leveling and stock',
     'method_note' => 'Valued at moving weighted average purchase cost. Opening + inputs − outputs = closing.',
 
     'tab_inputs' => 'Incoming calculations',

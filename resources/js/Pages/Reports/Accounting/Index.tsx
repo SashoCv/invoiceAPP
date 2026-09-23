@@ -169,18 +169,16 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
     const TabButton = ({ value, preset, icon: Icon, label, hint }: { value: Tab; preset?: string; icon: any; label: string; hint: string }) => {
         const active = tab === value && (preset ? filters.type === preset : !(value === 'outputs' && (filters.type === 'invoice' || filters.type === 'shopify')));
         return (
-        <button
-            onClick={() => { setType(preset ?? '__all__'); go({ tab: value, type: preset ?? '__all__' }); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-left transition-colors ${
-                active ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-        >
-            <Icon className="w-5 h-5 shrink-0" />
-            <span>
-                <span className="block text-sm font-semibold">{label}</span>
-                <span className="block text-xs text-gray-400">{hint}</span>
-            </span>
-        </button>
+            <button
+                onClick={() => { setType(preset ?? '__all__'); go({ tab: value, type: preset ?? '__all__' }); }}
+                title={hint}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                    active ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                }`}
+            >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+            </button>
         );
     };
 
@@ -210,7 +208,7 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3 mb-6">
+                <div className="inline-flex max-w-full overflow-x-auto gap-1 p-1 mb-6 rounded-lg bg-gray-100">
                     <TabButton value="inputs" icon={ArrowDownToLine} label={t('accounting.tab_inputs')} hint={t('accounting.tab_inputs_hint')} />
                     <TabButton value="outputs" icon={ArrowUpFromLine} label={t('accounting.tab_outputs')} hint={t('accounting.tab_outputs_hint')} />
                     <TabButton value="outputs" preset="invoice" icon={FileText} label={t('accounting.tab_invoices')} hint={t('accounting.tab_invoices_hint')} />
