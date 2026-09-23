@@ -16,9 +16,9 @@ import {
 } from '@/Components/ui/table';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
-import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Boxes, CheckCircle2, ChevronDown, ChevronRight, Download, FileSpreadsheet } from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Boxes, CheckCircle2, ChevronDown, ChevronRight, Download, FileSpreadsheet, FileText, ShoppingCart, TrendingDown } from 'lucide-react';
 
-type Tab = 'inputs' | 'outputs' | 'stock';
+type Tab = 'inputs' | 'outputs' | 'leveling' | 'stock';
 
 interface Totals {
     quantity: number;
@@ -44,6 +44,8 @@ interface DocLine {
     quantity: number;
     unit_cost: number;
     cost_value: number;
+    retail_unit: number;
+    retail_value: number;
     estimated: boolean;
 }
 
@@ -93,8 +95,8 @@ interface StockMonth {
 interface StockReport {
     months: StockMonth[];
     totals: Omit<StockMonth, 'month' | 'label' | 'in_by_type' | 'out_by_type'>;
-    list: { code: string; name: string; unit: string; quantity: number; avg_cost: number; value: number }[];
-    list_totals: { quantity: number; value: number };
+    list: { code: string; name: string; unit: string; quantity: number; avg_cost: number; value: number; retail_price: number; retail_value: number }[];
+    list_totals: { quantity: number; value: number; retail_value: number };
     checks: {
         balanced: boolean;
         discrepancies: { article_id: number; code: string | null; name: string; computed: number; actual: number }[];
@@ -103,9 +105,25 @@ interface StockReport {
     };
 }
 
+interface LevelingTotals {
+    full_value: number;
+    sold_value: number;
+    leveling_invoice: number;
+    leveling_shopify: number;
+    leveling: number;
+    leveling_tax: number;
+    count: number;
+}
+
+interface LevelingReport {
+    months: { month: string; label: string; rows: (LevelingTotals & { date: string; number: string })[]; totals: LevelingTotals }[];
+    totals: LevelingTotals;
+    count: number;
+}
+
 interface Props {
     tab: Tab;
-    report: DocumentsReport | StockReport;
+    report: DocumentsReport | StockReport | LevelingReport;
     typeOptions: { value: string; label: string }[];
     filters: { date_from: string; date_to: string; type: string | null };
 }
@@ -148,11 +166,13 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
 
     const exportQuery = new URLSearchParams(query()).toString();
 
-    const TabButton = ({ value, icon: Icon, label, hint }: { value: Tab; icon: any; label: string; hint: string }) => (
+    const TabButton = ({ value, preset, icon: Icon, label, hint }: { value: Tab; preset?: string; icon: any; label: string; hint: string }) => {
+        const active = tab === value && (preset ? filters.type === preset : !(value === 'outputs' && (filters.type === 'invoice' || filters.type === 'shopify')));
+        return (
         <button
-            onClick={() => go({ tab: value, type: '__all__' })}
+            onClick={() => { setType(preset ?? '__all__'); go({ tab: value, type: preset ?? '__all__' }); }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-left transition-colors ${
-                tab === value ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                active ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
             }`}
         >
             <Icon className="w-5 h-5 shrink-0" />
@@ -161,7 +181,8 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                 <span className="block text-xs text-gray-400">{hint}</span>
             </span>
         </button>
-    );
+        );
+    };
 
     return (
         <AppLayout>
@@ -192,6 +213,9 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                 <div className="flex flex-wrap gap-3 mb-6">
                     <TabButton value="inputs" icon={ArrowDownToLine} label={t('accounting.tab_inputs')} hint={t('accounting.tab_inputs_hint')} />
                     <TabButton value="outputs" icon={ArrowUpFromLine} label={t('accounting.tab_outputs')} hint={t('accounting.tab_outputs_hint')} />
+                    <TabButton value="outputs" preset="invoice" icon={FileText} label={t('accounting.tab_invoices')} hint={t('accounting.tab_invoices_hint')} />
+                    <TabButton value="outputs" preset="shopify" icon={ShoppingCart} label={t('accounting.tab_shopify')} hint={t('accounting.tab_shopify_hint')} />
+                    <TabButton value="leveling" icon={TrendingDown} label={t('accounting.tab_leveling')} hint={t('accounting.tab_leveling_hint')} />
                     <TabButton value="stock" icon={Boxes} label={t('accounting.tab_stock')} hint={t('accounting.tab_stock_hint')} />
                 </div>
 
@@ -206,7 +230,7 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                                 <Label className="text-xs text-gray-500">{t('accounting.date_to')}</Label>
                                 <Input type="date" value={dateTo} min={dateFrom} onChange={(e) => setDateTo(e.target.value)} className="w-40 h-9" />
                             </div>
-                            {tab !== 'stock' && (
+                            {(tab === 'inputs' || tab === 'outputs') && (
                                 <div className="space-y-1">
                                     <Label className="text-xs text-gray-500">{t('accounting.type')}</Label>
                                     <Select value={type} onValueChange={setType}>
@@ -233,9 +257,9 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                     </CardContent>
                 </Card>
 
-                {tab === 'stock'
-                    ? <StockView report={report as StockReport} dateTo={filters.date_to} />
-                    : <DocumentsView report={report as DocumentsReport} isOut={tab === 'outputs'} />}
+                {tab === 'stock' && <StockView report={report as StockReport} dateTo={filters.date_to} />}
+                {tab === 'leveling' && <LevelingView report={report as LevelingReport} />}
+                {(tab === 'inputs' || tab === 'outputs') && <DocumentsView report={report as DocumentsReport} isOut={tab === 'outputs'} />}
             </div>
         </AppLayout>
     );
@@ -246,12 +270,12 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
     const [open, setOpen] = useState<Record<string, boolean>>({});
     const toggle = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
-    const cols = isOut ? 12 : 10;
+    const cols = isOut ? 12 : 14;
     const labelSpan = isOut ? 5 : 4;
 
     const amounts = (r: Totals) => (isOut
         ? [r.cost_value, r.sales_no_tax, r.sales_tax, r.sales_with_tax, r.margin]
-        : [r.cost_value, r.cost_tax, r.cost_with_tax]);
+        : [r.cost_value, r.cost_tax, r.cost_with_tax, r.sales_no_tax, r.sales_tax, r.sales_with_tax, r.margin]);
 
     const AmountCells = ({ r }: { r: Totals }) => (
         <>
@@ -288,6 +312,10 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
                                         <TableHead className="text-right">{t('accounting.cost_no_tax')}</TableHead>
                                         <TableHead className="text-right">{t('accounting.cost_tax')}</TableHead>
                                         <TableHead className="text-right">{t('accounting.cost_with_tax')}</TableHead>
+                                        <TableHead className="text-right">{t('accounting.sales_no_tax')}</TableHead>
+                                        <TableHead className="text-right">{t('accounting.sales_tax')}</TableHead>
+                                        <TableHead className="text-right">{t('accounting.sales_with_tax')}</TableHead>
+                                        <TableHead className="text-right">{t('accounting.margin')}</TableHead>
                                     </>
                                 )}
                             </TableRow>
@@ -336,6 +364,8 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
                                                                     <th className="text-right font-medium">{t('accounting.quantity')}</th>
                                                                     <th className="text-right font-medium">{t('accounting.unit_cost')}</th>
                                                                     <th className="text-right font-medium">{t('accounting.cost_value')}</th>
+                                                                    <th className="text-right font-medium">{t('accounting.retail_unit')}</th>
+                                                                    <th className="text-right font-medium">{t('accounting.retail_value')}</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -347,6 +377,8 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
                                                                         <td className="text-right">{n2(l.quantity)}</td>
                                                                         <td className="text-right">{formatNumber(l.unit_cost, 4)}</td>
                                                                         <td className="text-right">{n2(l.cost_value)}</td>
+                                                                        <td className="text-right">{n2(l.retail_unit)}</td>
+                                                                        <td className="text-right">{n2(l.retail_value)}</td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
@@ -527,12 +559,14 @@ function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) 
                                 <TableHead className="text-right">{t('accounting.quantity')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.avg_cost')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.value')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.retail_unit')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.retail_value')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {report.list.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-gray-400 py-10">{t('accounting.no_stock')}</TableCell>
+                                    <TableCell colSpan={9} className="text-center text-gray-400 py-10">{t('accounting.no_stock')}</TableCell>
                                 </TableRow>
                             ) : report.list.map((r, i) => (
                                 <TableRow key={i}>
@@ -543,6 +577,8 @@ function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) 
                                     <TableCell className={`text-right ${r.quantity < 0 ? 'text-red-600' : ''}`}>{n2(r.quantity)}</TableCell>
                                     <TableCell className="text-right">{formatNumber(r.avg_cost, 4)}</TableCell>
                                     <TableCell className="text-right">{n2(r.value)}</TableCell>
+                                    <TableCell className="text-right">{n2(r.retail_price)}</TableCell>
+                                    <TableCell className="text-right">{n2(r.retail_value)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -552,11 +588,87 @@ function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) 
                                 <TableCell className="text-right">{n2(report.list_totals.quantity)}</TableCell>
                                 <TableCell />
                                 <TableCell className="text-right">{n2(report.list_totals.value)}</TableCell>
+                                <TableCell />
+                                <TableCell className="text-right">{n2(report.list_totals.retail_value)}</TableCell>
                             </TableRow>
                         </tfoot>
                     </Table>
                 </CardContent>
             </Card>
+        </>
+    );
+}
+
+function LevelingView({ report }: { report: LevelingReport }) {
+    const { t } = useTranslation();
+    const cells = (r: LevelingTotals) => [r.full_value, r.sold_value, r.leveling_invoice, r.leveling_shopify, r.leveling, r.leveling_tax];
+
+    return (
+        <>
+            <Card>
+                <CardContent className="p-0 overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>{t('accounting.number')}</TableHead>
+                                <TableHead>{t('accounting.date')}</TableHead>
+                                <TableHead className="text-center">{t('accounting.documents')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.full_value')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.sold_value')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.leveling_invoice')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.leveling_shopify')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.leveling_total')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.leveling_tax')}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {report.months.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={9} className="text-center text-gray-400 py-10">{t('accounting.no_leveling')}</TableCell>
+                                </TableRow>
+                            )}
+                            {report.months.map((m) => (
+                                <Fragment key={m.month}>
+                                    <TableRow className="bg-indigo-50/60 hover:bg-indigo-50/60">
+                                        <TableCell colSpan={9} className="font-semibold text-indigo-800">{m.label}</TableCell>
+                                    </TableRow>
+                                    {m.rows.map((r) => (
+                                        <TableRow key={r.date}>
+                                            <TableCell>
+                                                <a href={`/trade-ledger/leveling/${r.date}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                                                    {r.number}
+                                                </a>
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap">{formatDate(r.date)}</TableCell>
+                                            <TableCell className="text-center">{r.count}</TableCell>
+                                            {cells(r).map((v, i) => (
+                                                <TableCell key={i} className={`text-right whitespace-nowrap ${i >= 2 && v < 0 ? 'text-red-600' : ''}`}>{n2(v)}</TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                    <TableRow className="bg-gray-50 font-semibold hover:bg-gray-50">
+                                        <TableCell colSpan={2} className="text-right">{t('accounting.month_total', { month: m.label })}</TableCell>
+                                        <TableCell className="text-center">{m.totals.count}</TableCell>
+                                        {cells(m.totals).map((v, i) => (
+                                            <TableCell key={i} className="text-right whitespace-nowrap">{n2(v)}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                </Fragment>
+                            ))}
+                        </TableBody>
+                        <tfoot className="bg-gray-100 font-bold text-gray-900 border-t-2 border-gray-900">
+                            <TableRow>
+                                <TableCell colSpan={2} className="text-right">{t('accounting.period_total')}</TableCell>
+                                <TableCell className="text-center">{report.totals.count}</TableCell>
+                                {cells(report.totals).map((v, i) => (
+                                    <TableCell key={i} className="text-right whitespace-nowrap">{n2(v)}</TableCell>
+                                ))}
+                            </TableRow>
+                        </tfoot>
+                    </Table>
+                </CardContent>
+            </Card>
+            <p className="mt-3 text-xs text-gray-400">{t('accounting.leveling_note')}</p>
         </>
     );
 }

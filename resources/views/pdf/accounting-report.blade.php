@@ -53,7 +53,7 @@
         </div>
 
         <div class="title">{{ $title }}</div>
-        <div class="subtitle">Вреднување по подвижна пондерирана просечна набавна цена, без ДДВ{{ $typeLabel ? ' — ' . $typeLabel : '' }}</div>
+        <div class="subtitle">{{ $tab === 'leveling' ? 'Образец ЕТ — продажни цени со ДДВ' : 'Набавни цени по подвижна пондерирана просечна цена; продажни цени со ДДВ по Образец ЕТ' }}{{ $typeLabel ? ' — ' . $typeLabel : '' }}</div>
         <div class="period">Од датум: {{ $dateFrom }} до датум: {{ $dateTo }}</div>
 
         @if($tab === 'stock')
@@ -114,8 +114,10 @@
                         <th>Назив на артикл</th>
                         <th style="width: 6%;">Ед.</th>
                         <th style="width: 10%;">Количина</th>
-                        <th style="width: 13%;">Просечна набавна цена</th>
-                        <th style="width: 14%;">Набавна вредност</th>
+                        <th style="width: 11%;">Просечна набавна цена</th>
+                        <th style="width: 12%;">Набавна вредност</th>
+                        <th style="width: 11%;">Продажна цена со ДДВ</th>
+                        <th style="width: 12%;">Продажна вредност со ДДВ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,20 +130,67 @@
                         <td class="right">{{ $fmt($r['quantity']) }}</td>
                         <td class="right">{{ number_format((float) $r['avg_cost'], 4, ',', ' ') }}</td>
                         <td class="right">{{ $fmt($r['value']) }}</td>
+                        <td class="right">{{ $fmt($r['retail_price']) }}</td>
+                        <td class="right">{{ $fmt($r['retail_value']) }}</td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" class="center" style="padding: 14px; color: #9ca3af;">Нема залиха.</td></tr>
+                    <tr><td colspan="9" class="center" style="padding: 14px; color: #9ca3af;">Нема залиха.</td></tr>
                     @endforelse
                     <tr class="total">
                         <td colspan="4" class="right">Вкупно</td>
                         <td class="right">{{ $fmt($report['list_totals']['quantity']) }}</td>
                         <td></td>
                         <td class="right">{{ $fmt($report['list_totals']['value']) }}</td>
+                        <td></td>
+                        <td class="right">{{ $fmt($report['list_totals']['retail_value']) }}</td>
                     </tr>
                 </tbody>
             </table>
+        @elseif($tab === 'leveling')
+            <table class="rep">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Број</th>
+                        <th style="width: 8%;">Датум</th>
+                        <th style="width: 7%;">Документи</th>
+                        <th>Полна продажна со ДДВ</th>
+                        <th>Продадено со ДДВ</th>
+                        <th>Нивелација фактури</th>
+                        <th>Нивелација е-трговија</th>
+                        <th>Нивелација вкупно</th>
+                        <th>ДДВ во нивелацијата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $lv = fn ($t) => [$t['full_value'], $t['sold_value'], $t['leveling_invoice'], $t['leveling_shopify'], $t['leveling'], $t['leveling_tax']]; @endphp
+                    @forelse($report['months'] as $m)
+                        <tr class="month"><td colspan="9">{{ $m['label'] }}</td></tr>
+                        @foreach($m['rows'] as $r)
+                        <tr>
+                            <td>{{ $r['number'] }}</td>
+                            <td class="center">{{ $date($r['date']) }}</td>
+                            <td class="center">{{ $r['count'] }}</td>
+                            @foreach($lv($r) as $v)<td class="right">{{ $fmt($v) }}</td>@endforeach
+                        </tr>
+                        @endforeach
+                        <tr class="subtotal">
+                            <td colspan="2" class="right">Вкупно {{ $m['label'] }}</td>
+                            <td class="center">{{ $m['totals']['count'] }}</td>
+                            @foreach($lv($m['totals']) as $v)<td class="right">{{ $fmt($v) }}</td>@endforeach
+                        </tr>
+                    @empty
+                        <tr><td colspan="9" class="center" style="padding: 14px; color: #9ca3af;">Нема нивелации за избраниот период.</td></tr>
+                    @endforelse
+                    <tr class="total">
+                        <td colspan="2" class="right">ВКУПНО ЗА ПЕРИОД</td>
+                        <td class="center">{{ $report['totals']['count'] }}</td>
+                        @foreach($lv($report['totals']) as $v)<td class="right">{{ $fmt($v) }}</td>@endforeach
+                    </tr>
+                </tbody>
+            </table>
+            <div class="note">Нивелација = продадено со ДДВ − полна продажна вредност со ДДВ по која стоката е водена во Образец ЕТ (попусти). Негативен износ ја намалува продажната вредност на залихата. Секој ред е посебен записник за нивелација, книжен во ЕТ под истиот број.</div>
         @else
-            @php $cols = $isOut ? 12 : 10; @endphp
+            @php $cols = $isOut ? 12 : 14; @endphp
             <table class="rep">
                 <thead>
                     <tr>
@@ -159,9 +208,13 @@
                             <th style="width: 9%;">Продажна со ДДВ</th>
                             <th style="width: 8%;">РУЦ</th>
                         @else
-                            <th style="width: 12%;">Набавна без ДДВ</th>
-                            <th style="width: 10%;">ДДВ</th>
-                            <th style="width: 12%;">Набавна со ДДВ</th>
+                            <th style="width: 8%;">Набавна без ДДВ</th>
+                            <th style="width: 7%;">ДДВ</th>
+                            <th style="width: 8%;">Набавна со ДДВ</th>
+                            <th style="width: 8%;">Продажна без ДДВ</th>
+                            <th style="width: 7%;">ДДВ</th>
+                            <th style="width: 8%;">Продажна со ДДВ</th>
+                            <th style="width: 7%;">РУЦ</th>
                         @endif
                     </tr>
                 </thead>
@@ -170,7 +223,7 @@
                         $amounts = function ($r) use ($isOut, $fmt) {
                             return $isOut
                                 ? [$r['cost_value'], $r['sales_no_tax'], $r['sales_tax'], $r['sales_with_tax'], $r['margin']]
-                                : [$r['cost_value'], $r['cost_tax'], $r['cost_with_tax']];
+                                : [$r['cost_value'], $r['cost_tax'], $r['cost_with_tax'], $r['sales_no_tax'], $r['sales_tax'], $r['sales_with_tax'], $r['margin']];
                         };
                         $labelSpan = $isOut ? 5 : 4;
                     @endphp
