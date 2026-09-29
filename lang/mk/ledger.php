@@ -39,6 +39,7 @@ return [
     'type_surplus' => 'Вишок / рачен влез',
     'type_return' => 'Поврат',
     'type_shortage' => 'Кусок / рачен излез',
+    'type_writeoff' => 'Кало, крш, растур',
     'type_leveling' => 'Нивелација',
     'leveling_open' => 'Отвори записник за нивелација',
 

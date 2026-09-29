@@ -125,23 +125,29 @@ class TradeLedgerController extends Controller implements HasMiddleware
                 'partner' => $meta['partner'] ?? null,
                 'lines' => [],
             ];
+            $old = $e['retail_value'];                                   // стара МПЦ × кол.
+            $new = round($e['sales_no_tax'] + $e['sales_tax'], 2);       // нова (продадена) МПЦ × кол.
+            $vat = fn ($amount) => round($amount * $rate / (100 + $rate), 2); // ДДВ содржан во МПЦ
             $docs[$e['doc_key']]['lines'][] = [
                 'code' => $article->code ?? '',
                 'name' => $article->name ?? ('#' . $e['article_id']),
                 'unit' => $article->unit ?? '',
+                'rate' => $rate,
                 'quantity' => $e['qty'],
-                'full_unit' => $e['retail_unit'],
-                'full_value' => $e['retail_value'],
-                'sold_value' => round($e['sales_no_tax'] + $e['sales_tax'], 2),
+                'old_price' => $e['retail_unit'],
+                'old_value' => $old,
+                'old_vat' => $vat($old),
+                'new_price' => $e['qty'] > 0 ? round($new / $e['qty'], 2) : 0,
+                'new_value' => $new,
+                'new_vat' => $vat($new),
                 'difference' => $e['leveling'],
-                // ДДВ содржан во разликата (пресметковна стапка = стапка / (100 + стапка))
-                'difference_tax' => round($e['leveling'] * $rate / (100 + $rate), 2),
             ];
         }
 
+        $fields = ['old_value', 'old_vat', 'new_value', 'new_vat', 'difference'];
         $sum = fn (array $lines, string $f) => round(array_sum(array_column($lines, $f)), 2);
-        $docs = array_values(array_map(function ($d) use ($sum) {
-            foreach (['full_value', 'sold_value', 'difference', 'difference_tax'] as $f) {
+        $docs = array_values(array_map(function ($d) use ($sum, $fields) {
+            foreach ($fields as $f) {
                 $d['totals'][$f] = $sum($d['lines'], $f);
             }
             return $d;
@@ -149,23 +155,37 @@ class TradeLedgerController extends Controller implements HasMiddleware
 
         $allLines = array_merge(...array_map(fn ($d) => $d['lines'], $docs ?: [['lines' => []]]));
         $totals = [];
-        foreach (['full_value', 'sold_value', 'difference', 'difference_tax'] as $f) {
+        foreach ($fields as $f) {
             $totals[$f] = $sum($allLines, $f);
         }
+
+        // Разлика меѓу старо и ново ДДВ / стара и нова МПЦ, по даночна стапка
+        $byRate = [];
+        foreach ($allLines as $l) {
+            $r = (string) (float) $l['rate'];
+            $byRate[$r] ??= ['rate' => (float) $l['rate'], 'vat_difference' => 0.0, 'price_difference' => 0.0];
+            $byRate[$r]['vat_difference'] += $l['new_vat'] - $l['old_vat'];
+            $byRate[$r]['price_difference'] += $l['difference'];
+        }
+        krsort($byRate);
+        $byRate = array_values(array_map(fn ($x) => ['rate' => $x['rate'], 'vat_difference' => round($x['vat_difference'], 2), 'price_difference' => round($x['price_difference'], 2)], $byRate));
+
+        $number = $valuation->levelingNumbers($user->id)[$day->toDateString()] ?? '—';
 
         $pdfPath = $pdfService->generateLevelingPdf([
             'agency' => $user->agency,
             'authorizedPerson' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name,
-            'number' => 'НИВ-' . $day->format('d.m.Y'),
+            'number' => $number,
             'date' => $day->format('d.m.Y'),
             'printedAt' => now()->format('d.m.Y H:i'),
             'docs' => $docs,
             'totals' => $totals,
+            'byRate' => $byRate,
         ]);
 
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="Nivelacija_' . $day->toDateString() . '.pdf"',
+            'Content-Disposition' => 'inline; filename="Nivelacija_' . str_replace('/', '-', $number) . '.pdf"',
         ])->deleteFileAfterSend(true);
     }
 
@@ -245,9 +265,9 @@ class TradeLedgerController extends Controller implements HasMiddleware
      * Образец ЕТ по продажни цени со ДДВ (Правилник, Сл. весник 51/04, 89/04):
      *  - кол. 5 набавна вредност со ДДВ (ПЛТ кол. 6 + 7) — приеми, почетна, вишоци
      *  - кол. 6 продажна вредност со ДДВ (ПЛТ кол. 10) — приеми, почетна, вишоци, поврати,
-     *    and the daily нивелација (red storno, negative) for goods sold below full price
+     *    the daily нивелација and отпис (кало, крш, растур) as red storno (negative)
      *  - кол. 7 дневен промет — invoices + Shopify per day (or the manual Z report), plus
-     *    испратници (промоции, гратис) and кусоци at продажна вредност
+     *    испратници (промоции, гратис) and кусоци по попис at продажна вредност
      * Залиха по продажни цени = Σ кол. 6 − Σ кол. 7. All values come from
      * StockValuationService so they agree with the accounting reports.
      */
@@ -298,6 +318,8 @@ class TradeLedgerController extends Controller implements HasMiddleware
                 'return' => $rows->push($this->row($date, 'return', $number, $date, 0, $d['retail'], 0)),
                 // Промоции / гратис and кусоци leave the stock through дневен промет
                 'issue', 'shortage' => $rows->push($this->row($date, $d['type'], $number, $date, 0, 0, $d['retail'])),
+                // Отпис (кало, крш, растур) — црвено сторно во кол. 6 (Правилник)
+                'writeoff' => $rows->push($this->row($date, 'writeoff', $number, $date, 0, -$d['retail'], 0)),
                 default => null, // invoices and Shopify: shown below by amount
             };
         }
@@ -325,11 +347,13 @@ class TradeLedgerController extends Controller implements HasMiddleware
             }
         }
 
-        // 4. Нивелација — daily difference between full продажна and actual sale price
+        // 4. Нивелација — daily difference between full продажна and actual sale price,
+        // numbered 1/2026, 2/2026, … like the записник behind it
+        $levelingNumbers = $valuation->levelingNumbers($user->id);
         foreach ($levelingByDay as $day => $amount) {
             if (abs($amount) >= 0.01) {
                 $date = Carbon::parse($day);
-                $rows->push($this->row($date, 'leveling', 'НИВ-' . $date->format('d.m.Y'), $date, 0, $amount, 0));
+                $rows->push($this->row($date, 'leveling', 'НИВ ' . ($levelingNumbers[$day] ?? $date->format('d.m.Y')), $date, 0, $amount, 0));
             }
         }
 
@@ -360,7 +384,7 @@ class TradeLedgerController extends Controller implements HasMiddleware
         // Sort: by booking date; inputs, then outputs, sales documents, нивелација, day total
         $typeOrder = [
             'carryover' => 0, 'opening' => 1, 'receipt' => 2, 'surplus' => 3, 'return' => 4,
-            'issue' => 5, 'shortage' => 6, 'invoice' => 7, 'shopify' => 8, 'leveling' => 9, 'fiscal' => 10,
+            'issue' => 5, 'shortage' => 6, 'writeoff' => 6, 'invoice' => 7, 'shopify' => 8, 'leveling' => 9, 'fiscal' => 10,
         ];
         $sorted = $rows->sort(function ($a, $b) use ($typeOrder) {
             $cmp = $a['_sortDate'] <=> $b['_sortDate'];

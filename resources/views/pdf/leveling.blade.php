@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Записник за нивелација {{ $number }}</title>
-    @php $fmt = fn ($n) => number_format((float) $n, 2, ',', ' '); @endphp
+    <title>Извештај за нивелација на цени {{ $number }}</title>
+    @php
+        $fmt = fn ($n) => number_format((float) $n, 2, ',', ' ');
+        $pct = fn ($n) => rtrim(rtrim(number_format((float) $n, 2, ',', ''), '0'), ',') . '%';
+    @endphp
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 8pt; color: #111827; line-height: 1.35; }
@@ -28,6 +31,11 @@
         tr.doc td { font-weight: bold; background-color: #eef2ff; }
         tr.subtotal td { font-weight: bold; background-color: #f9fafb; }
         tr.total td { font-weight: bold; background-color: #f3f4f6; border-top: 2px solid #111827; }
+
+        table.rates { width: 60%; margin: 10px 0 0 auto; border-collapse: collapse; }
+        table.rates th, table.rates td { border: 1px solid #6b7280; padding: 3px 6px; font-size: 7.5pt; }
+        table.rates th { background-color: #f3f4f6; }
+
         .note { font-size: 7pt; color: #6b7280; margin-top: 8px; }
         .signature { margin-top: 36px; display: table; width: 100%; }
         .signature div { display: table-cell; width: 50%; text-align: center; font-size: 8pt; }
@@ -51,65 +59,93 @@
             </div>
         </div>
 
-        <div class="title">Записник за нивелација (промена на продажни цени)</div>
-        <div class="subtitle">Разлика меѓу полната продажна вредност со ДДВ на стоката во евиденцијата и продадената вредност (попусти) — за {{ $date }}</div>
+        <div class="title">Извештај за нивелација на цени бр. {{ $number }}</div>
+        <div class="subtitle">Намалување на малопродажната цена (МПЦ) при продажба со попуст — {{ $date }}</div>
 
         <table class="rep">
             <thead>
                 <tr>
-                    <th style="width: 3%;">Рб</th>
-                    <th style="width: 11%;">Шифра</th>
-                    <th>Назив на артикл</th>
-                    <th style="width: 4%;">Ед.</th>
-                    <th style="width: 6%;">Кол.</th>
-                    <th style="width: 9%;">Полна прод. цена со ДДВ</th>
-                    <th style="width: 10%;">Полна прод. вредност со ДДВ</th>
-                    <th style="width: 10%;">Продадено со ДДВ</th>
-                    <th style="width: 10%;">Нивелација (разлика)</th>
-                    <th style="width: 9%;">ДДВ во разликата</th>
+                    <th style="width: 3%;">Р. бр.</th>
+                    <th>Артикал</th>
+                    <th style="width: 5%;">Кол.</th>
+                    <th style="width: 4%;">Е.М.</th>
+                    <th style="width: 5%;">ДДВ %</th>
+                    <th style="width: 8%;">Стара МПЦ</th>
+                    <th style="width: 9%;">Вкупно стара МПЦ</th>
+                    <th style="width: 8%;">ДДВ во стара МПЦ</th>
+                    <th style="width: 8%;">Нова МПЦ</th>
+                    <th style="width: 9%;">Вкупно нова МПЦ</th>
+                    <th style="width: 8%;">ДДВ во нова МПЦ</th>
+                    <th style="width: 9%;">Разлика</th>
                 </tr>
             </thead>
             <tbody>
                 @php $rb = 0; @endphp
                 @forelse($docs as $doc)
-                    <tr class="doc"><td colspan="10">{{ $doc['label'] }}{{ $doc['partner'] ? ' — ' . $doc['partner'] : '' }}</td></tr>
+                    <tr class="doc"><td colspan="12">{{ $doc['label'] }}{{ $doc['partner'] ? ' — ' . $doc['partner'] : '' }}</td></tr>
                     @foreach($doc['lines'] as $l)
                     <tr>
                         <td class="center">{{ ++$rb }}</td>
-                        <td>{{ $l['code'] ?: '-' }}</td>
-                        <td>{{ $l['name'] }}</td>
-                        <td class="center">{{ $l['unit'] }}</td>
+                        <td>{{ $l['code'] ? $l['code'] . ' — ' : '' }}{{ $l['name'] }}</td>
                         <td class="right">{{ $fmt($l['quantity']) }}</td>
-                        <td class="right">{{ $fmt($l['full_unit']) }}</td>
-                        <td class="right">{{ $fmt($l['full_value']) }}</td>
-                        <td class="right">{{ $fmt($l['sold_value']) }}</td>
+                        <td class="center">{{ $l['unit'] }}</td>
+                        <td class="center">{{ $pct($l['rate']) }}</td>
+                        <td class="right">{{ $fmt($l['old_price']) }}</td>
+                        <td class="right">{{ $fmt($l['old_value']) }}</td>
+                        <td class="right">{{ $fmt($l['old_vat']) }}</td>
+                        <td class="right">{{ $fmt($l['new_price']) }}</td>
+                        <td class="right">{{ $fmt($l['new_value']) }}</td>
+                        <td class="right">{{ $fmt($l['new_vat']) }}</td>
                         <td class="right {{ $l['difference'] < 0 ? 'neg' : '' }}">{{ $fmt($l['difference']) }}</td>
-                        <td class="right">{{ $fmt($l['difference_tax']) }}</td>
                     </tr>
                     @endforeach
                     <tr class="subtotal">
                         <td colspan="6" class="right">Вкупно {{ $doc['label'] }}</td>
-                        <td class="right">{{ $fmt($doc['totals']['full_value']) }}</td>
-                        <td class="right">{{ $fmt($doc['totals']['sold_value']) }}</td>
+                        <td class="right">{{ $fmt($doc['totals']['old_value']) }}</td>
+                        <td class="right">{{ $fmt($doc['totals']['old_vat']) }}</td>
+                        <td></td>
+                        <td class="right">{{ $fmt($doc['totals']['new_value']) }}</td>
+                        <td class="right">{{ $fmt($doc['totals']['new_vat']) }}</td>
                         <td class="right">{{ $fmt($doc['totals']['difference']) }}</td>
-                        <td class="right">{{ $fmt($doc['totals']['difference_tax']) }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" class="center" style="padding: 14px; color: #9ca3af;">Нема нивелација за овој ден.</td></tr>
+                    <tr><td colspan="12" class="center" style="padding: 14px; color: #9ca3af;">Нема нивелација за овој ден.</td></tr>
                 @endforelse
                 <tr class="total">
-                    <td colspan="6" class="right">ВКУПНО НИВЕЛАЦИЈА</td>
-                    <td class="right">{{ $fmt($totals['full_value']) }}</td>
-                    <td class="right">{{ $fmt($totals['sold_value']) }}</td>
+                    <td colspan="6" class="right">ВКУПНО</td>
+                    <td class="right">{{ $fmt($totals['old_value']) }}</td>
+                    <td class="right">{{ $fmt($totals['old_vat']) }}</td>
+                    <td></td>
+                    <td class="right">{{ $fmt($totals['new_value']) }}</td>
+                    <td class="right">{{ $fmt($totals['new_vat']) }}</td>
                     <td class="right">{{ $fmt($totals['difference']) }}</td>
-                    <td class="right">{{ $fmt($totals['difference_tax']) }}</td>
                 </tr>
             </tbody>
         </table>
 
+        <table class="rates">
+            <thead>
+                <tr>
+                    <th>ДДВ стапка</th>
+                    <th>Разлика помеѓу старо и ново ДДВ</th>
+                    <th>Разлика помеѓу стара и нова МПЦ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($byRate as $r)
+                <tr>
+                    <td class="center">{{ $pct($r['rate']) }}</td>
+                    <td class="right">{{ $fmt($r['vat_difference']) }}</td>
+                    <td class="right">{{ $fmt($r['price_difference']) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+
         <div class="note">
-            Износот „Вкупно нивелација“ е книжен во Образец ЕТ, колона 6 (продажна вредност), под број {{ $number }}.
-            Негативен износ = намалување на продажната вредност на залихата (црвено сторно).
+            Разликата помеѓу стара и нова МПЦ ({{ $fmt($totals['difference']) }} ден.) е книжена во Образец ЕТ, колона 6 (продажна вредност) како црвено сторно, под број НИВ {{ $number }}.
+            Стара МПЦ = продажна цена со ДДВ по која стоката е водена во евиденцијата; нова МПЦ = цена по која е продадена.
+            Набавната вредност на залихата не се менува со нивелацијата.
         </div>
 
         <div class="signature">

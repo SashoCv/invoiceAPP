@@ -39,6 +39,7 @@ return [
     'type_surplus' => 'Surplus / manual in',
     'type_return' => 'Return',
     'type_shortage' => 'Shortage / manual out',
+    'type_writeoff' => 'Spoilage, breakage, loss',
     'type_leveling' => 'Price leveling',
     'leveling_open' => 'Open price leveling record',
 

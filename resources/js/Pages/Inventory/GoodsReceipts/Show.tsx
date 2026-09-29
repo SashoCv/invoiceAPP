@@ -31,6 +31,9 @@ interface GoodsReceipt {
     notes: string | null;
     total_cost: number;
     created_at: string;
+    type?: 'purchase' | 'customer_return' | 'opening';
+    dependent_costs?: number | string;
+    invoice?: { id: number; invoice_number: string } | null;
 }
 
 interface Props {
@@ -79,6 +82,18 @@ export default function GoodsReceiptShow({ receipt, movements }: Props) {
                             </a>
                         </Button>
                         <Button asChild variant="outline" size="sm">
+                            <a
+                                href={`/goods-receipts/${receipt.id}/plt`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="gap-1.5"
+                                title={t('inventory.plt_hint')}
+                            >
+                                <Download className="w-4 h-4" />
+                                {t('inventory.plt')}
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
                             <Link href={`/goods-receipts/${receipt.id}/edit`} className="gap-1.5">
                                 <Pencil className="w-4 h-4" />
                                 {t('inventory.edit_goods_receipt')}
@@ -107,6 +122,29 @@ export default function GoodsReceiptShow({ receipt, movements }: Props) {
                         </CardContent>
                     </Card>
                 </div>
+
+                {(receipt.type && receipt.type !== 'purchase') || Number(receipt.dependent_costs) > 0 ? (
+                    <Card className="mb-6">
+                        <CardContent className="pt-6 flex flex-wrap gap-8 text-sm">
+                            <div>
+                                <p className="text-gray-500 mb-1">{t('inventory.receipt_type')}</p>
+                                <p className="font-medium text-gray-900">{t(`inventory.receipt_type_${receipt.type ?? 'purchase'}`)}</p>
+                            </div>
+                            {receipt.invoice && (
+                                <div>
+                                    <p className="text-gray-500 mb-1">{t('inventory.return_invoice')}</p>
+                                    <Link href={`/invoices/${receipt.invoice.id}`} className="font-medium text-indigo-600 hover:underline">{receipt.invoice.invoice_number}</Link>
+                                </div>
+                            )}
+                            {Number(receipt.dependent_costs) > 0 && (
+                                <div>
+                                    <p className="text-gray-500 mb-1">{t('inventory.dependent_costs')}</p>
+                                    <p className="font-medium text-gray-900">{formatNumber(Number(receipt.dependent_costs))} MKD</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                ) : null}
 
                 {receipt.notes && (
                     <Card className="mb-6">

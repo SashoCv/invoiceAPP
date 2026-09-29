@@ -107,6 +107,8 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
         article_id: '',
         stock_quantity: 0,
         low_stock_threshold: 5,
+        cost_price: '',
+        date: new Date().toISOString().slice(0, 10),
     });
 
     // Movements filters
@@ -560,6 +562,34 @@ export default function InventoryIndex({ items, untrackedArticles, bundles, move
                                 className="mt-1"
                             />
                         </div>
+                        {addForm.data.stock_quantity > 0 && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label>{t('inventory.purchase_price')}</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.0001"
+                                        min="0"
+                                        value={addForm.data.cost_price}
+                                        onChange={(e) => addForm.setData('cost_price', e.target.value)}
+                                        className="mt-1"
+                                        error={addForm.errors.cost_price}
+                                    />
+                                </div>
+                                <div>
+                                    <Label>{t('inventory.document_date')}</Label>
+                                    <Input
+                                        type="date"
+                                        max={new Date().toISOString().slice(0, 10)}
+                                        value={addForm.data.date}
+                                        onChange={(e) => addForm.setData('date', e.target.value)}
+                                        className="mt-1"
+                                        error={addForm.errors.date}
+                                    />
+                                </div>
+                                <p className="col-span-2 -mt-1 text-xs text-gray-500">{t('inventory.initial_stock_price_hint')}</p>
+                            </div>
+                        )}
                         <div>
                             <Label>{t('inventory.low_stock_threshold')}</Label>
                             <Input

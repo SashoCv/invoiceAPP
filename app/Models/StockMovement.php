@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StockMovement extends Model
 {
+    /** Reasons for manual corrections (Магацин → Корекција на залиха) */
+    public const REASONS_IN = ['opening', 'surplus', 'other'];
+    public const REASONS_OUT = ['shortage', 'writeoff', 'other'];
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,6 +23,8 @@ class StockMovement extends Model
         'cost_price',
         'tax_rate',
         'retail_price',
+        'document_date',
+        'reason',
         'reference_type',
         'reference_id',
         'notes',
@@ -31,6 +37,7 @@ class StockMovement extends Model
         'cost_price' => 'decimal:4',
         'tax_rate' => 'decimal:2',
         'retail_price' => 'decimal:4',
+        'document_date' => 'date:Y-m-d',
         'created_at' => 'datetime',
     ];
 

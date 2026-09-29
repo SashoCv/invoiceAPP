@@ -11,15 +11,26 @@ class GoodsReceipt extends Model
     protected $fillable = [
         'user_id',
         'receipt_number',
+        'type',
+        'invoice_id',
         'date',
         'notes',
         'total_cost',
+        'dependent_costs',
     ];
+
+    public const TYPES = ['purchase', 'customer_return', 'opening'];
 
     protected $casts = [
         'date' => 'date',
         'total_cost' => 'decimal:2',
+        'dependent_costs' => 'decimal:2',
     ];
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
 
     public function user(): BelongsTo
     {

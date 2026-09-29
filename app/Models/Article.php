@@ -86,7 +86,7 @@ class Article extends Model
         return 'in_stock';
     }
 
-    public function deductStock(float $quantity, ?string $referenceType = null, ?int $referenceId = null, ?string $notes = null): StockMovement
+    public function deductStock(float $quantity, ?string $referenceType = null, ?int $referenceId = null, ?string $notes = null, array $extra = []): StockMovement
     {
         $before = $this->stock_quantity;
         $this->stock_quantity -= $quantity;
@@ -107,10 +107,10 @@ class Article extends Model
             'reference_type' => $referenceType,
             'reference_id' => $referenceId,
             'notes' => $notes,
-        ]);
+        ] + $extra);
     }
 
-    public function addStock(float $quantity, ?string $notes = null, string $type = 'receipt', ?string $referenceType = null, ?int $referenceId = null): StockMovement
+    public function addStock(float $quantity, ?string $notes = null, string $type = 'receipt', ?string $referenceType = null, ?int $referenceId = null, array $extra = []): StockMovement
     {
         $before = $this->stock_quantity;
         $this->stock_quantity += $quantity;
@@ -125,6 +125,6 @@ class Article extends Model
             'reference_type' => $referenceType,
             'reference_id' => $referenceId,
             'notes' => $notes,
-        ]);
+        ] + $extra);
     }
 }

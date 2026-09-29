@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\StockMovement;
 use App\Services\PdfService;
 use App\Services\StockValuationService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -27,13 +29,17 @@ class AccountingReportController extends Controller
     public const TYPE_LABELS = [
         'opening' => 'Почетна состојба',
         'receipt' => 'Приемница',
-        'return' => 'Поврат (е-трговија)',
+        'return' => 'Поврат од купувач',
         'surplus' => 'Вишок / рачен влез',
         'invoice' => 'Фактура',
         'shopify' => 'Е-трговија',
         'issue' => 'Испратница (промоција)',
         'shortage' => 'Кусок / рачен излез',
+        'writeoff' => 'Кало, крш, растур',
     ];
+
+    /** Show documents summed per day (one row per day and document type) */
+    private bool $byDay = false;
 
     public function __construct(private StockValuationService $valuation)
     {
@@ -52,6 +58,7 @@ class AccountingReportController extends Controller
                 'date_from' => $from,
                 'date_to' => $to,
                 'type' => $type,
+                'by_day' => $this->byDay,
             ],
         ]);
     }
@@ -64,7 +71,7 @@ class AccountingReportController extends Controller
             'agency' => $request->user()->agency,
             'tab' => $tab,
             'title' => $this->title($tab),
-            'typeLabel' => $type ? self::TYPE_LABELS[$type] : null,
+            'typeLabel' => trim(($type ? self::TYPE_LABELS[$type] : '') . ($this->byDay ? ' — збирно по ден' : ''), ' —') ?: null,
             'dateFrom' => Carbon::parse($from)->format('d.m.Y'),
             'dateTo' => Carbon::parse($to)->format('d.m.Y'),
             'printedAt' => now()->format('d.m.Y H:i'),
@@ -100,6 +107,99 @@ class AccountingReportController extends Controller
         ]);
     }
 
+    /**
+     * Образец МЕТГ — материјална евиденција во трговија на големо, for one article: every
+     * document with the quantity received (кол. 6), sold/issued (кол. 7) and the balance
+     * (кол. 8), starting from the balance carried into the period.
+     */
+    public function metgPdf(Request $request, int $article, PdfService $pdfService): BinaryFileResponse
+    {
+        [, $from, $to] = $this->params($request);
+        $userId = $request->user()->id;
+        $item = DB::table('articles')->where('user_id', $userId)->where('id', $article)->first(['id', 'code', 'name', 'unit']);
+        abort_unless($item, 404);
+
+        $opening = $this->valuation->balancesBefore($userId, $from)[$article]['qty'] ?? 0;
+        $docsMeta = $this->valuation->documents($userId);
+
+        $rows = [];
+        $balance = $opening;
+        foreach ($this->valuation->eventsBetween($userId, $from, $to) as $e) {
+            if ($e['article_id'] !== $article) {
+                continue;
+            }
+            $key = $e['doc_key'];
+            $meta = $docsMeta[$key] ?? [];
+            $in = $e['dir'] === 'in' ? $e['qty'] : 0;
+            $out = $e['dir'] === 'out' ? $e['qty'] : 0;
+
+            // One row per document (a document may carry the article on several lines)
+            $last = count($rows) - 1;
+            if ($last >= 0 && $rows[$last]['key'] === $key) {
+                $rows[$last]['in'] += $in;
+                $rows[$last]['out'] += $out;
+                $balance += $in - $out;
+                $rows[$last]['balance'] = $balance;
+                continue;
+            }
+
+            $balance += $in - $out;
+            $rows[] = [
+                'key' => $key,
+                'date' => Carbon::parse($e['date'])->format('d.m.Y'),
+                'number' => $meta['number'] ?? '',
+                'name' => self::TYPE_LABELS[$e['doc_type']] . (!empty($meta['partner']) ? ' — ' . $meta['partner'] : ''),
+                'in' => $in,
+                'out' => $out,
+                'balance' => $balance,
+            ];
+        }
+
+        $pdfPath = $pdfService->generateMetgPdf([
+            'agency' => $request->user()->agency,
+            'article' => $item,
+            'dateFrom' => Carbon::parse($from)->format('d.m.Y'),
+            'dateTo' => Carbon::parse($to)->format('d.m.Y'),
+            'printedAt' => now()->format('d.m.Y H:i'),
+            'opening' => $opening,
+            'rows' => $rows,
+            'totals' => [
+                'in' => array_sum(array_column($rows, 'in')),
+                'out' => array_sum(array_column($rows, 'out')),
+                'balance' => $balance,
+            ],
+        ]);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="METG_' . ($item->code ?: $item->id) . '.pdf"',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Set the purchase price of earlier manual inputs (почетна состојба, вишоци) that were
+     * entered without one and are valued at 0 or an estimate.
+     */
+    public function updateManualCosts(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        foreach ($validated['items'] as $item) {
+            StockMovement::where('id', $item['id'])
+                ->where('user_id', $request->user()->id)
+                ->whereNull('reference_type')
+                ->whereIn('type', ['receipt', 'adjustment'])
+                ->where('quantity', '>', 0)
+                ->update(['cost_price' => $item['cost_price']]);
+        }
+
+        return back()->with('success', __('toast.purchase_prices_saved'));
+    }
+
     // ─── Parameters ────────────────────────────────────────────────────
 
     private function params(Request $request): array
@@ -129,6 +229,8 @@ class AccountingReportController extends Controller
         $allowed = $tab === 'outputs' ? StockValuationService::OUTPUT_TYPES : StockValuationService::INPUT_TYPES;
         $type = in_array($request->get('type'), $allowed, true) ? $request->get('type') : null;
 
+        $this->byDay = in_array($tab, ['inputs', 'outputs'], true) && $request->boolean('by_day');
+
         return [$tab, $from->toDateString(), $to->toDateString(), in_array($tab, ['inputs', 'outputs'], true) ? $type : null];
     }
 
@@ -156,7 +258,7 @@ class AccountingReportController extends Controller
     {
         $name = ['inputs' => 'vlezni_kalkulacii', 'outputs' => 'izlezni_kalkulacii', 'leveling' => 'nivelacii', 'stock' => 'lager'][$tab];
 
-        return "{$name}_{$from}_{$to}.{$ext}";
+        return "{$name}" . ($this->byDay ? '_po_den' : '') . "_{$from}_{$to}.{$ext}";
     }
 
     // ─── Report building ───────────────────────────────────────────────
@@ -244,6 +346,10 @@ class AccountingReportController extends Controller
             unset($d);
         }
 
+        if ($this->byDay) {
+            $docs = $this->groupByDay($docs);
+        }
+
         // Rows sorted by date then document number; finalise derived columns
         $docs = array_values($docs);
         usort($docs, fn ($a, $b) => [$a['date'], $a['type'], (string) $a['number']] <=> [$b['date'], $b['type'], (string) $b['number']]);
@@ -283,6 +389,59 @@ class AccountingReportController extends Controller
             'by_type' => array_values(array_map(fn ($t) => $this->roundTotals($t), $grandByType)),
             'count' => count($docs),
         ];
+    }
+
+    /**
+     * Sum the documents of each day (per document type) into one row, e.g. all Shopify
+     * orders of a day. The row's lines are the day's articles, summed.
+     */
+    private function groupByDay(array $docs): array
+    {
+        $days = [];
+        foreach ($docs as $d) {
+            $key = 'day:' . $d['type'] . ':' . $d['date'];
+            if (!isset($days[$key])) {
+                $days[$key] = ['key' => $key, 'id' => null, 'partner' => null, 'docs' => 0, 'lines' => []] + $d;
+                foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax'] as $f) {
+                    $days[$key][$f] = 0;
+                }
+                $days[$key]['lines'] = [];
+            }
+
+            $g = &$days[$key];
+            $g['docs']++;
+            foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax'] as $f) {
+                $g[$f] += $d[$f];
+            }
+            $g['estimated'] = $g['estimated'] || $d['estimated'];
+
+            foreach ($d['lines'] as $l) {
+                $lk = $l['code'] . '|' . $l['name'];
+                if (!isset($g['lines'][$lk])) {
+                    $g['lines'][$lk] = $l;
+                    continue;
+                }
+                $m = &$g['lines'][$lk];
+                $m['quantity'] += $l['quantity'];
+                $m['cost_value'] += $l['cost_value'];
+                $m['retail_value'] += $l['retail_value'];
+                $m['estimated'] = $m['estimated'] || $l['estimated'];
+                $m['unit_cost'] = $m['quantity'] > 0 ? round($m['cost_value'] / $m['quantity'], 4) : 0;
+                $m['retail_unit'] = $m['quantity'] > 0 ? round($m['retail_value'] / $m['quantity'], 2) : 0;
+                unset($m);
+            }
+            unset($g);
+        }
+
+        foreach ($days as &$g) {
+            $one = $g['docs'] === 1;
+            $g['number'] = $g['docs'] . ' ' . ($g['type'] === 'shopify' ? ($one ? 'нарачка' : 'нарачки') : ($one ? 'документ' : 'документи'));
+            $g['lines'] = array_values($g['lines']);
+            usort($g['lines'], fn ($a, $b) => strcmp($a['name'], $b['name']));
+        }
+        unset($g);
+
+        return $days;
     }
 
     private function finaliseRow(array $d, string $tab): array
@@ -354,11 +513,12 @@ class AccountingReportController extends Controller
         ksort($days);
 
         $fields = ['full_value', 'sold_value', 'leveling_invoice', 'leveling_shopify', 'leveling', 'leveling_tax'];
+        $numbers = $this->valuation->levelingNumbers($userId);
         $empty = array_fill_keys($fields, 0.0) + ['count' => 0];
         $months = [];
         $grand = $empty;
         foreach ($days as $d) {
-            $row = ['date' => $d['date'], 'number' => 'НИВ-' . Carbon::parse($d['date'])->format('d.m.Y'), 'count' => count($d['docs'])];
+            $row = ['date' => $d['date'], 'number' => 'НИВ ' . ($numbers[$d['date']] ?? ''), 'count' => count($d['docs'])];
             foreach ($fields as $f) {
                 $row[$f] = round($d[$f], 2);
             }
@@ -455,6 +615,7 @@ class AccountingReportController extends Controller
             }
             $a = $articles[$articleId] ?? null;
             $list[] = [
+                'article_id' => $articleId,
                 'code' => $a->code ?? '',
                 'name' => $a->name ?? ('#' . $articleId),
                 'unit' => $a->unit ?? '',
@@ -480,9 +641,27 @@ class AccountingReportController extends Controller
 
         $allEvents = $this->valuation->events($userId);
         $negative = [];
+        $unpriced = [];
         foreach ($allEvents as $e) {
-            if ($e['date'] <= $to && $e['balance_qty'] < -0.00001) {
+            if ($e['date'] > $to) {
+                break;
+            }
+            if ($e['balance_qty'] < -0.00001) {
                 $negative[$e['article_id']] = true;
+            }
+            // Manual inputs without an entered purchase price (valued at 0 or estimated)
+            if (in_array($e['doc_type'], ['opening', 'surplus'], true) && !$e['cost_given'] && isset($e['movement_id'])
+                && ($e['estimated'] || $e['cost_value'] == 0)) {
+                $a = $articles[$e['article_id']] ?? null;
+                $unpriced[] = [
+                    'movement_id' => $e['movement_id'],
+                    'date' => $e['date'],
+                    'type_label' => self::TYPE_LABELS[$e['doc_type']],
+                    'code' => $a->code ?? '',
+                    'name' => $a->name ?? ('#' . $e['article_id']),
+                    'quantity' => $e['qty'],
+                    'unit_cost' => $e['unit_cost'],
+                ];
             }
         }
 
@@ -503,6 +682,7 @@ class AccountingReportController extends Controller
                     array_keys($negative)
                 )),
                 'estimated_count' => count(array_filter($events, fn ($e) => $e['estimated'])),
+                'unpriced_inputs' => $unpriced,
             ],
         ];
     }

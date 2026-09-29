@@ -94,4 +94,5 @@ return [
     // Trade ledger
     'fiscal_report_saved' => 'Дневниот фискален извештај е зачуван',
     'fiscal_report_deleted' => 'Дневниот фискален извештај е избришан',
+    'purchase_prices_saved' => 'Набавните цени се зачувани.',
 ];

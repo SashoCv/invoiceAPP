@@ -59,6 +59,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
 
         return Inertia::render('Inventory/GoodsReceipts/Create', [
             'articles' => $articles,
+            'invoices' => $this->returnableInvoices($request->user()),
         ]);
     }
 
@@ -67,10 +68,13 @@ class GoodsReceiptController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'type' => ['nullable', 'in:' . implode(',', GoodsReceipt::TYPES)],
+            'invoice_id' => ['nullable', 'integer'],
+            'dependent_costs' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
+            'items.*.cost_price' => ['required_unless:type,customer_return', 'nullable', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
@@ -88,13 +92,13 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             'date' => $validated['date'],
             'notes' => $validated['notes'] ?? null,
             'total_cost' => 0,
-        ]);
+        ] + $this->typeFields($validated, $user));
 
         foreach ($validated['items'] as $item) {
             $article = Article::where('user_id', $user->id)->findOrFail($item['article_id']);
 
             $taxRate = $item['tax_rate'] ?? 0;
-            $subtotal = $item['quantity'] * $item['cost_price'];
+            $subtotal = $item['quantity'] * ($item['cost_price'] ?? 0);
             $lineCost = $subtotal + $subtotal * ($taxRate / 100);
             $totalCost += $lineCost;
 
@@ -108,7 +112,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => $item['cost_price'],
+                'cost_price' => $item['cost_price'] ?? null,
                 'tax_rate' => $taxRate,
                 'retail_price' => $article->retailPriceWithTax(),
                 'reference_type' => 'goods_receipt',
@@ -141,6 +145,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             'receipt' => $goodsReceipt,
             'articles' => $articles,
             'movements' => $movements,
+            'invoices' => $this->returnableInvoices($request->user()),
         ]);
     }
 
@@ -153,10 +158,13 @@ class GoodsReceiptController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
+            'type' => ['nullable', 'in:' . implode(',', GoodsReceipt::TYPES)],
+            'invoice_id' => ['nullable', 'integer'],
+            'dependent_costs' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.article_id' => ['required', 'exists:articles,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.cost_price' => ['required', 'numeric', 'min:0'],
+            'items.*.cost_price' => ['required_unless:type,customer_return', 'nullable', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
@@ -181,7 +189,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             $article = Article::where('user_id', $user->id)->findOrFail($item['article_id']);
 
             $taxRate = $item['tax_rate'] ?? 0;
-            $subtotal = $item['quantity'] * $item['cost_price'];
+            $subtotal = $item['quantity'] * ($item['cost_price'] ?? 0);
             $lineCost = $subtotal + $subtotal * ($taxRate / 100);
             $totalCost += $lineCost;
 
@@ -195,7 +203,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
                 'quantity' => $item['quantity'],
                 'quantity_before' => $before,
                 'quantity_after' => $article->stock_quantity,
-                'cost_price' => $item['cost_price'],
+                'cost_price' => $item['cost_price'] ?? null,
                 'tax_rate' => $taxRate,
                 'retail_price' => $oldRetailPrices[$article->id] ?? $article->retailPriceWithTax(),
                 'reference_type' => 'goods_receipt',
@@ -208,7 +216,7 @@ class GoodsReceiptController extends Controller implements HasMiddleware
             'date' => $validated['date'],
             'notes' => $validated['notes'] ?? null,
             'total_cost' => $totalCost,
-        ]);
+        ] + $this->typeFields($validated, $user));
 
         return redirect()->route('goods-receipts.show', $goodsReceipt)
             ->with('success', __('toast.goods_receipt_updated'));
@@ -221,10 +229,46 @@ class GoodsReceiptController extends Controller implements HasMiddleware
         }
 
         $movements = $goodsReceipt->movements()->with('article:id,name,unit')->get();
+        $goodsReceipt->load('invoice:id,invoice_number');
 
         return Inertia::render('Inventory/GoodsReceipts/Show', [
             'receipt' => $goodsReceipt,
             'movements' => $movements,
         ]);
+    }
+
+    /**
+     * Receipt type fields: зависни трошоци only on a purchase, the invoice only on a customer return.
+     */
+    private function typeFields(array $validated, $user): array
+    {
+        $type = $validated['type'] ?? 'purchase';
+        $invoiceId = $type === 'customer_return' && !empty($validated['invoice_id'])
+            ? $user->invoices()->whereKey($validated['invoice_id'])->value('id')
+            : null;
+
+        return [
+            'type' => $type,
+            'invoice_id' => $invoiceId,
+            'dependent_costs' => $type === 'purchase' ? (float) ($validated['dependent_costs'] ?? 0) : 0,
+        ];
+    }
+
+    /**
+     * Invoices a customer return can refer to (newest first).
+     */
+    private function returnableInvoices($user): array
+    {
+        return $user->invoices()
+            ->where('status', '!=', 'cancelled')
+            ->with('client:id,name,company')
+            ->orderByDesc('issue_date')
+            ->limit(300)
+            ->get(['id', 'invoice_number', 'issue_date', 'client_id'])
+            ->map(fn ($i) => [
+                'id' => $i->id,
+                'label' => $i->invoice_number . ' — ' . ($i->client->company ?? $i->client->name ?? '') . ' (' . $i->issue_date->format('d.m.Y') . ')',
+            ])
+            ->all();
     }
 }

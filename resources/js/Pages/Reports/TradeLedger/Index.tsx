@@ -27,7 +27,7 @@ import { formatNumber, formatDate } from '@/lib/utils';
 import { Download, Plus, Pencil, Trash2, BookText } from 'lucide-react';
 
 interface LedgerRow {
-    type: 'carryover' | 'opening' | 'receipt' | 'surplus' | 'return' | 'issue' | 'shortage' | 'invoice' | 'shopify' | 'leveling' | 'fiscal';
+    type: 'carryover' | 'opening' | 'receipt' | 'surplus' | 'return' | 'issue' | 'shortage' | 'writeoff' | 'invoice' | 'shopify' | 'leveling' | 'fiscal';
     row_no: number;
     date_iso: string;
     booking_date: string;

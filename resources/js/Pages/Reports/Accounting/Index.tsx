@@ -95,13 +95,14 @@ interface StockMonth {
 interface StockReport {
     months: StockMonth[];
     totals: Omit<StockMonth, 'month' | 'label' | 'in_by_type' | 'out_by_type'>;
-    list: { code: string; name: string; unit: string; quantity: number; avg_cost: number; value: number; retail_price: number; retail_value: number }[];
+    list: { article_id: number; code: string; name: string; unit: string; quantity: number; avg_cost: number; value: number; retail_price: number; retail_value: number }[];
     list_totals: { quantity: number; value: number; retail_value: number };
     checks: {
         balanced: boolean;
         discrepancies: { article_id: number; code: string | null; name: string; computed: number; actual: number }[];
         negative: { code: string; name: string }[];
         estimated_count: number;
+        unpriced_inputs: { movement_id: number; date: string; type_label: string; code: string; name: string; quantity: number; unit_cost: number }[];
     };
 }
 
@@ -125,7 +126,7 @@ interface Props {
     tab: Tab;
     report: DocumentsReport | StockReport | LevelingReport;
     typeOptions: { value: string; label: string }[];
-    filters: { date_from: string; date_to: string; type: string | null };
+    filters: { date_from: string; date_to: string; type: string | null; by_day?: boolean };
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -139,9 +140,14 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
     const [type, setType] = useState(filters.type ?? '__all__');
 
     const query = (over: Record<string, string> = {}) => {
-        const params: Record<string, string> = { tab, date_from: dateFrom, date_to: dateTo, type: filters.type ?? '__all__', ...over };
+        const params: Record<string, string> = {
+            tab, date_from: dateFrom, date_to: dateTo, type: filters.type ?? '__all__', by_day: filters.by_day ? '1' : '0', ...over,
+        };
         if (params.type === '__all__') {
             delete params.type;
+        }
+        if (params.by_day !== '1' || (params.tab !== 'inputs' && params.tab !== 'outputs')) {
+            delete params.by_day;
         }
         return params;
     };
@@ -245,6 +251,17 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                                 </div>
                             )}
                             <Button size="sm" className="h-9" onClick={() => go({ type })}>{t('accounting.filter')}</Button>
+                            {(tab === 'inputs' || tab === 'outputs') && (
+                                <label className="flex items-center gap-2 h-9 px-3 rounded-md border border-gray-200 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        checked={!!filters.by_day}
+                                        onChange={(e) => go({ type, by_day: e.target.checked ? '1' : '0' })}
+                                    />
+                                    {t('accounting.group_by_day')}
+                                </label>
+                            )}
                             <div className="flex flex-wrap items-center gap-2 ml-auto">
                                 <Button size="sm" variant="outline" className="h-9" onClick={quickThisMonth}>{t('accounting.this_month')}</Button>
                                 <Button size="sm" variant="outline" className="h-9" onClick={quickLastMonth}>{t('accounting.last_month')}</Button>
@@ -255,7 +272,7 @@ export default function AccountingReportsIndex({ tab, report, typeOptions, filte
                     </CardContent>
                 </Card>
 
-                {tab === 'stock' && <StockView report={report as StockReport} dateTo={filters.date_to} />}
+                {tab === 'stock' && <StockView report={report as StockReport} dateFrom={filters.date_from} dateTo={filters.date_to} />}
                 {tab === 'leveling' && <LevelingView report={report as LevelingReport} />}
                 {(tab === 'inputs' || tab === 'outputs') && <DocumentsView report={report as DocumentsReport} isOut={tab === 'outputs'} />}
             </div>
@@ -278,13 +295,27 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
     const AmountCells = ({ r }: { r: Totals }) => (
         <>
             {amounts(r).map((v, i) => (
-                <TableCell key={i} className="text-right whitespace-nowrap">{n2(v)}</TableCell>
+                <TableCell key={i} className={`text-right whitespace-nowrap ${isOut && i === 4 && v < 0 ? 'text-red-600 font-semibold' : ''}`}>{n2(v)}</TableCell>
             ))}
         </>
     );
 
+    // Sales below purchase value — per МСС 2 the stock may need writing down to net realisable value
+    const belowCost = isOut
+        ? report.months.flatMap((m) => m.rows).filter((r) => (r.type === 'invoice' || r.type === 'shopify') && r.margin < 0)
+        : [];
+
     return (
         <>
+            {belowCost.length > 0 && (
+                <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                        {t('accounting.below_cost', { count: String(belowCost.length) })}{' '}
+                        <span className="text-red-600">{belowCost.slice(0, 8).map((r) => r.number).join(', ')}{belowCost.length > 8 ? '…' : ''}</span>
+                    </span>
+                </div>
+            )}
             <Card>
                 <CardContent className="p-0 overflow-x-auto">
                     <Table>
@@ -439,7 +470,7 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
     );
 }
 
-function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) {
+function StockView({ report, dateFrom, dateTo }: { report: StockReport; dateFrom: string; dateTo: string }) {
     const { t } = useTranslation();
     const tot = report.totals;
     const { checks } = report;
@@ -498,6 +529,8 @@ function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) 
                     </Table>
                 </CardContent>
             </Card>
+
+            {checks.unpriced_inputs.length > 0 && <UnpricedInputs items={checks.unpriced_inputs} />}
 
             <div className={`mb-6 flex items-center gap-2 rounded-lg border px-4 py-3 text-sm ${checks.balanced ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
                 {checks.balanced ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
@@ -570,7 +603,17 @@ function StockView({ report, dateTo }: { report: StockReport; dateTo: string }) 
                                 <TableRow key={i}>
                                     <TableCell className="text-gray-500">{i + 1}</TableCell>
                                     <TableCell className="text-gray-500">{r.code || '-'}</TableCell>
-                                    <TableCell className="font-medium text-gray-900">{r.name}</TableCell>
+                                    <TableCell className="font-medium text-gray-900">
+                                        <a
+                                            href={`/accounting-reports/metg/${r.article_id}?date_from=${dateFrom}&date_to=${dateTo}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:text-indigo-600 hover:underline"
+                                            title={t('accounting.metg_open')}
+                                        >
+                                            {r.name}
+                                        </a>
+                                    </TableCell>
                                     <TableCell className="text-gray-500">{r.unit}</TableCell>
                                     <TableCell className={`text-right ${r.quantity < 0 ? 'text-red-600' : ''}`}>{n2(r.quantity)}</TableCell>
                                     <TableCell className="text-right">{formatNumber(r.avg_cost, 4)}</TableCell>
@@ -668,5 +711,74 @@ function LevelingView({ report }: { report: LevelingReport }) {
             </Card>
             <p className="mt-3 text-xs text-gray-400">{t('accounting.leveling_note')}</p>
         </>
+    );
+}
+
+function UnpricedInputs({ items }: { items: StockReport['checks']['unpriced_inputs'] }) {
+    const { t } = useTranslation();
+    const [prices, setPrices] = useState<Record<number, string>>({});
+    const [saving, setSaving] = useState(false);
+
+    const filled = Object.entries(prices).filter(([, v]) => v !== '' && !isNaN(Number(v)));
+
+    const save = () => {
+        setSaving(true);
+        router.post(
+            '/accounting-reports/manual-costs',
+            { items: filled.map(([id, cost]) => ({ id: Number(id), cost_price: Number(cost) })) },
+            { preserveScroll: true, onFinish: () => { setSaving(false); setPrices({}); } },
+        );
+    };
+
+    return (
+        <Card className="mb-6 border-amber-200">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2 text-amber-800">
+                    <AlertTriangle className="w-4 h-4" />
+                    {t('accounting.unpriced_title')}
+                </CardTitle>
+                <p className="text-sm text-gray-500">{t('accounting.unpriced_hint')}</p>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('accounting.date')}</TableHead>
+                            <TableHead>{t('accounting.doc_type')}</TableHead>
+                            <TableHead>{t('accounting.name')}</TableHead>
+                            <TableHead className="text-right">{t('accounting.quantity')}</TableHead>
+                            <TableHead className="text-right">{t('accounting.unpriced_current')}</TableHead>
+                            <TableHead className="text-right w-44">{t('accounting.unpriced_new')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {items.map((it) => (
+                            <TableRow key={it.movement_id}>
+                                <TableCell className="whitespace-nowrap">{formatDate(it.date)}</TableCell>
+                                <TableCell className="whitespace-nowrap">{it.type_label}</TableCell>
+                                <TableCell className="font-medium text-gray-900">{it.code ? `${it.code} — ` : ''}{it.name}</TableCell>
+                                <TableCell className="text-right">{n2(it.quantity)}</TableCell>
+                                <TableCell className="text-right text-amber-700">{formatNumber(it.unit_cost, 4)}</TableCell>
+                                <TableCell className="text-right">
+                                    <Input
+                                        type="number"
+                                        step="0.0001"
+                                        min="0"
+                                        className="h-8 w-36 ml-auto text-right"
+                                        value={prices[it.movement_id] ?? ''}
+                                        onChange={(e) => setPrices((p) => ({ ...p, [it.movement_id]: e.target.value }))}
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <div className="flex justify-end p-3 border-t">
+                    <Button size="sm" onClick={save} disabled={filled.length === 0 || saving}>
+                        {t('accounting.unpriced_save')}
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

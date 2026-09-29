@@ -114,6 +114,8 @@ Route::middleware('auth')->group(function () {
     Route::get('accounting-reports', [\App\Http\Controllers\AccountingReportController::class, 'index'])->name('accounting-reports.index');
     Route::get('accounting-reports/pdf', [\App\Http\Controllers\AccountingReportController::class, 'exportPdf'])->name('accounting-reports.pdf');
     Route::get('accounting-reports/csv', [\App\Http\Controllers\AccountingReportController::class, 'exportCsv'])->name('accounting-reports.csv');
+    Route::get('accounting-reports/metg/{article}', [\App\Http\Controllers\AccountingReportController::class, 'metgPdf'])->whereNumber('article')->name('accounting-reports.metg');
+    Route::post('accounting-reports/manual-costs', [\App\Http\Controllers\AccountingReportController::class, 'updateManualCosts'])->middleware('subscribed')->name('accounting-reports.manual-costs');
 
     Route::post('trade-ledger/reports', [\App\Http\Controllers\TradeLedgerController::class, 'storeReport'])->name('trade-ledger.reports.store');
     Route::put('trade-ledger/reports/{dailyFiscalReport}', [\App\Http\Controllers\TradeLedgerController::class, 'updateReport'])->name('trade-ledger.reports.update');
@@ -129,6 +131,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::get('goods-receipts/export/csv', [ExportController::class, 'exportGoodsReceipts'])->name('goods-receipts.export.csv');
     Route::get('goods-receipts/{goodsReceipt}/pdf', [PdfController::class, 'goodsReceipt'])->name('goods-receipts.pdf');
+    Route::get('goods-receipts/{goodsReceipt}/plt', [PdfController::class, 'goodsReceiptPlt'])->name('goods-receipts.plt');
     Route::get('goods-receipts/{goodsReceipt}/pdf/preview', [PdfController::class, 'goodsReceiptPreview'])->name('goods-receipts.pdf.preview');
     Route::resource('goods-receipts', \App\Http\Controllers\GoodsReceiptController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::get('goods-issues/{goodsIssue}/pdf', [PdfController::class, 'goodsIssue'])->name('goods-issues.pdf');

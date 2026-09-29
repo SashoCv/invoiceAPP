@@ -421,6 +421,7 @@ class PdfService
             'tariffs' => array_values($tariffs),
             'totals' => $totals,
             'leveling' => array_map(fn ($v) => round($v, 2), $leveling),
+            'levelingNumber' => app(StockValuationService::class)->levelingNumbers($invoice->user_id)[$invoice->issue_date?->toDateString()] ?? null,
             'levelingDate' => $invoice->issue_date?->format('d.m.Y'),
         ];
 
@@ -519,6 +520,22 @@ class PdfService
     public function generateLevelingPdf(array $data): string
     {
         return $this->renderLandscapePdf('pdf.leveling', $data, 'leveling');
+    }
+
+    /**
+     * Generate the Образец МЕТГ (материјална евиденција во трговија на големо) PDF for one article.
+     */
+    public function generateMetgPdf(array $data): string
+    {
+        return $this->renderLandscapePdf('pdf.metg', $data, 'metg');
+    }
+
+    /**
+     * Generate the Приемен лист во трговија на мало (Образец ПЛТ) PDF for a goods receipt.
+     */
+    public function generatePltPdf(array $data): string
+    {
+        return $this->renderLandscapePdf('pdf.plt', $data, 'plt');
     }
 
     /**

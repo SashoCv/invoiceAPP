@@ -25,7 +25,7 @@ class StockValuationService
     public const RETAIL_VAT = 18; // Shopify line prices are gross (со ДДВ)
 
     public const INPUT_TYPES = ['opening', 'receipt', 'return', 'surplus'];
-    public const OUTPUT_TYPES = ['invoice', 'shopify', 'issue', 'shortage'];
+    public const OUTPUT_TYPES = ['invoice', 'shopify', 'issue', 'shortage', 'writeoff'];
 
     /** @var array<int, array> cached valued events per user */
     private array $cache = [];
@@ -93,7 +93,15 @@ class StockValuationService
         return $events;
     }
 
-    /** Приемници (goods receipts), dated by the receipt date. */
+    /**
+     * Приемници, dated by the receipt date:
+     *  - purchase → "receipt": at its purchase price plus its share of the зависни трошоци
+     *    (транспорт, шпедиција, царина), allocated by line value (МСС 2)
+     *  - opening → "opening" (почетна состојба / пренос) at the entered price
+     *  - customer_return → "return": back into stock at the cost (and retail price) the
+     *    goods left at on the linked invoice, otherwise at the running average
+     * ДДВ на набавката is at the article's prescribed rate (ПЛТ кол. 7 = кол. 6 × кол. 8).
+     */
     private function buildReceiptEvents(int $userId, array &$events, array &$docs): void
     {
         $rows = DB::table('stock_movements as sm')
@@ -102,19 +110,51 @@ class StockValuationService
             ->where('sm.type', 'receipt')
             ->where('sm.reference_type', 'goods_receipt')
             ->orderBy('gr.date')->orderBy('sm.id')
-            ->get(['sm.id', 'sm.article_id', 'sm.quantity', 'sm.cost_price', 'sm.tax_rate', 'sm.retail_price', 'gr.id as doc_id', 'gr.receipt_number', 'gr.date']);
+            ->get(['sm.id', 'sm.article_id', 'sm.quantity', 'sm.cost_price', 'sm.tax_rate', 'sm.retail_price',
+                'gr.id as doc_id', 'gr.receipt_number', 'gr.date', 'gr.type as receipt_type', 'gr.invoice_id', 'gr.dependent_costs', 'gr.notes']);
+
+        // Зависни трошоци as a share of each receipt's purchase value
+        $netByReceipt = [];
+        foreach ($rows as $r) {
+            $netByReceipt[$r->doc_id] = ($netByReceipt[$r->doc_id] ?? 0) + abs((float) $r->quantity) * (float) $r->cost_price;
+        }
 
         foreach ($rows as $r) {
             $key = 'receipt:' . $r->doc_id;
             $date = substr((string) $r->date, 0, 10);
-            $docs[$key] ??= ['type' => 'receipt', 'id' => $r->doc_id, 'number' => $r->receipt_number, 'date' => $date, 'partner' => null];
+            $docType = match ($r->receipt_type) {
+                'customer_return' => 'return',
+                'opening' => 'opening',
+                default => 'receipt',
+            };
+            $docs[$key] ??= ['type' => $docType, 'id' => $r->doc_id, 'number' => $r->receipt_number, 'date' => $date, 'partner' => $r->notes];
 
-            $this->firstCost[$userId][$r->article_id] ??= (float) $r->cost_price;
+            $qty = abs((float) $r->quantity);
+            $rate = (float) ($this->articleInfo[$userId][$r->article_id]->tax_rate ?? $r->tax_rate);
 
-            $events[] = $this->event($r->article_id, $date, 'in', 'receipt', $key, abs((float) $r->quantity), [
-                'unit_cost' => (float) $r->cost_price,
-                'tax_rate' => (float) $r->tax_rate,
+            if ($docType === 'return') {
+                $events[] = $this->event($r->article_id, $date, 'in', 'return', $key, $qty, [
+                    'tax_rate' => $rate,
+                    'return_of' => $r->invoice_id ? 'invoice:' . $r->invoice_id : null,
+                    'movement_id' => $r->id,
+                ]);
+                continue;
+            }
+
+            $net = $netByReceipt[$r->doc_id] ?? 0;
+            $share = $net > 0 ? (float) $r->dependent_costs / $net : 0;
+            $unitCost = round((float) $r->cost_price * (1 + $share), 4);
+
+            if ($unitCost > 0) {
+                $this->firstCost[$userId][$r->article_id] ??= $unitCost;
+            }
+
+            $events[] = $this->event($r->article_id, $date, 'in', $docType, $key, $qty, [
+                'unit_cost' => $unitCost,
+                'cost_given' => true,
+                'tax_rate' => $rate,
                 'retail_unit' => $r->retail_price !== null ? (float) $r->retail_price : $this->grossPrice($userId, $r->article_id),
+                'movement_id' => $r->id,
             ]);
         }
     }
@@ -135,7 +175,7 @@ class StockValuationService
                 })->orWhere('reference_type', 'shopify_refund');
             })
             ->orderBy('created_at')->orderBy('id')
-            ->get(['id', 'article_id', 'type', 'quantity', 'notes', 'created_at', 'reference_type', 'reference_id']);
+            ->get(['id', 'article_id', 'type', 'quantity', 'cost_price', 'notes', 'created_at', 'document_date', 'reason', 'reference_type', 'reference_id']);
 
         // Initial stock = the "Почетна залиха" row written when tracking is enabled, or an
         // untitled receipt that is the article's very first movement
@@ -155,9 +195,19 @@ class StockValuationService
                 continue;
             }
 
-            $date = substr((string) $r->created_at, 0, 10);
+            // The date of the event (e.g. the inventory count) when it was entered with one
+            $date = substr((string) ($r->document_date ?? $r->created_at), 0, 10);
+            $dir = $qty > 0 ? 'in' : 'out';
 
-            if ($r->reference_type === 'shopify_refund' || ($r->notes && str_starts_with($r->notes, 'Shopify refund for order '))) {
+            if ($r->reason && $r->reference_type === null) {
+                $docType = match (true) {
+                    $r->reason === 'opening' && $dir === 'in' => 'opening',
+                    $r->reason === 'writeoff' && $dir === 'out' => 'writeoff',
+                    default => $dir === 'in' ? 'surplus' : 'shortage',
+                };
+                $key = $docType . ':' . $date . ':' . $r->reason . ':' . md5((string) $r->notes);
+                $number = $r->notes ?: null;
+            } elseif ($r->reference_type === 'shopify_refund' || ($r->notes && str_starts_with($r->notes, 'Shopify refund for order '))) {
                 $docType = 'return';
                 $key = 'return:' . ($r->reference_id ?? $date);
                 $number = $r->notes;
@@ -174,8 +224,14 @@ class StockValuationService
 
             $docs[$key] ??= ['type' => $docType, 'id' => null, 'number' => $number, 'date' => $date, 'partner' => null];
 
-            $events[] = $this->event($r->article_id, $date, $qty > 0 ? 'in' : 'out', $docType, $key, abs($qty), [
-                'estimated' => $docType === 'opening',
+            // A purchase price entered with a manual input is used as its cost, like a receipt's
+            $costGiven = $dir === 'in' && $docType !== 'return' && (float) $r->cost_price > 0;
+
+            $events[] = $this->event($r->article_id, $date, $dir, $docType, $key, abs($qty), [
+                'estimated' => $docType === 'opening' && !$costGiven,
+                'cost_given' => $costGiven,
+                'unit_cost' => $costGiven ? (float) $r->cost_price : null,
+                'movement_id' => $r->id,
             ]);
         }
     }
@@ -352,6 +408,8 @@ class StockValuationService
             'sales_no_tax' => 0.0,
             'sales_tax' => 0.0,
             'retail_unit' => null,
+            'cost_given' => false,
+            'return_of' => null,
         ], $extra);
     }
 
@@ -411,13 +469,24 @@ class StockValuationService
         $val = [];
         $rval = [];
 
+        // Unit cost / retail price each invoice took its goods out at — a customer return
+        // linked to that invoice comes back at exactly those
+        $outUnits = [];
+
         foreach ($events as &$e) {
             $a = $e['article_id'];
             $q = $qty[$a] ?? 0.0;
             $v = $val[$a] ?? 0.0;
             $rv = $rval[$a] ?? 0.0;
 
-            if ($e['doc_type'] === 'receipt') {
+            $returned = !empty($e['return_of']) ? ($outUnits[$e['return_of']][$a] ?? null) : null;
+            if ($returned) {
+                $e['unit_cost'] = $returned['cost'];
+                $e['retail_unit'] = $returned['retail'];
+                $e['cost_given'] = true;
+            }
+
+            if ($e['doc_type'] === 'receipt' || $e['cost_given']) {
                 $unit = (float) $e['unit_cost'];
             } elseif ($q > 0 && $v > 0) {
                 $unit = $v / $q;
@@ -461,6 +530,10 @@ class StockValuationService
             $e['balance_qty'] = $q;
             $e['balance_value'] = $v;
             $e['balance_retail'] = $rv;
+
+            if ($e['doc_type'] === 'invoice' && $e['qty'] > 0) {
+                $outUnits[$e['doc_key']][$a] = ['cost' => $e['cost_value'] / $e['qty'], 'retail' => $e['retail_value'] / $e['qty']];
+            }
 
             $qty[$a] = $q;
             $val[$a] = $v;
@@ -514,6 +587,46 @@ class StockValuationService
             $this->events($userId),
             fn ($e) => $e['date'] >= $from && $e['date'] <= $to
         ));
+    }
+
+    /**
+     * Known набавна цена of an article on a date: the moving average if there is stock,
+     * otherwise its first receipt cost; null when the article has never had a cost.
+     */
+    public function knownUnitCost(int $userId, int $articleId, string $date): ?float
+    {
+        $bal = $this->balancesAt($userId, $date)[$articleId] ?? null;
+        if ($bal && $bal['qty'] > 0 && $bal['value'] > 0) {
+            return round($bal['value'] / $bal['qty'], 4);
+        }
+        $first = $this->firstCost[$userId][$articleId] ?? null;
+
+        return $first > 0 ? (float) $first : null;
+    }
+
+    /**
+     * Sequential number of each day's записник за нивелација within its year
+     * ("1/2026", "2/2026", …), keyed by date.
+     */
+    public function levelingNumbers(int $userId): array
+    {
+        $days = [];
+        foreach ($this->events($userId) as $e) {
+            if (in_array($e['doc_type'], ['invoice', 'shopify'], true) && abs($e['leveling']) >= 0.005) {
+                $days[$e['date']] = true;
+            }
+        }
+        ksort($days);
+
+        $numbers = [];
+        $seq = [];
+        foreach (array_keys($days) as $date) {
+            $year = substr($date, 0, 4);
+            $seq[$year] = ($seq[$year] ?? 0) + 1;
+            $numbers[$date] = $seq[$year] . '/' . $year;
+        }
+
+        return $numbers;
     }
 
     /**

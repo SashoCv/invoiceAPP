@@ -16,6 +16,7 @@
             'surplus' => 'Вишок / рачен влез',
             'return' => 'Поврат',
             'shortage' => 'Кусок / рачен излез',
+            'writeoff' => 'Кало, крш, растур',
             'leveling' => 'Нивелација',
         ];
         $fmt = fn ($n) => number_format((float) $n, 2, ',', ' ');

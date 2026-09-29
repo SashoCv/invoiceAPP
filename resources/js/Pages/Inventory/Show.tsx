@@ -23,7 +23,15 @@ import type { Article, StockMovement } from '@/types';
 interface ShowProps {
     item: Article;
     movements: StockMovement[];
+    avgCost: number | null;
 }
+
+const REASONS_IN = ['opening', 'surplus', 'other'];
+const REASONS_OUT = ['shortage', 'writeoff', 'other'];
+const todayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 function StockStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
     const variants: Record<string, string> = {
@@ -65,7 +73,7 @@ function MovementTypeBadge({ type, t }: { type: string; t: (key: string) => stri
     );
 }
 
-export default function ShowInventoryItem({ item, movements }: ShowProps) {
+export default function ShowInventoryItem({ item, movements, avgCost }: ShowProps) {
     const { t } = useTranslation();
     const [adjustOpen, setAdjustOpen] = useState(false);
 
@@ -73,10 +81,32 @@ export default function ShowInventoryItem({ item, movements }: ShowProps) {
         type: 'receipt',
         quantity: 0,
         notes: '',
+        reason: 'surplus',
+        date: todayStr(),
+        cost_price: avgCost !== null ? String(avgCost) : '',
     });
+
+    // Direction of the change: Прием adds, Издавање removes, Корекција sets the quantity
+    const change = adjustForm.data.type === 'receipt'
+        ? adjustForm.data.quantity
+        : adjustForm.data.type === 'issue'
+            ? -adjustForm.data.quantity
+            : adjustForm.data.quantity - Number(item.stock_quantity);
+    // Прием is always an input and Издавање an output; Корекција depends on the new quantity
+    const isInput = adjustForm.data.type === 'receipt' || (adjustForm.data.type === 'adjustment' && change > 0);
+    const reasons = isInput ? REASONS_IN : REASONS_OUT;
+    const reason = reasons.includes(adjustForm.data.reason) ? adjustForm.data.reason : reasons[isInput ? 1 : 0];
+    const costRequired = isInput && avgCost === null;
+
+    const reasonLabel = (r?: string | null) => (r ? t(`inventory.reason_${r}`) : '');
 
     const handleAdjust = (e: React.FormEvent) => {
         e.preventDefault();
+        adjustForm.transform((data) => ({
+            ...data,
+            reason,
+            cost_price: isInput && data.cost_price !== '' ? data.cost_price : null,
+        }));
         adjustForm.post(`/inventory/${item.id}/adjust-stock`, {
             onSuccess: () => {
                 setAdjustOpen(false);
@@ -172,10 +202,13 @@ export default function ShowInventoryItem({ item, movements }: ShowProps) {
                                     {movements.map((movement) => (
                                         <TableRow key={movement.id}>
                                             <TableCell className="text-gray-500 whitespace-nowrap">
-                                                {formatDate(movement.created_at)}
+                                                {formatDate(movement.document_date || movement.created_at)}
                                             </TableCell>
                                             <TableCell>
                                                 <MovementTypeBadge type={movement.type} t={t} />
+                                                {movement.reason && (
+                                                    <span className="ml-1.5 text-xs text-gray-500">{reasonLabel(movement.reason)}</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <span className={`font-medium ${movement.quantity < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -235,6 +268,53 @@ export default function ShowInventoryItem({ item, movements }: ShowProps) {
                                 error={adjustForm.errors.quantity}
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label>{t('inventory.reason')}</Label>
+                                <Select value={reason} onValueChange={(val) => adjustForm.setData('reason', val)}>
+                                    <SelectTrigger className="mt-1">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {reasons.map((r) => (
+                                            <SelectItem key={r} value={r}>{reasonLabel(r)}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>{t('inventory.document_date')}</Label>
+                                <Input
+                                    type="date"
+                                    max={todayStr()}
+                                    value={adjustForm.data.date}
+                                    onChange={(e) => adjustForm.setData('date', e.target.value)}
+                                    className="mt-1"
+                                    error={adjustForm.errors.date}
+                                />
+                            </div>
+                        </div>
+                        {isInput && (
+                            <div>
+                                <Label>
+                                    {t('inventory.purchase_price')}
+                                    {costRequired && <span className="text-red-500"> *</span>}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    required={costRequired}
+                                    value={adjustForm.data.cost_price}
+                                    onChange={(e) => adjustForm.setData('cost_price', e.target.value)}
+                                    className="mt-1"
+                                    error={adjustForm.errors.cost_price}
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    {costRequired ? t('inventory.purchase_price_required') : t('inventory.purchase_price_hint')}
+                                </p>
+                            </div>
+                        )}
                         <div>
                             <Label>{t('inventory.notes')}</Label>
                             <Textarea

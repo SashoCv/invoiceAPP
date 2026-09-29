@@ -157,6 +157,9 @@ export interface StockMovement {
     reference_type: string | null;
     reference_id: number | null;
     notes: string | null;
+    cost_price?: number | string | null;
+    document_date?: string | null;
+    reason?: string | null;
     article?: Article;
     created_at: string;
 }

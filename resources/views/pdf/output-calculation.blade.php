@@ -201,7 +201,7 @@
             <div style="margin-top: 10px; font-size: 7.5pt; color: #374151;">
                 Нивелација по Образец ЕТ за оваа фактура: <strong>{{ $fmt($leveling['amount']) }} ден.</strong>
                 (фактурирано со ДДВ {{ $fmt($leveling['sold']) }} − полна продажна вредност со ДДВ {{ $fmt($leveling['full']) }}).
-                Износот е содржан во записникот за нивелација НИВ-{{ $levelingDate }}.
+                Износот е содржан во записникот за нивелација бр. {{ $levelingNumber ?? '' }} од {{ $levelingDate }}.
             </div>
         @endif
     </div>

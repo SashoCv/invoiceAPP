@@ -15,6 +15,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, sanitizeIntegerInput } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
+import ReceiptTypeFields, { type ReceiptType } from '@/Components/Inventory/ReceiptTypeFields';
 
 interface ArticleOption {
     id: number;
@@ -45,15 +46,19 @@ interface GoodsReceipt {
     date: string;
     notes: string | null;
     total_cost: number;
+    type: ReceiptType;
+    invoice_id: number | null;
+    dependent_costs: number | string;
 }
 
 interface Props {
     receipt: GoodsReceipt;
     articles: ArticleOption[];
     movements: Movement[];
+    invoices: { id: number; label: string }[];
 }
 
-export default function EditGoodsReceipt({ receipt, articles, movements }: Props) {
+export default function EditGoodsReceipt({ receipt, articles, movements, invoices }: Props) {
     const { t } = useTranslation();
     const [items, setItems] = useState<ReceiptItem[]>(
         movements.map((m) => ({
@@ -67,6 +72,9 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
     const { data, setData, processing, errors, setError } = useForm({
         date: receipt.date,
         notes: receipt.notes || '',
+        type: (receipt.type || 'purchase') as ReceiptType,
+        invoice_id: receipt.invoice_id ? String(receipt.invoice_id) : '',
+        dependent_costs: Number(receipt.dependent_costs) > 0 ? String(receipt.dependent_costs) : '',
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -114,11 +122,11 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
         e.preventDefault();
 
         const formItems = items
-            .filter((item) => item.article_id && item.quantity && item.cost_price)
+            .filter((item) => item.article_id && item.quantity && (item.cost_price || data.type === 'customer_return'))
             .map((item) => ({
                 article_id: Number(item.article_id),
                 quantity: parseInt(item.quantity, 10),
-                cost_price: parseFloat(item.cost_price),
+                cost_price: item.cost_price === '' ? null : parseFloat(item.cost_price),
                 tax_rate: parseFloat(item.tax_rate) || 0,
             }));
 
@@ -130,6 +138,9 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
         router.put(`/goods-receipts/${receipt.id}`, {
             date: data.date,
             notes: data.notes,
+            type: data.type,
+            invoice_id: data.invoice_id || null,
+            dependent_costs: data.dependent_costs || 0,
             items: formItems,
         }, {
             onError: (errs) => {
@@ -190,6 +201,12 @@ export default function EditGoodsReceipt({ receipt, articles, movements }: Props
                                     />
                                 </div>
                             </div>
+                            <ReceiptTypeFields
+                                data={{ type: data.type, invoice_id: data.invoice_id, dependent_costs: data.dependent_costs }}
+                                setData={(field, value) => setData(field as any, value as any)}
+                                invoices={invoices}
+                                errors={errors as any}
+                            />
                         </CardContent>
                     </Card>
 

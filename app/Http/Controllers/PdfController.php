@@ -184,6 +184,59 @@ class PdfController extends Controller
     }
 
     /**
+     * Приемен лист во трговија на мало (Образец ПЛТ) for a goods receipt: набавна вредност
+     * (incl. the allocated зависни трошоци), ДДВ при набавка at the prescribed rate, продажна
+     * вредност со ДДВ and the ДДВ contained in it — the source of ЕТ кол. 5 and 6.
+     */
+    public function goodsReceiptPlt(GoodsReceipt $goodsReceipt): BinaryFileResponse
+    {
+        abort_if($goodsReceipt->user_id !== auth()->id(), 403);
+
+        $user = auth()->user();
+        $articles = $user->articles()->withTrashed()->get(['id', 'code', 'name', 'unit'])->keyBy('id');
+
+        $rows = [];
+        foreach (app(\App\Services\StockValuationService::class)->documentEvents($user->id, 'receipt:' . $goodsReceipt->id) as $e) {
+            $a = $articles->get($e['article_id']);
+            $rate = (float) $e['tax_rate'];
+            $retail = $e['retail_value'];
+            $rows[] = [
+                'name' => ($a->code ?? '') ? $a->code . ' — ' . $a->name : ($a->name ?? ''),
+                'unit' => $a->unit ?? '',
+                'quantity' => $e['qty'],
+                'unit_cost' => $e['unit_cost'],
+                'cost' => $e['cost_value'],                                     // кол. 6 = 4 × 5
+                'cost_vat' => round($e['cost_value'] * $rate / 100, 2),         // кол. 7 = 6 × 8
+                'rate' => $rate,                                                // кол. 8
+                'retail_unit' => $e['retail_unit'],                             // кол. 9
+                'retail' => $retail,                                            // кол. 10 = 4 × 9
+                'retail_vat' => round($retail * $rate / (100 + $rate), 2),      // кол. 11
+            ];
+        }
+
+        $totals = [];
+        foreach (['cost', 'cost_vat', 'retail', 'retail_vat'] as $f) {
+            $totals[$f] = round(array_sum(array_column($rows, $f)), 2);
+        }
+
+        $typeLabels = ['purchase' => 'Набавка', 'customer_return' => 'Поврат од купувач', 'opening' => 'Почетна состојба'];
+
+        $pdfPath = $this->pdfService->generatePltPdf([
+            'agency' => $user->agency,
+            'authorizedPerson' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name,
+            'receipt' => $goodsReceipt,
+            'typeLabel' => $typeLabels[$goodsReceipt->type] ?? 'Набавка',
+            'rows' => $rows,
+            'totals' => $totals,
+        ]);
+
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="PLT_' . str_replace(['/', '\\', ' '], '_', $goodsReceipt->receipt_number) . '.pdf"',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
      * Generate and download goods receipt (приемница) PDF
      */
     public function goodsReceipt(GoodsReceipt $goodsReceipt): BinaryFileResponse

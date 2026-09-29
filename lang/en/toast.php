@@ -94,4 +94,5 @@ return [
     // Trade ledger
     'fiscal_report_saved' => 'Daily fiscal report saved',
     'fiscal_report_deleted' => 'Daily fiscal report deleted',
+    'purchase_prices_saved' => 'Purchase prices saved.',
 ];

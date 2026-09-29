@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Inertia\Inertia;
@@ -230,9 +231,13 @@ class InventoryItemController extends Controller implements HasMiddleware
             ->limit(50)
             ->get();
 
+        // Known набавна цена today — prefills the purchase price of manual inputs
+        $avgCost = app(StockValuationService::class)->knownUnitCost($inventory->user_id, $inventory->id, now()->toDateString());
+
         return Inertia::render('Inventory/Show', [
             'item' => $inventory,
             'movements' => $movements,
+            'avgCost' => $avgCost,
         ]);
     }
 
@@ -245,10 +250,14 @@ class InventoryItemController extends Controller implements HasMiddleware
             'article_id' => ['required', 'exists:articles,id'],
             'stock_quantity' => ['required', 'numeric', 'min:0'],
             'low_stock_threshold' => ['required', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'date' => ['nullable', 'date', 'before_or_equal:today'],
         ]);
 
         $article = Article::where('user_id', $request->user()->id)
             ->findOrFail($validated['article_id']);
+
+        $this->requireCostForInput($article, (float) $validated['stock_quantity'], $validated['cost_price'] ?? null, $validated['date'] ?? null);
 
         $article->update([
             'track_inventory' => true,
@@ -264,6 +273,9 @@ class InventoryItemController extends Controller implements HasMiddleware
                 'quantity' => $validated['stock_quantity'],
                 'quantity_before' => 0,
                 'quantity_after' => $validated['stock_quantity'],
+                'cost_price' => $validated['cost_price'] ?? null,
+                'document_date' => $validated['date'] ?? now()->toDateString(),
+                'reason' => 'opening',
                 'notes' => __('inventory.initial_stock'),
             ]);
         }
@@ -296,6 +308,15 @@ class InventoryItemController extends Controller implements HasMiddleware
     {
         $this->authorize('update', $inventory);
 
+        // Whatever is left goes out on record, so the stock ledger stays balanced
+        $remaining = (float) $inventory->stock_quantity;
+        $extra = ['reason' => 'tracking_disabled', 'document_date' => now()->toDateString()];
+        if ($remaining > 0) {
+            $inventory->deductStock($remaining, null, null, __('inventory.tracking_disabled_note'), $extra);
+        } elseif ($remaining < 0) {
+            $inventory->addStock(-$remaining, __('inventory.tracking_disabled_note'), 'adjustment', null, null, $extra);
+        }
+
         $inventory->update([
             'track_inventory' => false,
             'stock_quantity' => 0,
@@ -313,29 +334,69 @@ class InventoryItemController extends Controller implements HasMiddleware
             'type' => ['required', 'in:receipt,issue,adjustment'],
             'quantity' => ['required', 'numeric', 'min:0.01'],
             'notes' => ['nullable', 'string'],
+            'reason' => ['nullable', 'in:' . implode(',', array_unique([...StockMovement::REASONS_IN, ...StockMovement::REASONS_OUT]))],
+            'date' => ['nullable', 'date', 'before_or_equal:today'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
+        $date = $validated['date'] ?? now()->toDateString();
+        $change = match ($validated['type']) {
+            'receipt' => (float) $validated['quantity'],
+            'issue' => -(float) $validated['quantity'],
+            default => (float) $validated['quantity'] - (float) $article->stock_quantity,
+        };
+
+        // Reason must fit the direction; default to вишок / кусок по попис
+        $reason = $validated['reason'] ?? null;
+        $allowed = $change >= 0 ? StockMovement::REASONS_IN : StockMovement::REASONS_OUT;
+        if (!in_array($reason, $allowed, true)) {
+            $reason = $change >= 0 ? 'surplus' : 'shortage';
+        }
+
+        $this->requireCostForInput($article, $change, $validated['cost_price'] ?? null, $date);
+
+        $extra = [
+            'reason' => $reason,
+            'document_date' => $date,
+            'cost_price' => $change > 0 ? ($validated['cost_price'] ?? null) : null,
+        ];
+
         if ($validated['type'] === 'receipt') {
-            $article->addStock($validated['quantity'], $validated['notes'], 'receipt');
+            $article->addStock($validated['quantity'], ($validated['notes'] ?? null), 'receipt', null, null, $extra);
         } elseif ($validated['type'] === 'issue') {
-            $article->deductStock($validated['quantity'], null, null, $validated['notes']);
+            $article->deductStock($validated['quantity'], null, null, ($validated['notes'] ?? null), $extra);
         } else {
             // Adjustment - set absolute quantity
             $before = $article->stock_quantity;
-            $diff = $validated['quantity'] - $before;
             $article->stock_quantity = $validated['quantity'];
             $article->save();
 
             $article->stockMovements()->create([
                 'user_id' => $request->user()->id,
                 'type' => 'adjustment',
-                'quantity' => $diff,
+                'quantity' => $change,
                 'quantity_before' => $before,
                 'quantity_after' => $validated['quantity'],
-                'notes' => $validated['notes'],
-            ]);
+                'notes' => ($validated['notes'] ?? null),
+            ] + $extra);
         }
 
         return back()->with('success', __('toast.stock_adjusted'));
+    }
+
+    /**
+     * A manual input of an article that has never had a purchase cost must carry one,
+     * otherwise it would enter the stock (and the accounting reports) at 0.
+     */
+    private function requireCostForInput(Article $article, float $change, $costPrice, ?string $date): void
+    {
+        if ($change <= 0 || ($costPrice !== null && (float) $costPrice > 0)) {
+            return;
+        }
+
+        $known = app(StockValuationService::class)->knownUnitCost($article->user_id, $article->id, $date ?? now()->toDateString());
+        if ($known === null) {
+            throw ValidationException::withMessages(['cost_price' => __('inventory.purchase_price_required')]);
+        }
     }
 }

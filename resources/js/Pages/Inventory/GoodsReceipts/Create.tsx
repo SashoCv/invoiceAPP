@@ -15,6 +15,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, sanitizeIntegerInput } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Package } from 'lucide-react';
+import ReceiptTypeFields, { type ReceiptType } from '@/Components/Inventory/ReceiptTypeFields';
 
 interface ArticleOption {
     id: number;
@@ -33,9 +34,10 @@ interface ReceiptItem {
 
 interface Props {
     articles: ArticleOption[];
+    invoices: { id: number; label: string }[];
 }
 
-export default function CreateGoodsReceipt({ articles }: Props) {
+export default function CreateGoodsReceipt({ articles, invoices }: Props) {
     const { t } = useTranslation();
     const [items, setItems] = useState<ReceiptItem[]>([
         { article_id: '', quantity: '', cost_price: '', tax_rate: '18' },
@@ -44,6 +46,9 @@ export default function CreateGoodsReceipt({ articles }: Props) {
     const { data, setData, processing, errors, setError, clearErrors } = useForm({
         date: new Date().toISOString().split('T')[0],
         notes: '',
+        type: 'purchase' as ReceiptType,
+        invoice_id: '',
+        dependent_costs: '',
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -92,11 +97,11 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         e.preventDefault();
 
         const formItems = items
-            .filter((item) => item.article_id && item.quantity && item.cost_price)
+            .filter((item) => item.article_id && item.quantity && (item.cost_price || data.type === 'customer_return'))
             .map((item) => ({
                 article_id: Number(item.article_id),
                 quantity: parseInt(item.quantity, 10),
-                cost_price: parseFloat(item.cost_price),
+                cost_price: item.cost_price === '' ? null : parseFloat(item.cost_price),
                 tax_rate: parseFloat(item.tax_rate) || 0,
             }));
 
@@ -108,6 +113,9 @@ export default function CreateGoodsReceipt({ articles }: Props) {
         router.post('/goods-receipts', {
             date: data.date,
             notes: data.notes,
+            type: data.type,
+            invoice_id: data.invoice_id || null,
+            dependent_costs: data.dependent_costs || 0,
             items: formItems,
         }, {
             onError: (errs) => {
@@ -169,6 +177,12 @@ export default function CreateGoodsReceipt({ articles }: Props) {
                                     />
                                 </div>
                             </div>
+                            <ReceiptTypeFields
+                                data={{ type: data.type, invoice_id: data.invoice_id, dependent_costs: data.dependent_costs }}
+                                setData={(field, value) => setData(field as any, value as any)}
+                                invoices={invoices}
+                                errors={errors as any}
+                            />
                         </CardContent>
                     </Card>
 
