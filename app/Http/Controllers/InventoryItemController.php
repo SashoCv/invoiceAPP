@@ -275,7 +275,7 @@ class InventoryItemController extends Controller implements HasMiddleware
                 'quantity_after' => $validated['stock_quantity'],
                 'cost_price' => $validated['cost_price'] ?? null,
                 'document_date' => $validated['date'] ?? now()->toDateString(),
-                'reason' => 'opening',
+                'reason' => 'surplus', // stock added with the article, not the company's opening stock
                 'notes' => __('inventory.initial_stock'),
             ]);
         }

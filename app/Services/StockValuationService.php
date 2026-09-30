@@ -180,12 +180,6 @@ class StockValuationService
             ->orderBy('created_at')->orderBy('id')
             ->get(['id', 'article_id', 'type', 'quantity', 'cost_price', 'notes', 'created_at', 'document_date', 'reason', 'reference_type', 'reference_id']);
 
-        // Initial stock = the "Почетна залиха" row written when tracking is enabled, or an
-        // untitled receipt that is the article's very first movement
-        $firstMovement = DB::table('stock_movements')->where('user_id', $userId)
-            ->selectRaw('article_id, MIN(id) as id')->groupBy('article_id')->pluck('id', 'article_id');
-        $openingNotes = [trans('inventory.initial_stock', [], 'mk'), trans('inventory.initial_stock', [], 'en')];
-
         foreach ($rows as $r) {
             $qty = (float) $r->quantity;
             if ($qty == 0.0) {
@@ -214,15 +208,15 @@ class StockValuationService
                 $docType = 'return';
                 $key = 'return:' . ($r->reference_id ?? $date);
                 $number = $r->notes;
-            } elseif ($r->type === 'receipt' && (in_array($r->notes, $openingNotes, true)
-                    || (!$r->notes && ($firstMovement[$r->article_id] ?? null) == $r->id))) {
-                $docType = 'opening';
-                $key = 'opening:' . $date;
-                $number = $r->notes ?: null;
             } else {
+                // Stock added in Магацин without a receipt — including the "Почетна залиха" row
+                // written when an article is added to the warehouse — is a вишок / рачен влез,
+                // not the company's opening stock
                 $docType = $qty > 0 ? 'surplus' : 'shortage';
                 $key = $docType . ':' . $date . ':' . md5((string) $r->notes);
-                $number = $r->notes ?: null;
+                $number = in_array($r->notes, [trans('inventory.initial_stock', [], 'mk'), trans('inventory.initial_stock', [], 'en')], true)
+                    ? 'Додадено во магацин'
+                    : ($r->notes ?: null);
             }
 
             $docs[$key] ??= ['type' => $docType, 'id' => null, 'number' => $number, 'date' => $date, 'partner' => null];
