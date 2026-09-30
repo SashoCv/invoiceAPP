@@ -108,11 +108,11 @@ class TradeLedgerController extends Controller implements HasMiddleware
         $valuation = app(StockValuationService::class);
         $docsMeta = $valuation->documents($user->id);
         $articles = $user->articles()->withTrashed()->get(['id', 'code', 'name', 'unit', 'tax_rate'])->keyBy('id');
-        $typeLabels = ['invoice' => 'Фактура', 'shopify' => 'Е-трговија'];
+        $typeLabels = ['invoice' => 'Фактура', 'shopify' => 'Е-трговија', 'issue' => 'Испратница (промоција)', 'shortage' => 'Кусок'];
 
         $docs = [];
         foreach ($valuation->eventsBetween($user->id, $day->toDateString(), $day->toDateString()) as $e) {
-            if (!in_array($e['doc_type'], ['invoice', 'shopify'], true) || abs($e['leveling']) < 0.005) {
+            if (!in_array($e['doc_type'], StockValuationService::LEVELED_TYPES, true) || abs($e['leveling']) < 0.005) {
                 continue;
             }
 
@@ -298,7 +298,8 @@ class TradeLedgerController extends Controller implements HasMiddleware
         $levelingByDay = [];
         foreach ($valuation->eventsBetween($user->id, $yearStart, $toDate) as $e) {
             $key = $e['doc_key'];
-            $perDoc[$key] ??= ['type' => $e['doc_type'], 'date' => $e['date'], 'purchase' => 0.0, 'retail' => 0.0];
+            $perDoc[$key] ??= ['type' => $e['doc_type'], 'date' => $e['date'], 'purchase' => 0.0, 'retail' => 0.0, 'sales' => 0.0];
+            $perDoc[$key]['sales'] += $e['sales_no_tax'] + $e['sales_tax'];
             $perDoc[$key]['purchase'] += $e['cost_value'] + round($e['cost_value'] * $this->purchaseTaxRate($e, $user) / 100, 2);
             $perDoc[$key]['retail'] += $e['retail_value'];
 
@@ -317,7 +318,9 @@ class TradeLedgerController extends Controller implements HasMiddleware
                 // Returned goods go back into stock at продажна вредност
                 'return' => $rows->push($this->row($date, 'return', $number, $date, 0, $d['retail'], 0)),
                 // Промоции / гратис and кусоци leave the stock through дневен промет
-                'issue', 'shortage' => $rows->push($this->row($date, $d['type'], $number, $date, 0, 0, $d['retail'])),
+                // Испратници (промоции) and кусоци по набавна вредност + ДДВ; the gap to their
+                // продажна вредност is in that day's нивелација
+                'issue', 'shortage' => $rows->push($this->row($date, $d['type'], $number, $date, 0, 0, $d['sales'])),
                 // Отпис (кало, крш, растур) — црвено сторно во кол. 6 (Правилник)
                 'writeoff' => $rows->push($this->row($date, 'writeoff', $number, $date, 0, -$d['retail'], 0)),
                 default => null, // invoices and Shopify: shown below by amount
@@ -439,6 +442,10 @@ class TradeLedgerController extends Controller implements HasMiddleware
     private function sumRows($rows): array
     {
         return [
+            // Дневен промет broken down: real turnover / испратници / кусоци
+            'turnover_sales' => round($rows->where('type', 'fiscal')->sum('daily_turnover'), 2),
+            'turnover_issues' => round($rows->where('type', 'issue')->sum('daily_turnover'), 2),
+            'turnover_shortages' => round($rows->where('type', 'shortage')->sum('daily_turnover'), 2),
             'purchase_value' => round($rows->sum('purchase_value'), 2),
             'sales_value' => round($rows->sum('sales_value'), 2),
             // Invoice rows also carry their own amount in daily_turnover (for display,

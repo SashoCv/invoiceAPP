@@ -304,6 +304,8 @@ class AccountingReportController extends Controller
                     'cost_tax' => 0.0,
                     'sales_no_tax' => 0.0,
                     'sales_tax' => 0.0,
+                    'charged' => $meta['charged'] ?? null,
+                    'other' => 0.0,
                     'estimated' => false,
                     'lines' => [],
                 ];
@@ -345,6 +347,15 @@ class AccountingReportController extends Controller
             }
             unset($d);
         }
+
+        // Достава и друго: what the customer paid on top of the goods (Shopify shipping,
+        // unmapped lines), so "Вкупно наплатено" equals the order total / bank payment
+        foreach ($docs as &$d) {
+            if ($d['charged'] !== null) {
+                $d['other'] = round($d['charged'] - round($d['sales_no_tax'] + $d['sales_tax'], 2), 2);
+            }
+        }
+        unset($d);
 
         if ($this->byDay) {
             $docs = $this->groupByDay($docs);
@@ -402,7 +413,7 @@ class AccountingReportController extends Controller
             $key = 'day:' . $d['type'] . ':' . $d['date'];
             if (!isset($days[$key])) {
                 $days[$key] = ['key' => $key, 'id' => null, 'partner' => null, 'docs' => 0, 'lines' => []] + $d;
-                foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax'] as $f) {
+                foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax', 'other'] as $f) {
                     $days[$key][$f] = 0;
                 }
                 $days[$key]['lines'] = [];
@@ -410,7 +421,7 @@ class AccountingReportController extends Controller
 
             $g = &$days[$key];
             $g['docs']++;
-            foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax'] as $f) {
+            foreach (['items', 'quantity', 'cost_value', 'cost_tax', 'sales_no_tax', 'sales_tax', 'other'] as $f) {
                 $g[$f] += $d[$f];
             }
             $g['estimated'] = $g['estimated'] || $d['estimated'];
@@ -451,6 +462,9 @@ class AccountingReportController extends Controller
         }
         $d['cost_with_tax'] = round($d['cost_value'] + $d['cost_tax'], 2);
         $d['sales_with_tax'] = round($d['sales_no_tax'] + $d['sales_tax'], 2);
+        $d['other'] = round($d['other'] ?? 0, 2);
+        // Nothing is charged for испратници / кусоци (their value is набавна + ДДВ / продажна)
+        $d['charged_total'] = in_array($d['type'], ['invoice', 'shopify'], true) ? round($d['sales_with_tax'] + $d['other'], 2) : 0.0;
         // РУЦ: sales documents (realised) and inputs (вкалкулирана разлика во цена)
         $d['margin'] = in_array($d['type'], ['invoice', 'shopify', 'opening', 'receipt', 'return', 'surplus'], true)
             ? round($d['sales_no_tax'] - $d['cost_value'], 2)
@@ -464,6 +478,7 @@ class AccountingReportController extends Controller
         return [
             'quantity' => 0.0, 'cost_value' => 0.0, 'cost_tax' => 0.0, 'cost_with_tax' => 0.0,
             'sales_no_tax' => 0.0, 'sales_tax' => 0.0, 'sales_with_tax' => 0.0, 'margin' => 0.0,
+            'other' => 0.0, 'charged_total' => 0.0,
         ];
     }
 
@@ -494,25 +509,25 @@ class AccountingReportController extends Controller
 
         $days = [];
         foreach ($this->valuation->eventsBetween($userId, $from, $to) as $e) {
-            if (!in_array($e['doc_type'], ['invoice', 'shopify'], true) || abs($e['leveling']) < 0.005) {
+            if (!in_array($e['doc_type'], StockValuationService::LEVELED_TYPES, true) || abs($e['leveling']) < 0.005) {
                 continue;
             }
             $rate = $e['doc_type'] === 'shopify' ? StockValuationService::RETAIL_VAT : (float) ($taxRates[$e['article_id']] ?? 0);
 
             $d = &$days[$e['date']];
             $d ??= ['date' => $e['date'], 'docs' => [], 'full_value' => 0.0, 'sold_value' => 0.0,
-                'leveling_invoice' => 0.0, 'leveling_shopify' => 0.0, 'leveling' => 0.0, 'leveling_tax' => 0.0];
+                'leveling_invoice' => 0.0, 'leveling_shopify' => 0.0, 'leveling_issue' => 0.0, 'leveling' => 0.0, 'leveling_tax' => 0.0];
             $d['docs'][$e['doc_key']] = true;
             $d['full_value'] += $e['retail_value'];
             $d['sold_value'] += $e['sales_no_tax'] + $e['sales_tax'];
-            $d['leveling_' . $e['doc_type']] += $e['leveling'];
+            $d['leveling_' . (in_array($e['doc_type'], ['issue', 'shortage'], true) ? 'issue' : $e['doc_type'])] += $e['leveling'];
             $d['leveling'] += $e['leveling'];
             $d['leveling_tax'] += round($e['leveling'] * $rate / (100 + $rate), 2);
             unset($d);
         }
         ksort($days);
 
-        $fields = ['full_value', 'sold_value', 'leveling_invoice', 'leveling_shopify', 'leveling', 'leveling_tax'];
+        $fields = ['full_value', 'sold_value', 'leveling_invoice', 'leveling_shopify', 'leveling_issue', 'leveling', 'leveling_tax'];
         $numbers = $this->valuation->levelingNumbers($userId);
         $empty = array_fill_keys($fields, 0.0) + ['count' => 0];
         $months = [];
@@ -711,20 +726,20 @@ class AccountingReportController extends Controller
         $n = fn ($v) => number_format((float) $v, 2, '.', '');
 
         $header = $isOut
-            ? ['Р.бр.', 'Тип', 'Број', 'Датум', 'Партнер', 'Ставки', 'Количина', 'Набавна вредност', 'Продажна без ДДВ', 'ДДВ', 'Продажна со ДДВ', 'РУЦ']
+            ? ['Р.бр.', 'Тип', 'Број', 'Датум', 'Партнер', 'Ставки', 'Количина', 'Набавна вредност', 'Продажна без ДДВ', 'ДДВ', 'Продажна со ДДВ', 'РУЦ', 'Достава и друго', 'Вкупно наплатено']
             : ['Р.бр.', 'Тип', 'Број', 'Датум', 'Ставки', 'Количина', 'Набавна без ДДВ', 'ДДВ', 'Набавна со ДДВ', 'Продажна без ДДВ', 'ДДВ (продажна)', 'Продажна со ДДВ', 'РУЦ', 'Проценета'];
 
         $line = function (array $r) use ($isOut, $n) {
             $date = Carbon::parse($r['date'])->format('d.m.Y');
 
             return $isOut
-                ? [$r['rb'], $r['type_label'], $r['number'], $date, $r['partner'], $r['items'], $n($r['quantity']), $n($r['cost_value']), $n($r['sales_no_tax']), $n($r['sales_tax']), $n($r['sales_with_tax']), $n($r['margin'])]
+                ? [$r['rb'], $r['type_label'], $r['number'], $date, $r['partner'], $r['items'], $n($r['quantity']), $n($r['cost_value']), $n($r['sales_no_tax']), $n($r['sales_tax']), $n($r['sales_with_tax']), $n($r['margin']), $n($r['other']), $n($r['charged_total'])]
                 : [$r['rb'], $r['type_label'], $r['number'], $date, $r['items'], $n($r['quantity']), $n($r['cost_value']), $n($r['cost_tax']), $n($r['cost_with_tax']), $n($r['sales_no_tax']), $n($r['sales_tax']), $n($r['sales_with_tax']), $n($r['margin']), $r['estimated'] ? 'да' : ''];
         };
 
         $total = function (string $label, array $t) use ($isOut, $n) {
             return $isOut
-                ? ['', $label, '', '', '', '', $n($t['quantity']), $n($t['cost_value']), $n($t['sales_no_tax']), $n($t['sales_tax']), $n($t['sales_with_tax']), $n($t['margin'])]
+                ? ['', $label, '', '', '', '', $n($t['quantity']), $n($t['cost_value']), $n($t['sales_no_tax']), $n($t['sales_tax']), $n($t['sales_with_tax']), $n($t['margin']), $n($t['other']), $n($t['charged_total'])]
                 : ['', $label, '', '', '', $n($t['quantity']), $n($t['cost_value']), $n($t['cost_tax']), $n($t['cost_with_tax']), $n($t['sales_no_tax']), $n($t['sales_tax']), $n($t['sales_with_tax']), $n($t['margin']), ''];
         };
 
@@ -768,9 +783,9 @@ class AccountingReportController extends Controller
     private function levelingCsvRows(array $report): array
     {
         $n = fn ($v) => number_format((float) $v, 2, '.', '');
-        $line = fn (string $a, string $b, $count, array $t) => [$a, $b, $count, $n($t['full_value']), $n($t['sold_value']), $n($t['leveling_invoice']), $n($t['leveling_shopify']), $n($t['leveling']), $n($t['leveling_tax'])];
+        $line = fn (string $a, string $b, $count, array $t) => [$a, $b, $count, $n($t['full_value']), $n($t['sold_value']), $n($t['leveling_invoice']), $n($t['leveling_shopify']), $n($t['leveling_issue']), $n($t['leveling']), $n($t['leveling_tax'])];
 
-        $rows = [['Број', 'Датум', 'Документи', 'Полна продажна со ДДВ', 'Продадено со ДДВ', 'Нивелација фактури', 'Нивелација е-трговија', 'Нивелација вкупно', 'ДДВ во нивелацијата']];
+        $rows = [['Број', 'Датум', 'Документи', 'Полна продажна со ДДВ', 'Продадено / издадено со ДДВ', 'Нивелација фактури', 'Нивелација е-трговија', 'Нивелација испратници и кусоци', 'Нивелација вкупно', 'ДДВ во нивелацијата']];
         foreach ($report['months'] as $m) {
             foreach ($m['rows'] as $r) {
                 $rows[] = $line($r['number'], Carbon::parse($r['date'])->format('d.m.Y'), $r['count'], $r);

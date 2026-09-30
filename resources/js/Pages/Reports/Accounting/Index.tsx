@@ -29,6 +29,8 @@ interface Totals {
     sales_tax: number;
     sales_with_tax: number;
     margin: number;
+    other: number;
+    charged_total: number;
 }
 
 interface TypeTotals extends Totals {
@@ -111,6 +113,7 @@ interface LevelingTotals {
     sold_value: number;
     leveling_invoice: number;
     leveling_shopify: number;
+    leveling_issue: number;
     leveling: number;
     leveling_tax: number;
     count: number;
@@ -285,11 +288,11 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
     const [open, setOpen] = useState<Record<string, boolean>>({});
     const toggle = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
 
-    const cols = isOut ? 12 : 14;
+    const cols = 14;
     const labelSpan = isOut ? 5 : 4;
 
     const amounts = (r: Totals) => (isOut
-        ? [r.cost_value, r.sales_no_tax, r.sales_tax, r.sales_with_tax, r.margin]
+        ? [r.cost_value, r.sales_no_tax, r.sales_tax, r.sales_with_tax, r.margin, r.other, r.charged_total]
         : [r.cost_value, r.cost_tax, r.cost_with_tax, r.sales_no_tax, r.sales_tax, r.sales_with_tax, r.margin]);
 
     const AmountCells = ({ r }: { r: Totals }) => (
@@ -335,6 +338,8 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
                                         <TableHead className="text-right">{t('accounting.sales_tax')}</TableHead>
                                         <TableHead className="text-right">{t('accounting.sales_with_tax')}</TableHead>
                                         <TableHead className="text-right">{t('accounting.margin')}</TableHead>
+                                        <TableHead className="text-right" title={t('accounting.other_hint')}>{t('accounting.other')}</TableHead>
+                                        <TableHead className="text-right">{t('accounting.charged_total')}</TableHead>
                                     </>
                                 ) : (
                                     <>
@@ -642,7 +647,7 @@ function StockView({ report, dateFrom, dateTo }: { report: StockReport; dateFrom
 
 function LevelingView({ report }: { report: LevelingReport }) {
     const { t } = useTranslation();
-    const cells = (r: LevelingTotals) => [r.full_value, r.sold_value, r.leveling_invoice, r.leveling_shopify, r.leveling, r.leveling_tax];
+    const cells = (r: LevelingTotals) => [r.full_value, r.sold_value, r.leveling_invoice, r.leveling_shopify, r.leveling_issue, r.leveling, r.leveling_tax];
 
     return (
         <>
@@ -658,6 +663,7 @@ function LevelingView({ report }: { report: LevelingReport }) {
                                 <TableHead className="text-right">{t('accounting.sold_value')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.leveling_invoice')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.leveling_shopify')}</TableHead>
+                                <TableHead className="text-right">{t('accounting.leveling_issue')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.leveling_total')}</TableHead>
                                 <TableHead className="text-right">{t('accounting.leveling_tax')}</TableHead>
                             </TableRow>
@@ -665,13 +671,13 @@ function LevelingView({ report }: { report: LevelingReport }) {
                         <TableBody>
                             {report.months.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center text-gray-400 py-10">{t('accounting.no_leveling')}</TableCell>
+                                    <TableCell colSpan={10} className="text-center text-gray-400 py-10">{t('accounting.no_leveling')}</TableCell>
                                 </TableRow>
                             )}
                             {report.months.map((m) => (
                                 <Fragment key={m.month}>
                                     <TableRow className="bg-indigo-50/60 hover:bg-indigo-50/60">
-                                        <TableCell colSpan={9} className="font-semibold text-indigo-800">{m.label}</TableCell>
+                                        <TableCell colSpan={10} className="font-semibold text-indigo-800">{m.label}</TableCell>
                                     </TableRow>
                                     {m.rows.map((r) => (
                                         <TableRow key={r.date}>

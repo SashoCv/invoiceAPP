@@ -157,14 +157,15 @@
                         <th>Продадено со ДДВ</th>
                         <th>Нивелација фактури</th>
                         <th>Нивелација е-трговија</th>
+                        <th>Нивелација испратници и кусоци</th>
                         <th>Нивелација вкупно</th>
                         <th>ДДВ во нивелацијата</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php $lv = fn ($t) => [$t['full_value'], $t['sold_value'], $t['leveling_invoice'], $t['leveling_shopify'], $t['leveling'], $t['leveling_tax']]; @endphp
+                    @php $lv = fn ($t) => [$t['full_value'], $t['sold_value'], $t['leveling_invoice'], $t['leveling_shopify'], $t['leveling_issue'], $t['leveling'], $t['leveling_tax']]; @endphp
                     @forelse($report['months'] as $m)
-                        <tr class="month"><td colspan="9">{{ $m['label'] }}</td></tr>
+                        <tr class="month"><td colspan="10">{{ $m['label'] }}</td></tr>
                         @foreach($m['rows'] as $r)
                         <tr>
                             <td>{{ $r['number'] }}</td>
@@ -179,7 +180,7 @@
                             @foreach($lv($m['totals']) as $v)<td class="right">{{ $fmt($v) }}</td>@endforeach
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="center" style="padding: 14px; color: #9ca3af;">Нема нивелации за избраниот период.</td></tr>
+                        <tr><td colspan="10" class="center" style="padding: 14px; color: #9ca3af;">Нема нивелации за избраниот период.</td></tr>
                     @endforelse
                     <tr class="total">
                         <td colspan="2" class="right">ВКУПНО ЗА ПЕРИОД</td>
@@ -190,7 +191,7 @@
             </table>
             <div class="note">Нивелација = продадено со ДДВ − полна продажна вредност со ДДВ по која стоката е водена во Образец ЕТ (попусти). Негативен износ ја намалува продажната вредност на залихата. Секој ред е посебен записник за нивелација, книжен во ЕТ под истиот број.</div>
         @else
-            @php $cols = $isOut ? 12 : 14; @endphp
+            @php $cols = 14; @endphp
             <table class="rep">
                 <thead>
                     <tr>
@@ -202,11 +203,13 @@
                         <th style="width: 5%;">Ставки</th>
                         <th style="width: 7%;">Количина</th>
                         @if($isOut)
-                            <th style="width: 9%;">Набавна вредност</th>
-                            <th style="width: 9%;">Продажна без ДДВ</th>
-                            <th style="width: 8%;">ДДВ</th>
-                            <th style="width: 9%;">Продажна со ДДВ</th>
-                            <th style="width: 8%;">РУЦ</th>
+                            <th style="width: 8%;">Набавна вредност</th>
+                            <th style="width: 8%;">Продажна без ДДВ</th>
+                            <th style="width: 7%;">ДДВ</th>
+                            <th style="width: 8%;">Продажна со ДДВ</th>
+                            <th style="width: 7%;">РУЦ</th>
+                            <th style="width: 7%;">Достава и друго</th>
+                            <th style="width: 8%;">Вкупно наплатено</th>
                         @else
                             <th style="width: 8%;">Набавна без ДДВ</th>
                             <th style="width: 7%;">ДДВ</th>
@@ -222,7 +225,7 @@
                     @php
                         $amounts = function ($r) use ($isOut, $fmt) {
                             return $isOut
-                                ? [$r['cost_value'], $r['sales_no_tax'], $r['sales_tax'], $r['sales_with_tax'], $r['margin']]
+                                ? [$r['cost_value'], $r['sales_no_tax'], $r['sales_tax'], $r['sales_with_tax'], $r['margin'], $r['other'], $r['charged_total']]
                                 : [$r['cost_value'], $r['cost_tax'], $r['cost_with_tax'], $r['sales_no_tax'], $r['sales_tax'], $r['sales_with_tax'], $r['margin']];
                         };
                         $labelSpan = $isOut ? 5 : 4;

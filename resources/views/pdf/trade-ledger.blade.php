@@ -82,6 +82,7 @@
         .col-turnover { background-color: #eef2ff; border-left: 2px solid #c7d2fe !important; }
 
         .fiscal-row td { font-weight: bold; background-color: #e0e7ff; }
+        tr.breakdown td { font-size: 7.5pt; color: #374151; background-color: #fff; }
         .fiscal-row td.col-turnover { background-color: #c7d2fe; }
 
         .colnum td {
@@ -178,6 +179,18 @@
                     <td class="right">{{ $fmt($periodTotals['sales_value']) }}</td>
                     <td class="right col-turnover">{{ $fmt($periodTotals['daily_turnover']) }}</td>
                 </tr>
+                <tr class="breakdown">
+                    <td colspan="7" class="right">од тоа: промет (фактури + е-трговија / Z-извештај)</td>
+                    <td class="right col-turnover">{{ $fmt($periodTotals['turnover_sales']) }}</td>
+                </tr>
+                <tr class="breakdown">
+                    <td colspan="7" class="right">од тоа: испратници — промоции (по набавна вредност + ДДВ)</td>
+                    <td class="right col-turnover">{{ $fmt($periodTotals['turnover_issues']) }}</td>
+                </tr>
+                <tr class="breakdown">
+                    <td colspan="7" class="right">од тоа: кусоци (по набавна вредност + ДДВ)</td>
+                    <td class="right col-turnover">{{ $fmt($periodTotals['turnover_shortages']) }}</td>
+                </tr>
                 <tr class="total">
                     <td colspan="5" class="right">Вкупно</td>
                     <td class="right">{{ $fmt($grandTotals['purchase_value']) }}</td>
@@ -188,7 +201,7 @@
         </table>
 
         <div style="font-size: 7pt; color: #6b7280; margin-top: 4px;">
-            Залиха по продажни цени (кол. 6 − кол. 7) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['daily_turnover']) }} ден. Нивелацијата (разлика меѓу полната продажна цена и продадената цена — попусти) се книжи дневно со минус во кол. 6. Испратниците (промоции, гратис) и кусоците влегуваат во дневниот промет по продажна вредност.
+            Залиха по продажни цени (кол. 6 − кол. 7) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['daily_turnover']) }} ден. Нивелацијата (разлика меѓу полната продажна цена и продадената цена — попусти) се книжи дневно со минус во кол. 6. Испратниците (промоции, гратис) и кусоците влегуваат во дневниот промет по набавна вредност + ДДВ; разликата до продажната вредност е во нивелацијата.
         </div>
 
         {{-- Signature --}}

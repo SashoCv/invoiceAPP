@@ -25,7 +25,7 @@ return [
     'period_total' => 'Period total',
     'grand_total' => 'Grand total',
     'grand_total_hint' => 'Cumulative from January 1st through the end of the selected period',
-    'margin_hint' => 'Stock at retail prices (Sales value − Daily turnover) = :amount MKD. Price leveling is computed automatically every day: the difference between the full retail price and the price the goods were sold at (discounts) is booked as a negative sales value. Goods issues (promotions, giveaways) and shortages enter daily turnover at retail value.',
+    'margin_hint' => 'Stock at retail prices (Sales value − Daily turnover) = :amount MKD. Price leveling is computed automatically every day: the difference between the full retail price and the price the goods were sold at (discounts) is booked as a negative sales value. Goods issues (promotions, giveaways) and shortages enter daily turnover at cost + VAT; the difference to retail value is in the price leveling.',
     'no_rows' => 'No records for the selected period',
 
     // Document types
@@ -34,6 +34,9 @@ return [
     'type_invoice' => 'Invoice',
     'type_shopify' => 'Shopify',
     'type_fiscal' => 'Daily fiscal report',
+    'turnover_sales' => 'of which: turnover (invoices + e-commerce / Z report)',
+    'turnover_issues' => 'of which: goods issues — promotions (at cost + VAT)',
+    'turnover_shortages' => 'of which: shortages (at cost + VAT)',
     'type_carryover' => 'Carried over (opening)',
     'type_opening' => 'Opening stock',
     'type_surplus' => 'Surplus / manual in',

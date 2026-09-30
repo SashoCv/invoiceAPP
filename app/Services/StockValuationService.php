@@ -27,6 +27,9 @@ class StockValuationService
     public const INPUT_TYPES = ['opening', 'receipt', 'return', 'surplus'];
     public const OUTPUT_TYPES = ['invoice', 'shopify', 'issue', 'shortage', 'writeoff'];
 
+    /** Outputs that leave below their продажна вредност and are levelled in ЕТ */
+    public const LEVELED_TYPES = ['invoice', 'shopify', 'issue', 'shortage'];
+
     /** @var array<int, array> cached valued events per user */
     private array $cache = [];
 
@@ -261,7 +264,7 @@ class StockValuationService
             ->orderBy('i.issue_date')->orderBy('i.id')->orderBy('ii.id')
             ->get([
                 'ii.id as line_id', 'ii.article_id', 'ii.bundle_id', 'ii.quantity', 'ii.unit_price', 'ii.discount', 'ii.additional_discount', 'ii.tax_rate',
-                'i.id as doc_id', 'i.invoice_number', 'i.issue_date', 'i.currency', 'c.company', 'c.name as client_name',
+                'i.id as doc_id', 'i.invoice_number', 'i.issue_date', 'i.currency', 'i.total as invoice_total', 'c.company', 'c.name as client_name',
             ]);
 
         foreach ($items as $it) {
@@ -284,6 +287,7 @@ class StockValuationService
             $docs[$key] ??= [
                 'type' => 'invoice', 'id' => $it->doc_id, 'number' => $it->invoice_number, 'date' => $date,
                 'partner' => $it->company ?: $it->client_name,
+                'charged' => round((float) $it->invoice_total * $this->toMkdRate($it->currency, $date), 2),
             ];
 
             $rate = $this->toMkdRate($it->currency, $date);
@@ -310,7 +314,7 @@ class StockValuationService
     private function buildShopifyEvents(int $userId, array &$events, array &$docs): void
     {
         $orders = DB::table('shopify_orders')->where('user_id', $userId)
-            ->get(['id', 'order_number', 'customer_name', 'ordered_at', 'currency'])->keyBy('id');
+            ->get(['id', 'order_number', 'customer_name', 'ordered_at', 'currency', 'total_price'])->keyBy('id');
 
         $components = DB::table('bundle_items')
             ->join('bundles', 'bundles.id', '=', 'bundle_items.bundle_id')
@@ -356,7 +360,9 @@ class StockValuationService
 
             $date = substr((string) $order->ordered_at, 0, 10);
             $key = 'shopify:' . $order->id;
-            $docs[$key] ??= ['type' => 'shopify', 'id' => $order->id, 'number' => $order->order_number, 'date' => $date, 'partner' => $order->customer_name];
+            // charged = what the customer paid for the whole order (goods + достава и друго)
+            $docs[$key] ??= ['type' => 'shopify', 'id' => $order->id, 'number' => $order->order_number, 'date' => $date, 'partner' => $order->customer_name,
+                'charged' => round((float) $order->total_price * $this->toMkdRate($order->currency, $date), 2)];
 
             $extra = [];
             if (!isset($salesAttached[$order->id][$m->article_id])) {
@@ -524,7 +530,16 @@ class StockValuationService
             $e['cost_value'] = $cost;
             $e['retail_unit'] = round($retailUnit, 4);
             $e['retail_value'] = $retail;
-            $e['leveling'] = in_array($e['doc_type'], ['invoice', 'shopify'], true)
+
+            // Испратница (промоции, гратис) and кусок: go out at набавна вредност + ДДВ (the base
+            // for ДДВ on free supplies); the gap to their продажна вредност is levelled
+            if (in_array($e['doc_type'], ['issue', 'shortage'], true)) {
+                $rate = (float) ($this->articleInfo[$userId][$a]->tax_rate ?? 0);
+                $e['sales_no_tax'] = $cost;
+                $e['sales_tax'] = round($cost * $rate / 100, 2);
+            }
+
+            $e['leveling'] = in_array($e['doc_type'], self::LEVELED_TYPES, true)
                 ? round($e['sales_no_tax'] + $e['sales_tax'] - $retail, 2)
                 : 0.0;
             $e['balance_qty'] = $q;
@@ -612,7 +627,7 @@ class StockValuationService
     {
         $days = [];
         foreach ($this->events($userId) as $e) {
-            if (in_array($e['doc_type'], ['invoice', 'shopify'], true) && abs($e['leveling']) >= 0.005) {
+            if (in_array($e['doc_type'], self::LEVELED_TYPES, true) && abs($e['leveling']) >= 0.005) {
                 $days[$e['date']] = true;
             }
         }

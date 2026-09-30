@@ -42,6 +42,9 @@ interface Totals {
     purchase_value: number;
     sales_value: number;
     daily_turnover: number;
+    turnover_sales: number;
+    turnover_issues: number;
+    turnover_shortages: number;
 }
 
 interface FiscalReport {
@@ -253,6 +256,16 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                     <TableCell className="text-right">{formatNumber(periodTotals.sales_value, 2)}</TableCell>
                                     <TableCell className="text-right bg-indigo-100 border-l-2 border-indigo-200">{formatNumber(periodTotals.daily_turnover, 2)}</TableCell>
                                 </TableRow>
+                                {[
+                                    ['ledger.turnover_sales', periodTotals.turnover_sales],
+                                    ['ledger.turnover_issues', periodTotals.turnover_issues],
+                                    ['ledger.turnover_shortages', periodTotals.turnover_shortages],
+                                ].map(([key, value]) => (
+                                    <TableRow key={key as string} className="bg-white text-sm font-normal text-gray-600">
+                                        <TableCell colSpan={7} className="text-right py-1.5">{t(key as string)}</TableCell>
+                                        <TableCell className="text-right py-1.5 border-l-2 border-indigo-200">{formatNumber(value as number, 2)}</TableCell>
+                                    </TableRow>
+                                ))}
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-right text-indigo-700">
                                         <div>{t('ledger.grand_total')}</div>
