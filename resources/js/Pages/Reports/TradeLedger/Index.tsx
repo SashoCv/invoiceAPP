@@ -58,7 +58,6 @@ interface FiscalReport {
 interface Props {
     rows: LedgerRow[];
     periodTotals: Totals;
-    grandTotals: Totals;
     reports: FiscalReport[];
     filters: {
         date_from: string;
@@ -68,7 +67,7 @@ interface Props {
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, reports, filters }: Props) {
+export default function TradeLedgerIndex({ rows, periodTotals, reports, filters }: Props) {
     const { t } = useTranslation();
 
     const [dateFrom, setDateFrom] = useState(filters.date_from);
@@ -266,20 +265,6 @@ export default function TradeLedgerIndex({ rows, periodTotals, grandTotals, repo
                                         <TableCell className="text-right py-1.5 border-l-2 border-indigo-200">{formatNumber(value as number, 2)}</TableCell>
                                     </TableRow>
                                 ))}
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-right text-indigo-700">
-                                        <div>{t('ledger.grand_total')}</div>
-                                        <div className="text-xs font-normal text-indigo-400">{t('ledger.grand_total_hint')}</div>
-                                    </TableCell>
-                                    <TableCell className="text-right text-indigo-700">{formatNumber(grandTotals.purchase_value, 2)}</TableCell>
-                                    <TableCell className="text-right text-indigo-700">{formatNumber(grandTotals.sales_value, 2)}</TableCell>
-                                    <TableCell className="text-right text-indigo-700 bg-indigo-100 border-l-2 border-indigo-200">{formatNumber(grandTotals.daily_turnover, 2)}</TableCell>
-                                </TableRow>
-                                <TableRow className="bg-transparent">
-                                    <TableCell colSpan={8} className="text-xs font-normal text-gray-400 pt-1 pb-2">
-                                        {t('ledger.margin_hint', { amount: formatNumber(grandTotals.sales_value - grandTotals.daily_turnover, 2) })}
-                                    </TableCell>
-                                </TableRow>
                             </tfoot>
                         </Table>
                     </CardContent>

@@ -191,18 +191,11 @@
                     <td colspan="7" class="right">од тоа: кусоци (по набавна вредност + ДДВ)</td>
                     <td class="right col-turnover">{{ $fmt($periodTotals['turnover_shortages']) }}</td>
                 </tr>
-                <tr class="total">
-                    <td colspan="5" class="right">Вкупно</td>
-                    <td class="right">{{ $fmt($grandTotals['purchase_value']) }}</td>
-                    <td class="right">{{ $fmt($grandTotals['sales_value']) }}</td>
-                    <td class="right col-turnover">{{ $fmt($grandTotals['daily_turnover']) }}</td>
-                </tr>
+
             </tbody>
         </table>
 
-        <div style="font-size: 7pt; color: #6b7280; margin-top: 4px;">
-            Залиха по продажни цени (кол. 6 − кол. 7) = {{ $fmt($grandTotals['sales_value'] - $grandTotals['daily_turnover']) }} ден. Нивелацијата (разлика меѓу полната продажна цена и продадената цена — попусти) се книжи дневно со минус во кол. 6. Испратниците (промоции, гратис) и кусоците влегуваат во дневниот промет по набавна вредност + ДДВ; разликата до продажната вредност е во нивелацијата.
-        </div>
+
 
         {{-- Signature --}}
         <div class="signature">
