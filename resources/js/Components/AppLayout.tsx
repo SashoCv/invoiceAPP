@@ -32,6 +32,7 @@ import {
     DollarSign,
     BookText,
     Scale,
+    ShieldCheck,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { PageProps } from '@/types';
@@ -150,6 +151,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     href: '/shopify/orders/pending',
                     icon: Clock,
                     active: currentPath === '/shopify/orders/pending',
+                },
+                {
+                    name: t('navigation.shopify_payment_check'),
+                    href: '/shopify/payment-check',
+                    icon: ShieldCheck,
+                    active: currentPath.startsWith('/shopify/payment-check'),
                 },
             ],
         },

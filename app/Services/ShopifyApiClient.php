@@ -7,13 +7,43 @@ use Illuminate\Support\Facades\Http;
 
 class ShopifyApiClient
 {
+    private const GRAPHQL_VERSION = '2025-01';
+
     private string $baseUrl;
+    private string $graphqlUrl;
     private ?string $accessToken;
 
     public function __construct(ShopifyConnection $connection)
     {
         $this->baseUrl = "https://{$connection->shop_domain}/admin/api/2024-01";
+        $this->graphqlUrl = "https://{$connection->shop_domain}/admin/api/" . self::GRAPHQL_VERSION . '/graphql.json';
         $this->accessToken = $connection->access_token;
+    }
+
+    /**
+     * GraphQL Admin API query. Throws ShopifyGraphqlException when Shopify returns errors
+     * (e.g. ACCESS_DENIED for orders older than 60 days without read_all_orders).
+     */
+    public function graphql(string $query, array $variables = []): array
+    {
+        $response = Http::withHeaders([
+            'X-Shopify-Access-Token' => $this->accessToken,
+            'Content-Type' => 'application/json',
+        ])->timeout(30)->post($this->graphqlUrl, ['query' => $query, 'variables' => (object) $variables]);
+
+        $response->throw();
+        $json = $response->json();
+
+        if (!empty($json['errors'])) {
+            throw new ShopifyGraphqlException($json['errors']);
+        }
+
+        return $json['data'] ?? [];
+    }
+
+    public function getOrder(int $id): array
+    {
+        return $this->request('GET', "/orders/{$id}.json")['order'];
     }
 
     public function getShop(): array

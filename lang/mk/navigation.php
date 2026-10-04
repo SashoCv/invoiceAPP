@@ -47,4 +47,5 @@ return [
     'shopify_sales' => 'Продажби',
     'shopify_orders' => 'Нарачки',
     'shopify_pending' => 'Чекаат испорака',
+    'shopify_payment_check' => 'Проверка на плаќања',
 ];

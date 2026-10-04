@@ -47,4 +47,5 @@ return [
     'shopify_sales' => 'Sales',
     'shopify_orders' => 'Orders',
     'shopify_pending' => 'Pending Shipment',
+    'shopify_payment_check' => 'Payment check',
 ];

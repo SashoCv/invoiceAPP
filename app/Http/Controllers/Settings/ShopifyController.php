@@ -81,7 +81,8 @@ class ShopifyController extends Controller
 
         // Redirect to Shopify OAuth
         $redirectUri = route('settings.shopify.callback');
-        $scopes = 'read_orders,read_products';
+        // read_all_orders: orders older than 60 days (payment check, sync of older periods)
+        $scopes = 'read_orders,read_products,read_all_orders';
 
         $url = "https://{$shopDomain}/admin/oauth/authorize?" . http_build_query([
             'client_id' => $request->client_id,
