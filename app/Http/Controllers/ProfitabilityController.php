@@ -86,7 +86,7 @@ class ProfitabilityController extends Controller
         $shopifyUnmappedItems = DB::table('shopify_order_items')
             ->join('shopify_orders', 'shopify_order_items.shopify_order_id', '=', 'shopify_orders.id')
             ->where('shopify_orders.user_id', $user->id)
-            ->whereBetween('shopify_orders.ordered_at', [$fromDate, $toDate])
+            ->whereBetween('shopify_orders.ordered_at', StockValuationService::utcRange($fromDate, $toDate))
             ->whereNull('shopify_order_items.article_id')
             ->whereNull('shopify_order_items.bundle_id')
             ->select('shopify_order_items.title', 'shopify_order_items.quantity', 'shopify_order_items.price', 'shopify_order_items.total_discount', 'shopify_orders.currency', 'shopify_orders.ordered_at', 'shopify_orders.order_number')
@@ -104,7 +104,7 @@ class ProfitabilityController extends Controller
 
         // Shopify shipping & other (order total - sum of items)
         $shopifyOrders = \App\Models\ShopifyOrder::where('user_id', $user->id)
-            ->whereBetween('ordered_at', [$fromDate, $toDate])
+            ->whereBetween('ordered_at', StockValuationService::utcRange($fromDate, $toDate))
             ->with('items')
             ->get();
 

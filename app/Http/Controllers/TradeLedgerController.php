@@ -338,11 +338,13 @@ class TradeLedgerController extends Controller implements HasMiddleware
         }
         $invoiceByDay = $invoices->groupBy(fn ($i) => $i->issue_date->toDateString())->map(fn ($g) => $g->sum('total'));
 
-        // 3. Shopify → one row per day
+        // 3. Shopify → one row per day, by the Macedonian calendar day of the order
         $shopifyByDay = $user->shopifyOrders()
-            ->whereBetween('ordered_at', [$yearStart, $to])
-            ->selectRaw('DATE(ordered_at) as d, SUM(total_price) as t')
-            ->groupBy('d')->pluck('t', 'd');
+            ->whereBetween('ordered_at', StockValuationService::utcRange($yearStart, $toDate))
+            ->get(['ordered_at', 'total_price'])
+            ->groupBy(fn ($o) => StockValuationService::localDate($o->getRawOriginal('ordered_at')))
+            ->map(fn ($g) => $g->sum('total_price'))
+            ->sortKeys();
         foreach ($shopifyByDay as $day => $total) {
             $date = Carbon::parse($day);
             if ((float) $total > 0) {

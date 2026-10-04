@@ -24,6 +24,9 @@ class StockValuationService
 {
     public const RETAIL_VAT = 18; // Shopify line prices are gross (со ДДВ)
 
+    /** Business day for Shopify orders (stored in UTC): a sale belongs to the Macedonian calendar day */
+    public const BUSINESS_TZ = 'Europe/Skopje';
+
     public const INPUT_TYPES = ['opening', 'receipt', 'return', 'surplus'];
     public const OUTPUT_TYPES = ['invoice', 'shopify', 'issue', 'shortage', 'writeoff'];
 
@@ -352,7 +355,7 @@ class StockValuationService
                 continue;
             }
 
-            $date = substr((string) $order->ordered_at, 0, 10);
+            $date = self::localDate($order->ordered_at);
             $key = 'shopify:' . $order->id;
             // charged = what the customer paid for the whole order (goods + достава и друго)
             $docs[$key] ??= ['type' => 'shopify', 'id' => $order->id, 'number' => $order->order_number, 'date' => $date, 'partner' => $order->customer_name,
@@ -692,6 +695,26 @@ class StockValuationService
         }
 
         return $this->rateCache[$currency . $date] ??= (ExchangeRate::getRate($currency, $date) ?? 1.0);
+    }
+
+    /**
+     * Macedonian calendar date of a UTC timestamp (e.g. a Shopify order at 23:12 UTC on 23.03
+     * was placed at 00:12 on 24.03 in Skopje).
+     */
+    public static function localDate($utcTimestamp): string
+    {
+        return Carbon::parse((string) $utcTimestamp, 'UTC')->setTimezone(self::BUSINESS_TZ)->toDateString();
+    }
+
+    /**
+     * UTC bounds of Macedonian calendar days [from, to] — for filtering UTC timestamps.
+     */
+    public static function utcRange($from, $to): array
+    {
+        return [
+            Carbon::parse(substr((string) $from, 0, 10), self::BUSINESS_TZ)->startOfDay()->utc(),
+            Carbon::parse(substr((string) $to, 0, 10), self::BUSINESS_TZ)->endOfDay()->utc(),
+        ];
     }
 
     public static function monthKey(string $date): string
