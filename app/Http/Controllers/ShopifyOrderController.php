@@ -16,10 +16,10 @@ class ShopifyOrderController extends Controller
         $query = $user->shopifyOrders()->with('items');
 
         if ($request->filled('from')) {
-            $query->where('ordered_at', '>=', \App\Services\StockValuationService::utcRange($request->from, $request->from)[0]);
+            $query->where('ordered_at', '>=', \App\Services\StockValuationService::dayRange($request->from, $request->from)[0]);
         }
         if ($request->filled('to')) {
-            $query->where('ordered_at', '<=', \App\Services\StockValuationService::utcRange($request->to, $request->to)[1]);
+            $query->where('ordered_at', '<=', \App\Services\StockValuationService::dayRange($request->to, $request->to)[1]);
         }
         if ($request->filled('status')) {
             $query->where('financial_status', $request->status);
@@ -44,10 +44,10 @@ class ShopifyOrderController extends Controller
             ->whereNull('fulfillment_status');
 
         if ($request->filled('from')) {
-            $query->where('ordered_at', '>=', \App\Services\StockValuationService::utcRange($request->from, $request->from)[0]);
+            $query->where('ordered_at', '>=', \App\Services\StockValuationService::dayRange($request->from, $request->from)[0]);
         }
         if ($request->filled('to')) {
-            $query->where('ordered_at', '<=', \App\Services\StockValuationService::utcRange($request->to, $request->to)[1]);
+            $query->where('ordered_at', '<=', \App\Services\StockValuationService::dayRange($request->to, $request->to)[1]);
         }
 
         $orders = $query->orderByDesc('ordered_at')

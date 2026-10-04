@@ -26,7 +26,7 @@ class ShopifyProfitabilityController extends Controller
 
         // Orders in date range
         $orders = ShopifyOrder::where('user_id', $user->id)
-            ->whereBetween('ordered_at', \App\Services\StockValuationService::utcRange($fromDate, $toDate))
+            ->whereBetween('ordered_at', \App\Services\StockValuationService::dayRange($fromDate, $toDate))
             ->with('items')
             ->get();
 

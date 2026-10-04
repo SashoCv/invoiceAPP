@@ -42,7 +42,7 @@ class DashboardController extends Controller
 
         // Revenue from Shopify orders
         $shopifyOrders = ShopifyOrder::where('user_id', $user->id)
-            ->whereBetween('ordered_at', \App\Services\StockValuationService::utcRange($fromDate, $toDate))
+            ->whereBetween('ordered_at', \App\Services\StockValuationService::dayRange($fromDate, $toDate))
             ->get(['total_price', 'currency', 'ordered_at']);
 
         $shopifyRevenue = $shopifyOrders->sum(fn ($order) =>
@@ -95,7 +95,7 @@ class DashboardController extends Controller
 
             // Shopify revenue
             $monthShopifyOrders = ShopifyOrder::where('user_id', $user->id)
-                ->whereBetween('ordered_at', \App\Services\StockValuationService::utcRange($monthStart, $monthEnd))
+                ->whereBetween('ordered_at', \App\Services\StockValuationService::dayRange($monthStart, $monthEnd))
                 ->get(['total_price', 'currency', 'ordered_at']);
 
             $monthShopRevenue = $monthShopifyOrders->sum(fn ($order) =>

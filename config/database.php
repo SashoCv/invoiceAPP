@@ -56,6 +56,9 @@ return [
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
             'prefix' => '',
             'prefix_indexes' => true,
+            // Session time zone for TIMESTAMP columns; set DB_TIMEZONE=+00:00 so a local copy reads
+            // the same values as production
+            'timezone' => env('DB_TIMEZONE'),
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([

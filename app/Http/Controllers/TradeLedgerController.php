@@ -340,7 +340,7 @@ class TradeLedgerController extends Controller implements HasMiddleware
 
         // 3. Shopify → one row per day, by the Macedonian calendar day of the order
         $shopifyByDay = $user->shopifyOrders()
-            ->whereBetween('ordered_at', StockValuationService::utcRange($yearStart, $toDate))
+            ->whereBetween('ordered_at', StockValuationService::dayRange($yearStart, $toDate))
             ->get(['ordered_at', 'total_price'])
             ->groupBy(fn ($o) => StockValuationService::localDate($o->getRawOriginal('ordered_at')))
             ->map(fn ($g) => $g->sum('total_price'))

@@ -24,7 +24,7 @@ class StockValuationService
 {
     public const RETAIL_VAT = 18; // Shopify line prices are gross (со ДДВ)
 
-    /** Business day for Shopify orders (stored in UTC): a sale belongs to the Macedonian calendar day */
+    /** The shop's timezone (Shopify API times are converted to it) */
     public const BUSINESS_TZ = 'Europe/Skopje';
 
     public const INPUT_TYPES = ['opening', 'receipt', 'return', 'surplus'];
@@ -698,22 +698,23 @@ class StockValuationService
     }
 
     /**
-     * Macedonian calendar date of a UTC timestamp (e.g. a Shopify order at 23:12 UTC on 23.03
-     * was placed at 00:12 on 24.03 in Skopje).
+     * Calendar date of a Shopify order. ordered_at holds the shop's local (Macedonian)
+     * wall-clock time — Shopify sends created_at with the shop's offset and it is stored
+     * without conversion — so the date is simply its first 10 characters.
      */
-    public static function localDate($utcTimestamp): string
+    public static function localDate($timestamp): string
     {
-        return Carbon::parse((string) $utcTimestamp, 'UTC')->setTimezone(self::BUSINESS_TZ)->toDateString();
+        return substr((string) $timestamp, 0, 10);
     }
 
     /**
-     * UTC bounds of Macedonian calendar days [from, to] — for filtering UTC timestamps.
+     * Bounds of the calendar days [from, to] for filtering ordered_at (local wall-clock time).
      */
-    public static function utcRange($from, $to): array
+    public static function dayRange($from, $to): array
     {
         return [
-            Carbon::parse(substr((string) $from, 0, 10), self::BUSINESS_TZ)->startOfDay()->utc(),
-            Carbon::parse(substr((string) $to, 0, 10), self::BUSINESS_TZ)->endOfDay()->utc(),
+            Carbon::parse(substr((string) $from, 0, 10))->startOfDay(),
+            Carbon::parse(substr((string) $to, 0, 10))->endOfDay(),
         ];
     }
 

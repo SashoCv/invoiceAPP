@@ -18,6 +18,14 @@ class ShopifyConnection extends Model
         'last_synced_at',
     ];
 
+    /** Secrets never leave the server (the user model is shared with every page) */
+    protected $hidden = [
+        'client_id',
+        'client_secret',
+        'access_token',
+        'webhook_secret',
+    ];
+
     protected function casts(): array
     {
         return [
