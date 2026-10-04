@@ -378,9 +378,9 @@ function DocumentsView({ report, isOut }: { report: DocumentsReport; isOut: bool
                                                     {r.type_label}
                                                     {r.estimated && <span className="ml-1 text-amber-600" title={t('accounting.estimated')}>*</span>}
                                                 </TableCell>
-                                                <TableCell className="font-medium text-gray-900">{r.number || '-'}</TableCell>
+                                                <TableCell className="font-medium text-gray-900 whitespace-nowrap">{r.number || '-'}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatDate(r.date)}</TableCell>
-                                                {isOut && <TableCell className="max-w-[220px] truncate">{r.partner || '-'}</TableCell>}
+                                                {isOut && <TableCell className="min-w-[180px]">{r.partner || '-'}</TableCell>}
                                                 <TableCell className="text-center">{r.items}</TableCell>
                                                 <TableCell className="text-right">{n2(r.quantity)}</TableCell>
                                                 <AmountCells r={r} />
