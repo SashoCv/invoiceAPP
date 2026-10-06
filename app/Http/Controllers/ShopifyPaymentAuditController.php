@@ -78,18 +78,22 @@ class ShopifyPaymentAuditController extends Controller
         $connection = $request->user()->shopifyConnection;
         abort_unless($connection, 404);
         $client = new ShopifyApiClient($connection);
-        set_time_limit(600);
+        set_time_limit(300);
 
+        // One request per 250 orders (Shopify's /orders.json?ids=…) instead of one per order,
+        // so a large batch finishes well within the web server's timeout
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'])));
         $orders = [];
-        $failed = [];
-        foreach ($validated['ids'] as $id) {
-            try {
-                $orders[] = $client->getOrder((int) $id);
-            } catch (\Throwable $e) {
-                $failed[] = $id;
+        try {
+            foreach (array_chunk($ids, 250) as $chunk) {
+                array_push($orders, ...$client->getOrders(['ids' => implode(',', $chunk), 'status' => 'any', 'limit' => 250]));
             }
-            usleep(500_000); // stay within Shopify's REST rate limit (2 requests/second)
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', $e->getMessage());
         }
+        $found = array_map(fn ($o) => (int) $o['id'], $orders);
+        $failed = array_values(array_diff($ids, $found));
 
         usort($orders, fn ($a, $b) => strcmp($a['created_at'] ?? '', $b['created_at'] ?? ''));
         $imported = 0;
