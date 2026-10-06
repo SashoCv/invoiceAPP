@@ -48,6 +48,8 @@ interface AuditResult {
     error: 'access_denied' | 'api' | null;
     message?: string;
     limited?: boolean;
+    checkouts_from?: string | null;
+    checkouts_gone?: boolean;
     summary?: Record<string, number>;
     findings?: Record<FindingKey, OrderRow[]> & { abandoned: CheckoutRow[] };
 }
@@ -178,6 +180,13 @@ export default function PaymentCheck({ connected, result, filters }: Props) {
                                             {t('shopify.audit_abandoned')} ({findings.abandoned.length})
                                         </CardTitle>
                                         <p className="text-sm text-gray-500">{t('shopify.audit_abandoned_hint')}</p>
+                                        {result.checkouts_gone && (
+                                            <p className="mt-1 text-sm text-amber-700">
+                                                {result.checkouts_from
+                                                    ? t('shopify.audit_abandoned_gone', { date: result.checkouts_from })
+                                                    : t('shopify.audit_abandoned_none_kept')}
+                                            </p>
+                                        )}
                                     </CardHeader>
                                     {findings.abandoned.length > 0 && (
                                         <CardContent className="p-0 overflow-x-auto">

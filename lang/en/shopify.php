@@ -129,6 +129,8 @@ return [
     'audit_failed_attempts_hint' => 'For information: orders where a first attempt failed and a later one succeeded. Check the bank did not charge twice.',
     'audit_abandoned' => 'Abandoned checkouts',
     'audit_abandoned_hint' => 'Customers who started paying but no order was created. If the bank statement has a payment with the same amount and time, the customer paid without an order — create it manually.',
+    'audit_abandoned_gone' => 'Shopify keeps abandoned checkouts for a limited time — the oldest it still has is from :date. For part of the selected period they no longer exist; customers can only be found in the bank portal.',
+    'audit_abandoned_none_kept' => 'Shopify has no abandoned checkouts stored for this period.',
     'audit_order' => 'Order',
     'audit_checkout' => 'Checkout',
     'audit_time' => 'Time',

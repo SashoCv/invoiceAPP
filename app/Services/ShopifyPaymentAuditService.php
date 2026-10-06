@@ -75,7 +75,21 @@ class ShopifyPaymentAuditService
             return ['error' => $e->isAccessDenied() ? 'access_denied' : 'api', 'message' => $e->getMessage()];
         }
 
+        // Shopify may ignore the date filter for abandoned checkouts — keep only the period.
+        // It also deletes old checkouts (about 3 months), so remember the oldest one it still has.
+        $oldestCheckout = null;
+        foreach ($checkouts as $c) {
+            $at = Carbon::parse($c['createdAt']);
+            $oldestCheckout = $oldestCheckout && $oldestCheckout->lt($at) ? $oldestCheckout : $at;
+        }
+        $checkouts = array_values(array_filter($checkouts, function ($c) use ($fromUtc, $toUtc) {
+            $at = Carbon::parse($c['createdAt']);
+            return $at->gte($fromUtc) && $at->lte($toUtc);
+        }));
+
         $result = $this->analyse($connection->user_id, $orders, $checkouts);
+        $result['checkouts_from'] = $oldestCheckout?->setTimezone(StockValuationService::BUSINESS_TZ)->format('d.m.Y');
+        $result['checkouts_gone'] = $oldestCheckout === null || $oldestCheckout->gt($fromUtc);
 
         // Without read_all_orders Shopify only returns orders from the last 60 days — older
         // periods come back empty or cut off rather than with an error
