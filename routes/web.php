@@ -125,6 +125,7 @@ Route::middleware('auth')->group(function () {
     // Shopify
     Route::get('shopify/profitability', [ShopifyProfitabilityController::class, 'index'])->name('shopify.profitability');
     Route::get('shopify/payment-check', [\App\Http\Controllers\ShopifyPaymentAuditController::class, 'index'])->name('shopify.payment-check');
+    Route::post('shopify/payment-check/import-all', [\App\Http\Controllers\ShopifyPaymentAuditController::class, 'importAll'])->middleware('subscribed')->name('shopify.payment-check.import-all');
     Route::post('shopify/payment-check/import/{shopifyOrderId}', [\App\Http\Controllers\ShopifyPaymentAuditController::class, 'import'])->whereNumber('shopifyOrderId')->middleware('subscribed')->name('shopify.payment-check.import');
     Route::get('shopify/orders', [ShopifyOrderController::class, 'index'])->name('shopify.orders.index');
     Route::get('shopify/orders/pending', [ShopifyOrderController::class, 'pending'])->name('shopify.orders.pending');

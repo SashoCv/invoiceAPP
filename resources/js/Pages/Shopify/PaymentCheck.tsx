@@ -30,6 +30,7 @@ interface OrderRow {
     total: number;
     charged: number;
     refunded: number;
+    reversed: number;
     transactions: Transaction[];
 }
 
@@ -41,7 +42,7 @@ interface CheckoutRow {
     total: number;
 }
 
-type FindingKey = 'double_charge' | 'amount_mismatch' | 'missing' | 'status_differs' | 'failed_attempts';
+type FindingKey = 'double_charge' | 'amount_mismatch' | 'missing' | 'status_differs' | 'refunds' | 'failed_attempts';
 
 interface AuditResult {
     error: 'access_denied' | 'api' | null;
@@ -66,6 +67,7 @@ const ORDER_SECTIONS: { key: FindingKey; tone: 'red' | 'amber' | 'gray' }[] = [
     { key: 'missing', tone: 'red' },
     { key: 'amount_mismatch', tone: 'amber' },
     { key: 'status_differs', tone: 'amber' },
+    { key: 'refunds', tone: 'amber' },
     { key: 'failed_attempts', tone: 'gray' },
 ];
 
@@ -221,13 +223,26 @@ function OrderSection({ sectionKey, tone, rows }: { sectionKey: FindingKey; tone
         router.post(`/shopify/payment-check/import/${id}`, {}, { preserveScroll: true, onFinish: () => setImporting(null) });
     };
 
+    const importAll = () => {
+        if (!confirm(t('shopify.audit_import_all_confirm', { count: String(rows.length) }))) return;
+        setImporting(-1);
+        router.post('/shopify/payment-check/import-all', { ids: rows.map((r) => r.shopify_id) }, { preserveScroll: true, onFinish: () => setImporting(null) });
+    };
+
     return (
         <Card className="mb-6">
             <CardHeader className="pb-2">
-                <CardTitle className={`text-base flex items-center gap-2 ${titleColor}`}>
-                    {rows.length === 0 ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4" />}
-                    {t(`shopify.audit_${sectionKey}`)} ({rows.length})
-                </CardTitle>
+                <div className="flex items-center justify-between gap-3">
+                    <CardTitle className={`text-base flex items-center gap-2 ${titleColor}`}>
+                        {rows.length === 0 ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4" />}
+                        {t(`shopify.audit_${sectionKey}`)} ({rows.length})
+                    </CardTitle>
+                    {sectionKey === 'missing' && rows.length > 1 && (
+                        <Button size="sm" onClick={importAll} disabled={importing !== null} loading={importing === -1}>
+                            {t('shopify.audit_import_all', { count: String(rows.length) })}
+                        </Button>
+                    )}
+                </div>
                 <p className="text-sm text-gray-500">{t(`shopify.audit_${sectionKey}_hint`)}</p>
             </CardHeader>
             {rows.length > 0 && (
@@ -241,6 +256,7 @@ function OrderSection({ sectionKey, tone, rows }: { sectionKey: FindingKey; tone
                                 <TableHead>{t('shopify.audit_status')}</TableHead>
                                 <TableHead className="text-right">{t('shopify.audit_amount')}</TableHead>
                                 <TableHead className="text-right">{t('shopify.audit_charged')}</TableHead>
+                                {sectionKey === 'refunds' && <TableHead className="text-right">{t('shopify.audit_reversed')}</TableHead>}
                                 <TableHead>{t('shopify.audit_transactions')}</TableHead>
                                 {sectionKey === 'missing' && <TableHead />}
                             </TableRow>
@@ -260,7 +276,8 @@ function OrderSection({ sectionKey, tone, rows }: { sectionKey: FindingKey; tone
                                         {r.local_status && <span className="block text-gray-400">{t('shopify.audit_in_program')}: {r.local_status}</span>}
                                     </TableCell>
                                     <TableCell className="text-right whitespace-nowrap">{formatNumber(r.total, 2)}</TableCell>
-                                    <TableCell className={`text-right whitespace-nowrap ${Math.abs(r.charged - r.total) > 1 ? 'text-red-600 font-semibold' : ''}`}>{formatNumber(r.charged, 2)}</TableCell>
+                                    <TableCell className={`text-right whitespace-nowrap ${sectionKey !== 'refunds' && Math.abs(r.charged - r.total) > 1 ? 'text-red-600 font-semibold' : ''}`}>{formatNumber(r.charged, 2)}</TableCell>
+                                    {sectionKey === 'refunds' && <TableCell className="text-right whitespace-nowrap font-semibold text-red-600">−{formatNumber(Math.max(r.reversed, r.refunded), 2)}</TableCell>}
                                     <TableCell className="text-xs text-gray-600">
                                         {r.transactions.map((tx, i) => (
                                             <div key={i} className={`whitespace-nowrap ${tx.status !== 'SUCCESS' ? 'text-gray-400' : ''}`}>

@@ -15,9 +15,12 @@ class ShopifyWebhookController extends Controller
         $topic = $request->header('X-Shopify-Topic');
         $data = $request->all();
 
+        // Processed right away instead of on the queue: with no queue worker running the
+        // jobs never ran and paid orders silently went missing. Processing is idempotent and
+        // quick; on an exception Shopify gets an error response and retries the webhook.
         match ($topic) {
-            'orders/paid' => ProcessShopifyOrder::dispatch($userId, $data),
-            'refunds/create' => ProcessShopifyRefund::dispatch($userId, $data),
+            'orders/paid' => ProcessShopifyOrder::dispatchSync($userId, $data),
+            'refunds/create' => ProcessShopifyRefund::dispatchSync($userId, $data),
             default => null,
         };
 

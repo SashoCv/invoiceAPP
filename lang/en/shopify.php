@@ -122,6 +122,9 @@ return [
     'audit_amount_mismatch_hint' => 'The successfully charged amount is not equal to the order total.',
     'audit_status_differs' => 'Cancelled or refunded in Shopify',
     'audit_status_differs_hint' => 'Paid in the program, but cancelled or refunded in Shopify.',
+    'audit_refunds' => 'Reversals and refunds',
+    'audit_refunds_hint' => 'Orders with money returned (refund), a voided payment or cancelled in Shopify. In the bank statement a refund appears as a reversal (minus) on the refund date, not the order date.',
+    'audit_reversed' => 'Returned',
     'audit_failed_attempts' => 'Failed payment attempts',
     'audit_failed_attempts_hint' => 'For information: orders where a first attempt failed and a later one succeeded. Check the bank did not charge twice.',
     'audit_abandoned' => 'Abandoned checkouts',
@@ -138,4 +141,8 @@ return [
     'audit_in_program' => 'in program',
     'audit_import' => 'Import',
     'audit_imported' => 'Order :number imported.',
+    'audit_import_all' => 'Import all (:count)',
+    'audit_import_all_confirm' => 'Import all :count orders and deduct the stock? This takes about half a second per order.',
+    'audit_imported_all' => ':count orders imported.',
+    'audit_import_failed' => 'Failed: :list',
 ];

@@ -95,7 +95,7 @@ class ShopifyPaymentAuditService
             ->whereIn('shopify_order_id', array_map(fn ($o) => (int) $o['legacyResourceId'], $orders))
             ->get(['id', 'shopify_order_id', 'financial_status'])->keyBy('shopify_order_id');
 
-        $findings = ['double_charge' => [], 'amount_mismatch' => [], 'missing' => [], 'status_differs' => [], 'failed_attempts' => []];
+        $findings = ['double_charge' => [], 'amount_mismatch' => [], 'missing' => [], 'status_differs' => [], 'refunds' => [], 'failed_attempts' => []];
         $paidTotal = 0.0;
 
         foreach ($orders as $o) {
@@ -107,6 +107,8 @@ class ShopifyPaymentAuditService
             $charges = array_filter($tx, fn ($t) => in_array($t['kind'], ['SALE', 'CAPTURE'], true) && $t['status'] === 'SUCCESS');
             $charged = array_sum(array_map(fn ($t) => (float) $t['amountSet']['shopMoney']['amount'], $charges));
             $failed = array_filter($tx, fn ($t) => in_array($t['status'], ['FAILURE', 'ERROR'], true));
+            // Сторна: money given back (refund) or a payment cancelled before settlement (void)
+            $reversals = array_filter($tx, fn ($t) => in_array($t['kind'], ['REFUND', 'VOID'], true) && $t['status'] === 'SUCCESS');
 
             $local = $known->get((int) $o['legacyResourceId']);
             $row = [
@@ -121,6 +123,7 @@ class ShopifyPaymentAuditService
                 'total' => round($total, 2),
                 'charged' => round($charged, 2),
                 'refunded' => round($refunded, 2),
+                'reversed' => round(array_sum(array_map(fn ($t) => (float) $t['amountSet']['shopMoney']['amount'], $reversals)), 2),
                 'transactions' => array_map(fn ($t) => [
                     'kind' => $t['kind'],
                     'status' => $t['status'],
@@ -144,6 +147,9 @@ class ShopifyPaymentAuditService
             if ($local && ($row['cancelled'] || in_array($status, ['REFUNDED', 'PARTIALLY_REFUNDED', 'VOIDED'], true))
                 && $local->financial_status === 'paid') {
                 $findings['status_differs'][] = $row;
+            }
+            if ($reversals || $refunded > 0 || $row['cancelled']) {
+                $findings['refunds'][] = $row;
             }
             if ($failed && $charges) {
                 $findings['failed_attempts'][] = $row;

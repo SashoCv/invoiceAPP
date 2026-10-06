@@ -65,6 +65,54 @@ class ShopifyPaymentAuditController extends Controller
         return back()->with('success', __('shopify.audit_imported', ['number' => $order['name'] ?? $shopifyOrderId]));
     }
 
+    /**
+     * Bring in all the given missing orders, oldest first (so stock moves in order).
+     */
+    public function importAll(Request $request, ShopifyOrderProcessor $processor): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:500'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $connection = $request->user()->shopifyConnection;
+        abort_unless($connection, 404);
+        $client = new ShopifyApiClient($connection);
+        set_time_limit(600);
+
+        $orders = [];
+        $failed = [];
+        foreach ($validated['ids'] as $id) {
+            try {
+                $orders[] = $client->getOrder((int) $id);
+            } catch (\Throwable $e) {
+                $failed[] = $id;
+            }
+            usleep(500_000); // stay within Shopify's REST rate limit (2 requests/second)
+        }
+
+        usort($orders, fn ($a, $b) => strcmp($a['created_at'] ?? '', $b['created_at'] ?? ''));
+        $imported = 0;
+        foreach ($orders as $order) {
+            try {
+                $result = $processor->processOrder($request->user()->id, $order);
+                if ($result?->wasRecentlyCreated) {
+                    $imported++;
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                $failed[] = $order['name'] ?? $order['id'];
+            }
+        }
+
+        $message = __('shopify.audit_imported_all', ['count' => $imported]);
+        if ($failed) {
+            return back()->with('error', $message . ' ' . __('shopify.audit_import_failed', ['list' => implode(', ', $failed)]));
+        }
+
+        return back()->with('success', $message);
+    }
+
     private function date(?string $value, Carbon $default): Carbon
     {
         try {
