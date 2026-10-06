@@ -37,8 +37,7 @@ import {
     Plus,
     Loader2,
     ShoppingBag,
-    Unlink,
-} from 'lucide-react';
+    Unlink, ShieldCheck } from 'lucide-react';
 
 interface ShopifyConnection {
     id: number;
@@ -221,6 +220,10 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
                                     <Button size="sm" onClick={() => setSyncDialogOpen(true)}>
                                         <RefreshCw className="w-4 h-4 mr-2" />
                                         {t('shopify.sync_orders')}
+                                    </Button>
+                                    <Button size="sm" variant="outline" onClick={() => router.post('/settings/shopify/reauthorize')} title={t('shopify.reauthorize_hint')}>
+                                        <ShieldCheck className="w-4 h-4 mr-2" />
+                                        {t('shopify.reauthorize')}
                                     </Button>
                                     <Button size="sm" variant="destructive" onClick={handleDisconnect}>
                                         <Unlink className="w-4 h-4 mr-2" />

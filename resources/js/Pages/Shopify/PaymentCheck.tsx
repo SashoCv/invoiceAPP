@@ -146,7 +146,10 @@ export default function PaymentCheck({ connected, result, filters }: Props) {
                         {result?.limited && (
                             <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                                <span>{t('shopify.audit_limited')}</span>
+                                <span>
+                                    {t('shopify.audit_limited')}{' '}
+                                    <Link href="/settings/shopify" className="font-medium underline">{t('shopify.reauthorize')}</Link>
+                                </span>
                             </div>
                         )}
 

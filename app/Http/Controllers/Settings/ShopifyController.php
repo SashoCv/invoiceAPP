@@ -79,16 +79,7 @@ class ShopifyController extends Controller
             ]
         );
 
-        // Redirect to Shopify OAuth
-        $redirectUri = route('settings.shopify.callback');
-        // read_all_orders: orders older than 60 days (payment check, sync of older periods)
-        $scopes = 'read_orders,read_products,read_all_orders';
-
-        $url = "https://{$shopDomain}/admin/oauth/authorize?" . http_build_query([
-            'client_id' => $request->client_id,
-            'scope' => $scopes,
-            'redirect_uri' => $redirectUri,
-        ]);
+        $url = $this->authorizeUrl($shopDomain, $request->client_id);
 
         Log::info('Shopify OAuth redirect', [
             'shop' => $shopDomain,
@@ -149,7 +140,11 @@ class ShopifyController extends Controller
                 'error' => $e->getMessage(),
                 'response' => isset($response) ? $response->body() : null,
             ]);
-            $connection->delete();
+            // A re-authorization of a working connection keeps the old token; only a new,
+            // never-completed connection is removed
+            if (!$connection->getOriginal('access_token')) {
+                $connection->delete();
+            }
             return redirect()->route('settings.shopify')->with('error', __('shopify.connection_failed'));
         }
 
@@ -164,6 +159,30 @@ class ShopifyController extends Controller
         }
 
         return redirect()->route('settings.shopify')->with('success', __('shopify.connected'));
+    }
+
+    /**
+     * Ask Shopify for the current scopes again (e.g. read_all_orders) on an existing
+     * connection — unlike disconnect + connect, product mappings and the working token stay.
+     */
+    public function reauthorize(Request $request): \Symfony\Component\HttpFoundation\Response
+    {
+        $connection = $request->user()->shopifyConnection;
+        if (!$connection || !$connection->client_id) {
+            return back()->with('error', __('shopify.not_connected'));
+        }
+
+        return Inertia::location($this->authorizeUrl($connection->shop_domain, $connection->client_id));
+    }
+
+    private function authorizeUrl(string $shopDomain, string $clientId): string
+    {
+        // read_all_orders: orders older than 60 days (payment check, sync of older periods)
+        return "https://{$shopDomain}/admin/oauth/authorize?" . http_build_query([
+            'client_id' => $clientId,
+            'scope' => 'read_orders,read_products,read_all_orders',
+            'redirect_uri' => route('settings.shopify.callback'),
+        ]);
     }
 
     public function disconnect(Request $request): RedirectResponse
