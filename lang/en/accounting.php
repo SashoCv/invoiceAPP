@@ -58,6 +58,7 @@ return [
     'sales_with_tax' => 'Sales incl. VAT',
     'margin' => 'Margin',
     'other' => 'Shipping & other',
+    'not_mapped' => 'not mapped to an article',
     'other_hint' => 'Charged on top of the goods: Shopify shipping, services and invoice rounding. Not part of the margin.',
     'charged_total' => 'Total charged',
     'code' => 'Code',

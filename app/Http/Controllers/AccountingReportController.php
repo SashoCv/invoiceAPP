@@ -348,6 +348,10 @@ class AccountingReportController extends Controller
             unset($d);
         }
 
+        if ($dir === 'out') {
+            $this->addDocumentsWithoutStock($userId, $from, $to, $type, $docs);
+        }
+
         // Достава и друго: what the customer paid on top of the goods (Shopify shipping,
         // unmapped lines), so "Вкупно наплатено" equals the order total / bank payment
         foreach ($docs as &$d) {
@@ -400,6 +404,56 @@ class AccountingReportController extends Controller
             'by_type' => array_values(array_map(fn ($t) => $this->roundTotals($t), $grandByType)),
             'count' => count($docs),
         ];
+    }
+
+    /**
+     * Sales documents that moved no stock — a Shopify order whose items are not mapped to
+     * articles, an invoice with only services — still belong in the outputs, so "Вкупно
+     * наплатено" matches Shopify and ЕТ. They carry no набавна; their amount shows under
+     * "Достава и друго".
+     */
+    private function addDocumentsWithoutStock(int $userId, string $from, string $to, ?string $type, array &$docs): void
+    {
+        $row = fn (string $key, string $docType, $id, $number, $partner, string $date, float $charged, array $lines) => [
+            'key' => $key, 'type' => $docType, 'type_label' => self::TYPE_LABELS[$docType],
+            'id' => $id, 'number' => $number, 'partner' => $partner, 'date' => $date,
+            'items' => 0, 'quantity' => 0.0, 'cost_value' => 0.0, 'cost_tax' => 0.0,
+            'sales_no_tax' => 0.0, 'sales_tax' => 0.0, 'charged' => round($charged, 2), 'other' => 0.0,
+            'estimated' => false, 'lines' => $lines,
+        ];
+
+        if (!$type || $type === 'shopify') {
+            $orders = DB::table('shopify_orders')->where('user_id', $userId)
+                ->whereBetween('ordered_at', StockValuationService::dayRange($from, $to))
+                ->get(['id', 'order_number', 'customer_name', 'ordered_at', 'total_price']);
+            foreach ($orders as $o) {
+                $key = 'shopify:' . $o->id;
+                if (isset($docs[$key])) {
+                    continue;
+                }
+                $lines = DB::table('shopify_order_items')->where('shopify_order_id', $o->id)->get(['title', 'quantity'])
+                    ->map(fn ($i) => ['code' => '', 'name' => $i->title . ' (' . __('accounting.not_mapped') . ')', 'unit' => '',
+                        'quantity' => (float) $i->quantity, 'unit_cost' => 0, 'cost_value' => 0, 'retail_unit' => 0, 'retail_value' => 0, 'estimated' => false])->all();
+                $docs[$key] = $row($key, 'shopify', $o->id, $o->order_number, $o->customer_name,
+                    StockValuationService::localDate($o->ordered_at), (float) $o->total_price, $lines);
+            }
+        }
+
+        if (!$type || $type === 'invoice') {
+            $invoices = DB::table('invoices as i')->leftJoin('clients as c', 'c.id', '=', 'i.client_id')
+                ->leftJoin('client_branches as cb', 'cb.id', '=', 'i.branch_id')
+                ->where('i.user_id', $userId)->whereNull('i.deleted_at')->where('i.status', '!=', 'cancelled')
+                ->whereBetween('i.issue_date', [$from, $to])
+                ->get(['i.id', 'i.invoice_number', 'i.issue_date', 'i.total', 'c.company', 'c.name', 'cb.name as branch_name']);
+            foreach ($invoices as $i) {
+                $key = 'invoice:' . $i->id;
+                if (!isset($docs[$key])) {
+                    $docs[$key] = $row($key, 'invoice', $i->id, $i->invoice_number,
+                        StockValuationService::partnerName($i->company ?: $i->name, $i->branch_name),
+                        substr((string) $i->issue_date, 0, 10), (float) $i->total, []);
+                }
+            }
+        }
     }
 
     /**
