@@ -86,12 +86,13 @@ interface ArticleOption {
 interface Props {
     connection: ShopifyConnection | null;
     mappings: ShopifyMapping[];
+    unmappedPending: number;
     articles: ArticleOption[];
     bundles: BundleOption[];
     callbackUrl: string;
 }
 
-export default function Shopify({ connection, mappings, articles, bundles, callbackUrl }: Props) {
+export default function Shopify({ connection, mappings, unmappedPending, articles, bundles, callbackUrl }: Props) {
     const { t } = useTranslation();
     const [products, setProducts] = useState<ShopifyProduct[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -306,6 +307,21 @@ export default function Shopify({ connection, mappings, articles, bundles, callb
                             </div>
                         </CardHeader>
                         <CardContent>
+                            {unmappedPending > 0 && (
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    <span>{t('shopify.mappings_pending', { count: String(unmappedPending) })}</span>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            if (confirm(t('shopify.mappings_apply_confirm', { count: String(unmappedPending) }))) {
+                                                router.post('/settings/shopify/apply-mappings', {}, { preserveScroll: true });
+                                            }
+                                        }}
+                                    >
+                                        {t('shopify.mappings_apply')}
+                                    </Button>
+                                </div>
+                            )}
                             {/* Add mapping form */}
                             {products.length > 0 && (
                                 <div className="mb-6 p-4 bg-gray-50 rounded-lg space-y-3">

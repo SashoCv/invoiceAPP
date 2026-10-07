@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -43,6 +44,7 @@ class ShopifyController extends Controller
                 'last_synced_at' => $activeConnection->last_synced_at?->toISOString(),
             ] : null,
             'mappings' => $mappings,
+            'unmappedPending' => $activeConnection ? $this->unmappedWithMapping($user->id)->count() : 0,
             'articles' => $articles,
             'bundles' => $bundles,
             'callbackUrl' => route('settings.shopify.callback'),
@@ -183,6 +185,49 @@ class ShopifyController extends Controller
             'scope' => 'read_orders,read_products,read_all_orders',
             'redirect_uri' => route('settings.shopify.callback'),
         ]);
+    }
+
+    /**
+     * Order lines that came in before their product was mapped, and are mapped now.
+     */
+    private function unmappedWithMapping(int $userId)
+    {
+        $mappings = ShopifyProductMapping::where('user_id', $userId)->with(['article', 'bundle.bundleItems.article'])->get()->keyBy('shopify_variant_id');
+
+        return \App\Models\ShopifyOrderItem::query()
+            ->whereNull('article_id')->whereNull('bundle_id')
+            ->whereHas('order', fn ($q) => $q->where('user_id', $userId))
+            ->with('order')
+            ->get()
+            ->filter(fn ($item) => $mappings->has($item->shopify_variant_id))
+            ->each(fn ($item) => $item->setRelation('mapping', $mappings->get($item->shopify_variant_id)));
+    }
+
+    /**
+     * Apply current product mappings to older order lines that were unmapped when the order
+     * arrived: link the article/bundle and deduct the stock, as if mapped from the start.
+     */
+    public function applyMappings(Request $request): RedirectResponse
+    {
+        $userId = $request->user()->id;
+        $count = 0;
+
+        DB::transaction(function () use ($userId, &$count) {
+            foreach ($this->unmappedWithMapping($userId) as $item) {
+                $mapping = $item->getRelation('mapping');
+                $order = $item->order;
+                $item->update(['article_id' => $mapping->article_id, 'bundle_id' => $mapping->bundle_id]);
+
+                if ($mapping->bundle_id && $mapping->bundle) {
+                    $mapping->bundle->deductComponentStocks($item->quantity, 'shopify_order', $order->id);
+                } elseif ($mapping->article && $mapping->article->track_inventory) {
+                    $mapping->article->deductStock($item->quantity, 'shopify_order', $order->id, "Shopify order {$order->order_number} (подоцна поврзано)");
+                }
+                $count++;
+            }
+        });
+
+        return back()->with('success', __('shopify.mappings_applied', ['count' => $count]));
     }
 
     public function disconnect(Request $request): RedirectResponse

@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/shopify/connect', [ShopifyController::class, 'connect'])->name('shopify.connect');
         Route::post('/shopify/disconnect', [ShopifyController::class, 'disconnect'])->name('shopify.disconnect');
         Route::post('/shopify/reauthorize', [ShopifyController::class, 'reauthorize'])->name('shopify.reauthorize');
+        Route::post('/shopify/apply-mappings', [ShopifyController::class, 'applyMappings'])->name('shopify.apply-mappings');
         Route::get('/shopify/products', [ShopifyController::class, 'fetchProducts'])->name('shopify.products');
         Route::post('/shopify/mappings', [ShopifyController::class, 'saveMapping'])->name('shopify.mappings.store');
         Route::delete('/shopify/mappings/{mapping}', [ShopifyController::class, 'deleteMapping'])->name('shopify.mappings.destroy');

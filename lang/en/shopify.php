@@ -48,6 +48,10 @@ return [
     'shopify_sku' => 'SKU',
     'local_article' => 'Local Article / Bundle',
     'no_mappings' => 'No product mappings yet',
+    'mappings_pending' => ':count lines of older orders arrived before their product was mapped — they have no article, no purchase value and no stock deducted.',
+    'mappings_apply' => 'Map older orders too',
+    'mappings_apply_confirm' => ':count lines of older orders will get the mapped article and their stock will be deducted. Continue?',
+    'mappings_applied' => ':count lines of older orders mapped.',
 
     // Orders
     'orders_title' => 'Shopify Orders',
