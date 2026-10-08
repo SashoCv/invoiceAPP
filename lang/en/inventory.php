@@ -148,7 +148,21 @@ return [
 
     // Show page
     'item_details' => 'Item Details',
-    'stock_history' => 'Stock History',
+    'stock_history' => 'Warehouse entry history (last 50)',
+    'analytical_card' => 'Analytical stock card',
+    'analytical_card_hint' => 'Every document from the very beginning, by document date, with balance and value at purchase price',
+    'metg_pdf' => 'METG (PDF)',
+    'card_document' => 'Document',
+    'card_partner' => 'Supplier / customer',
+    'card_in' => 'In',
+    'card_out' => 'Out',
+    'card_balance' => 'Balance',
+    'card_unit_cost' => 'Purch. price',
+    'card_value' => 'Value',
+    'card_balance_value' => 'Balance value',
+    'card_total' => 'Total',
+    'card_estimated' => 'Estimated purchase price (no price entered)',
+    'card_mismatch' => 'By documents the balance is :card, but the warehouse records :stock. Check for a manual entry duplicating a receipt, or a sale not linked to the article.',
 
     // Invoice integration
     'inventory_item' => 'Inventory Item',

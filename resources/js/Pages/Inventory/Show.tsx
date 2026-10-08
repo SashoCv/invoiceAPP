@@ -17,13 +17,32 @@ import {
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
-import { ArrowLeft, PackagePlus } from 'lucide-react';
+import { ArrowLeft, FileText, PackagePlus } from 'lucide-react';
 import type { Article, StockMovement } from '@/types';
+
+interface CardRow {
+    key: string;
+    date: string;
+    type: string;
+    label: string;
+    number: string | null;
+    partner: string | null;
+    url: string | null;
+    in: number;
+    out: number;
+    unit_cost: number | null;
+    estimated: boolean;
+    value_in: number;
+    value_out: number;
+    balance: number;
+    balance_value: number;
+}
 
 interface ShowProps {
     item: Article;
     movements: StockMovement[];
     avgCost: number | null;
+    card: CardRow[];
 }
 
 const REASONS_IN = ['opening', 'surplus', 'other'];
@@ -73,8 +92,14 @@ function MovementTypeBadge({ type, t }: { type: string; t: (key: string) => stri
     );
 }
 
-export default function ShowInventoryItem({ item, movements, avgCost }: ShowProps) {
+export default function ShowInventoryItem({ item, movements, avgCost, card }: ShowProps) {
     const { t } = useTranslation();
+    const cardTotals = card.reduce(
+        (sum, r) => ({ in: sum.in + r.in, out: sum.out + r.out, value_in: sum.value_in + r.value_in, value_out: sum.value_out + r.value_out }),
+        { in: 0, out: 0, value_in: 0, value_out: 0 },
+    );
+    const cardEnd = card.length ? card[card.length - 1] : null;
+    const metgUrl = card.length ? `/accounting-reports/metg/${item.id}?date_from=${card[0].date}&date_to=${todayStr()}` : null;
     const [adjustOpen, setAdjustOpen] = useState(false);
 
     const adjustForm = useForm({
@@ -176,6 +201,88 @@ export default function ShowInventoryItem({ item, movements, avgCost }: ShowProp
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card className="mb-6">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <div>
+                            <CardTitle>{t('inventory.analytical_card')}</CardTitle>
+                            <p className="mt-1 text-sm text-gray-500">{t('inventory.analytical_card_hint')}</p>
+                        </div>
+                        {metgUrl && (
+                            <Button variant="outline" size="sm" asChild>
+                                <a href={metgUrl} target="_blank" rel="noreferrer">
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    {t('inventory.metg_pdf')}
+                                </a>
+                            </Button>
+                        )}
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {card.length === 0 ? (
+                            <div className="py-12 text-center text-gray-500">{t('inventory.no_movements')}</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <Table className="text-xs">
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{t('inventory.movement_date')}</TableHead>
+                                            <TableHead>{t('inventory.card_document')}</TableHead>
+                                            <TableHead>{t('inventory.card_partner')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_in')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_out')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_balance')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_unit_cost')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_value')}</TableHead>
+                                            <TableHead className="text-right">{t('inventory.card_balance_value')}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {card.map((r) => (
+                                            <TableRow key={r.key}>
+                                                <TableCell className="whitespace-nowrap text-gray-500">{formatDate(r.date)}</TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    <span className="text-gray-500">{r.label}</span>
+                                                    {r.number && (
+                                                        r.url ? (
+                                                            <Link href={r.url} className="ml-1.5 font-medium text-blue-600 hover:underline">{r.number}</Link>
+                                                        ) : (
+                                                            <span className="ml-1.5 font-medium">{r.number}</span>
+                                                        )
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="max-w-[12rem] truncate text-gray-500">{r.partner || ''}</TableCell>
+                                                <TableCell className="text-right font-medium text-green-600">{r.in ? formatNumber(r.in, 0) : ''}</TableCell>
+                                                <TableCell className="text-right font-medium text-red-600">{r.out ? formatNumber(r.out, 0) : ''}</TableCell>
+                                                <TableCell className={`text-right font-semibold ${r.balance < 0 ? 'text-red-600' : ''}`}>{formatNumber(r.balance, 0)}</TableCell>
+                                                <TableCell className="text-right text-gray-500" title={r.estimated ? t('inventory.card_estimated') : undefined}>
+                                                    {r.unit_cost !== null ? formatNumber(r.unit_cost, 2) : '-'}{r.estimated ? '*' : ''}
+                                                </TableCell>
+                                                <TableCell className={`text-right ${r.value_out ? 'text-red-600' : ''}`}>
+                                                    {formatNumber(r.value_in - r.value_out, 2)}
+                                                </TableCell>
+                                                <TableCell className="text-right">{formatNumber(r.balance_value, 2)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                        <TableRow className="bg-gray-50 font-semibold">
+                                            <TableCell colSpan={3}>{t('inventory.card_total')}</TableCell>
+                                            <TableCell className="text-right text-green-600">{formatNumber(cardTotals.in, 0)}</TableCell>
+                                            <TableCell className="text-right text-red-600">{formatNumber(cardTotals.out, 0)}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(cardEnd?.balance ?? 0, 0)}</TableCell>
+                                            <TableCell />
+                                            <TableCell className="text-right">{formatNumber(cardTotals.value_in - cardTotals.value_out, 2)}</TableCell>
+                                            <TableCell className="text-right">{formatNumber(cardEnd?.balance_value ?? 0, 2)}</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                                {cardEnd && Math.abs(cardEnd.balance - Number(item.stock_quantity)) > 0.001 && (
+                                    <div className="border-t bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                        {t('inventory.card_mismatch', { card: formatNumber(cardEnd.balance, 0), stock: formatNumber(item.stock_quantity, 0) })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader>

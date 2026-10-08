@@ -231,14 +231,72 @@ class InventoryItemController extends Controller implements HasMiddleware
             ->limit(50)
             ->get();
 
+        $valuation = app(StockValuationService::class);
+
         // Known набавна цена today — prefills the purchase price of manual inputs
-        $avgCost = app(StockValuationService::class)->knownUnitCost($inventory->user_id, $inventory->id, now()->toDateString());
+        $avgCost = $valuation->knownUnitCost($inventory->user_id, $inventory->id, now()->toDateString());
 
         return Inertia::render('Inventory/Show', [
             'item' => $inventory,
             'movements' => $movements,
             'avgCost' => $avgCost,
+            'card' => $this->analyticalCard($valuation, $inventory),
         ]);
+    }
+
+    /**
+     * Аналитичка картица — every document that moved the article, from the very first one,
+     * ordered by document date, with the running quantity and value at набавна цена
+     * (the same figures the accounting reports use).
+     */
+    private function analyticalCard(StockValuationService $valuation, Article $article): array
+    {
+        $docs = $valuation->documents($article->user_id);
+        $links = ['receipt' => '/goods-receipts/', 'invoice' => '/invoices/', 'shopify' => '/shopify/orders/', 'issue' => '/goods-issues/'];
+
+        $rows = [];
+        foreach ($valuation->events($article->user_id) as $e) {
+            if ($e['article_id'] !== $article->id) {
+                continue;
+            }
+            $key = $e['doc_key'];
+            $in = $e['dir'] === 'in' ? $e['qty'] : 0;
+            $out = $e['dir'] === 'out' ? $e['qty'] : 0;
+
+            // One row per document (a document may carry the article on several lines)
+            $last = count($rows) - 1;
+            if ($last >= 0 && $rows[$last]['key'] === $key) {
+                $rows[$last]['in'] += $in;
+                $rows[$last]['out'] += $out;
+                $rows[$last]['value_in'] += $e['dir'] === 'in' ? $e['cost_value'] : 0;
+                $rows[$last]['value_out'] += $e['dir'] === 'out' ? $e['cost_value'] : 0;
+                $rows[$last]['balance'] = $e['balance_qty'];
+                $rows[$last]['balance_value'] = $e['balance_value'];
+                continue;
+            }
+
+            $meta = $docs[$key] ?? [];
+            $prefix = explode(':', $key)[0];
+            $rows[] = [
+                'key' => $key,
+                'date' => $e['date'],
+                'type' => $e['doc_type'],
+                'label' => AccountingReportController::TYPE_LABELS[$e['doc_type']] ?? $e['doc_type'],
+                'number' => $meta['number'] ?? null,
+                'partner' => $meta['partner'] ?? null,
+                'url' => isset($links[$prefix], $meta['id']) ? $links[$prefix] . $meta['id'] : null,
+                'in' => $in,
+                'out' => $out,
+                'unit_cost' => $e['unit_cost'],
+                'estimated' => (bool) $e['estimated'],
+                'value_in' => $e['dir'] === 'in' ? $e['cost_value'] : 0,
+                'value_out' => $e['dir'] === 'out' ? $e['cost_value'] : 0,
+                'balance' => $e['balance_qty'],
+                'balance_value' => $e['balance_value'],
+            ];
+        }
+
+        return $rows;
     }
 
     /**
