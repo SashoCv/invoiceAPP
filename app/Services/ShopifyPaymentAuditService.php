@@ -109,7 +109,8 @@ class ShopifyPaymentAuditService
             ->whereIn('shopify_order_id', array_map(fn ($o) => (int) $o['legacyResourceId'], $orders))
             ->get(['id', 'shopify_order_id', 'financial_status'])->keyBy('shopify_order_id');
 
-        $findings = ['double_charge' => [], 'amount_mismatch' => [], 'missing' => [], 'status_differs' => [], 'refunds' => [], 'failed_attempts' => []];
+        $findings = ['double_charge' => [], 'amount_mismatch' => [], 'missing' => [], 'unpaid' => [], 'status_differs' => [], 'refunds' => [], 'failed_attempts' => []];
+        $all = [];
         $paidTotal = 0.0;
 
         foreach ($orders as $o) {
@@ -158,6 +159,13 @@ class ShopifyPaymentAuditService
             if (!$local && in_array($status, self::PAID_STATES, true)) {
                 $findings['missing'][] = $row;
             }
+            // Not paid in Shopify, so no orders/paid webhook was ever sent. If the bank still
+            // shows the money (e.g. the NLB confirmation never reached Shopify), the order has
+            // to be marked as paid in Shopify — then it comes into the program by itself.
+            if (!$local && !$row['cancelled'] && !in_array($status, [...self::PAID_STATES, 'VOIDED'], true)) {
+                $findings['unpaid'][] = $row;
+            }
+            $all[] = $row;
             if ($local && ($row['cancelled'] || in_array($status, ['REFUNDED', 'PARTIALLY_REFUNDED', 'VOIDED'], true))
                 && $local->financial_status === 'paid') {
                 $findings['status_differs'][] = $row;
@@ -193,6 +201,8 @@ class ShopifyPaymentAuditService
                 'in_program' => $known->count(),
             ] + array_map('count', $findings),
             'findings' => $findings,
+            // Every order of the period, for looking up a bank payment by amount
+            'orders' => $all,
         ];
     }
 

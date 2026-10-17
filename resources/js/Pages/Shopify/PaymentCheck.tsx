@@ -42,7 +42,7 @@ interface CheckoutRow {
     total: number;
 }
 
-type FindingKey = 'double_charge' | 'amount_mismatch' | 'missing' | 'status_differs' | 'refunds' | 'failed_attempts';
+type FindingKey = 'double_charge' | 'amount_mismatch' | 'missing' | 'unpaid' | 'status_differs' | 'refunds' | 'failed_attempts';
 
 interface AuditResult {
     error: 'access_denied' | 'api' | null;
@@ -52,6 +52,7 @@ interface AuditResult {
     checkouts_gone?: boolean;
     summary?: Record<string, number>;
     findings?: Record<FindingKey, OrderRow[]> & { abandoned: CheckoutRow[] };
+    orders?: OrderRow[];
 }
 
 interface Props {
@@ -67,6 +68,7 @@ const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.ge
 const ORDER_SECTIONS: { key: FindingKey; tone: 'red' | 'amber' | 'gray' }[] = [
     { key: 'double_charge', tone: 'red' },
     { key: 'missing', tone: 'red' },
+    { key: 'unpaid', tone: 'amber' },
     { key: 'amount_mismatch', tone: 'amber' },
     { key: 'status_differs', tone: 'amber' },
     { key: 'refunds', tone: 'amber' },
@@ -92,7 +94,7 @@ export default function PaymentCheck({ connected, result, filters }: Props) {
 
     const findings = result?.findings;
     const issues = findings
-        ? findings.double_charge.length + findings.missing.length + findings.amount_mismatch.length + findings.status_differs.length
+        ? findings.double_charge.length + findings.missing.length + (findings.unpaid?.length ?? 0) + findings.amount_mismatch.length + findings.status_differs.length
         : 0;
 
     return (
@@ -170,8 +172,10 @@ export default function PaymentCheck({ connected, result, filters }: Props) {
                                     </span>
                                 </div>
 
+                                <PaymentLookup orders={result.orders ?? []} checkouts={findings.abandoned} />
+
                                 {ORDER_SECTIONS.map(({ key, tone }) => (
-                                    <OrderSection key={key} sectionKey={key} tone={tone} rows={findings[key]} />
+                                    <OrderSection key={key} sectionKey={key} tone={tone} rows={findings[key] ?? []} />
                                 ))}
 
                                 <Card className="mb-6">
@@ -305,6 +309,92 @@ function OrderSection({ sectionKey, tone, rows }: { sectionKey: FindingKey; tone
                             ))}
                         </TableBody>
                     </Table>
+                </CardContent>
+            )}
+        </Card>
+    );
+}
+
+/**
+ * Find a payment from the bank statement: every order and abandoned checkout of the period
+ * whose amount (order total, charged or any single payment) matches, or by number / customer.
+ */
+function PaymentLookup({ orders, checkouts }: { orders: OrderRow[]; checkouts: CheckoutRow[] }) {
+    const { t } = useTranslation();
+    const [q, setQ] = useState('');
+    const query = q.trim();
+    // "3.443,00" / "3443" / "3443.5" → number
+    const amount = /^[\d.,\s]+$/.test(query) ? parseFloat(query.replace(/\s/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) : NaN;
+    const near = (v: number) => !isNaN(amount) && Math.abs(v - amount) <= 1;
+    const text = (v: string | null) => !!v && v.toLowerCase().includes(query.toLowerCase());
+
+    const orderHits = query === '' ? [] : orders.filter((o) => isNaN(amount)
+        ? text(o.number) || text(o.customer)
+        : near(o.total) || near(o.charged) || o.transactions.some((tx) => near(tx.amount)));
+    const checkoutHits = query === '' ? [] : checkouts.filter((c) => isNaN(amount) ? text(c.number) || text(c.customer) || text(c.email) : near(c.total));
+
+    return (
+        <Card className="mb-6">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2"><Search className="w-4 h-4 text-gray-500" />{t('shopify.audit_lookup')}</CardTitle>
+                <p className="text-sm text-gray-500">{t('shopify.audit_lookup_hint')}</p>
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('shopify.audit_lookup_placeholder')} className="mt-2 h-9 max-w-sm" />
+            </CardHeader>
+            {query !== '' && (
+                <CardContent className="p-0 overflow-x-auto">
+                    {orderHits.length + checkoutHits.length === 0 ? (
+                        <p className="px-6 pb-5 text-sm text-red-700">{t('shopify.audit_lookup_none')}</p>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t('shopify.audit_order')}</TableHead>
+                                    <TableHead>{t('shopify.audit_time')}</TableHead>
+                                    <TableHead>{t('shopify.audit_customer')}</TableHead>
+                                    <TableHead>{t('shopify.audit_status')}</TableHead>
+                                    <TableHead className="text-right">{t('shopify.audit_amount')}</TableHead>
+                                    <TableHead>{t('shopify.audit_transactions')}</TableHead>
+                                    <TableHead>{t('shopify.audit_lookup_program')}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {orderHits.map((r) => (
+                                    <TableRow key={r.shopify_id}>
+                                        <TableCell className="font-medium whitespace-nowrap">
+                                            {r.local_id ? <Link href={`/shopify/orders/${r.local_id}`} className="text-indigo-600 hover:underline">{r.number}</Link> : r.number}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">{r.created_at}</TableCell>
+                                        <TableCell>{r.customer || '-'}</TableCell>
+                                        <TableCell className="whitespace-nowrap text-xs">{r.status}{r.cancelled ? ` · ${t('shopify.audit_cancelled')}` : ''}</TableCell>
+                                        <TableCell className="text-right whitespace-nowrap">{formatNumber(r.total, 2)}</TableCell>
+                                        <TableCell className="text-xs text-gray-600">
+                                            {r.transactions.length === 0 ? '-' : r.transactions.map((tx, i) => (
+                                                <div key={i} className={`whitespace-nowrap ${tx.status !== 'SUCCESS' ? 'text-gray-400' : ''}`}>
+                                                    {tx.at} · {tx.kind} · {tx.status} · {formatNumber(tx.amount, 2)}{tx.gateway ? ` · ${tx.gateway}` : ''}
+                                                </div>
+                                            ))}
+                                        </TableCell>
+                                        <TableCell className="text-xs">
+                                            {r.local_id
+                                                ? <span className="text-green-700">{t('shopify.audit_lookup_yes')}{r.local_status ? ` (${r.local_status})` : ''}</span>
+                                                : <span className="font-medium text-red-700">{t('shopify.audit_lookup_no')}</span>}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {checkoutHits.map((c, i) => (
+                                    <TableRow key={`c${i}`} className="bg-amber-50/50">
+                                        <TableCell className="font-medium whitespace-nowrap">{c.number || '-'} <span className="block text-xs font-normal text-amber-700">{t('shopify.audit_checkout')}</span></TableCell>
+                                        <TableCell className="whitespace-nowrap">{c.created_at}</TableCell>
+                                        <TableCell>{[c.customer, c.email].filter(Boolean).join(' · ') || '-'}</TableCell>
+                                        <TableCell className="text-xs text-amber-700">{t('shopify.audit_lookup_abandoned')}</TableCell>
+                                        <TableCell className="text-right whitespace-nowrap">{formatNumber(c.total, 2)}</TableCell>
+                                        <TableCell>-</TableCell>
+                                        <TableCell className="text-xs font-medium text-red-700">{t('shopify.audit_lookup_no')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             )}
         </Card>
