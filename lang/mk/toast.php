@@ -73,6 +73,7 @@ return [
     'inventory_tracking_disabled' => 'Магацинското следење е исклучено',
     'inventory_item_updated' => 'Магацинскиот артикл е успешно ажуриран',
     'stock_adjusted' => 'Залихата е успешно корегирана',
+    'stock_movement_deleted' => 'Внесувањето е избришано и залихата е вратена',
     'bundle_created' => 'Пакетот е успешно креиран',
     'bundle_updated' => 'Пакетот е успешно ажуриран',
     'bundle_deleted' => 'Пакетот е избришан',

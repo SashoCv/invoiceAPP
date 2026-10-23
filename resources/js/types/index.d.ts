@@ -160,6 +160,8 @@ export interface StockMovement {
     cost_price?: number | string | null;
     document_date?: string | null;
     reason?: string | null;
+    /** Entered by hand — can be deleted from the article's history */
+    deletable?: boolean;
     article?: Article;
     created_at: string;
 }

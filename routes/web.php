@@ -132,6 +132,7 @@ Route::middleware('auth')->group(function () {
     Route::get('shopify/orders/pending', [ShopifyOrderController::class, 'pending'])->name('shopify.orders.pending');
     Route::get('shopify/orders/{shopifyOrder}', [ShopifyOrderController::class, 'show'])->name('shopify.orders.show');
     Route::post('inventory/{article}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('inventory.adjust-stock');
+    Route::delete('inventory/{article}/movements/{movement}', [InventoryItemController::class, 'destroyMovement'])->name('inventory.movements.destroy');
     Route::get('inventory/export/pdf', [InventoryItemController::class, 'exportPdf'])->name('inventory.export.pdf');
     Route::resource('inventory', InventoryItemController::class)->except(['create', 'edit']);
     Route::get('goods-receipts/export/csv', [ExportController::class, 'exportGoodsReceipts'])->name('goods-receipts.export.csv');

@@ -41,6 +41,28 @@ class StockMovement extends Model
         'created_at' => 'datetime',
     ];
 
+    /**
+     * Entered by hand in Магацин (Корекција на залиха, or the stock added with the article) —
+     * not written by a document, a Shopify order/refund, an inventory count or disabling tracking.
+     * Only these can be deleted from the article's history.
+     */
+    public function isManual(): bool
+    {
+        if ($this->reference_type !== null || !in_array($this->type, ['receipt', 'issue', 'adjustment'], true)) {
+            return false;
+        }
+        if ($this->reason === 'tracking_disabled') {
+            return false;
+        }
+        foreach (['Restored: invoice #', 'Restored from bundle:', 'Bundle: ', 'Shopify refund for order ', 'Попис '] as $prefix) {
+            if ($this->notes && str_starts_with($this->notes, $prefix)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);

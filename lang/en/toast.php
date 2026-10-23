@@ -73,6 +73,7 @@ return [
     'inventory_tracking_disabled' => 'Inventory tracking disabled',
     'inventory_item_updated' => 'Inventory item updated successfully',
     'stock_adjusted' => 'Stock adjusted successfully',
+    'stock_movement_deleted' => 'Entry deleted and stock restored',
     'bundle_created' => 'Bundle created successfully',
     'bundle_updated' => 'Bundle updated successfully',
     'bundle_deleted' => 'Bundle deleted',

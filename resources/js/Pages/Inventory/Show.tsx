@@ -6,6 +6,7 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import DeleteConfirmDialog from '@/Components/DeleteConfirmDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import {
@@ -17,7 +18,7 @@ import {
 } from '@/Components/ui/dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatNumber, formatDate } from '@/lib/utils';
-import { ArrowLeft, FileText, PackagePlus } from 'lucide-react';
+import { ArrowLeft, FileText, PackagePlus, Trash2 } from 'lucide-react';
 import type { Article, StockMovement } from '@/types';
 
 interface CardRow {
@@ -101,6 +102,10 @@ export default function ShowInventoryItem({ item, movements, avgCost, card }: Sh
     const cardEnd = card.length ? card[card.length - 1] : null;
     const metgUrl = card.length ? `/accounting-reports/metg/${item.id}?date_from=${card[0].date}&date_to=${todayStr()}` : null;
     const [adjustOpen, setAdjustOpen] = useState(false);
+    const [deleting, setDeleting] = useState<StockMovement | null>(null);
+    const hasDeletable = movements.some((m) => m.deletable);
+    /** Signed change from the before/after balances (some older issues were stored with a positive quantity) */
+    const delta = (m: StockMovement) => Number(m.quantity_after) - Number(m.quantity_before);
 
     const adjustForm = useForm({
         type: 'receipt',
@@ -303,6 +308,7 @@ export default function ShowInventoryItem({ item, movements, avgCost, card }: Sh
                                         <TableHead className="text-right">{t('inventory.movement_before')}</TableHead>
                                         <TableHead className="text-right">{t('inventory.movement_after')}</TableHead>
                                         <TableHead>{t('inventory.movement_notes')}</TableHead>
+                                        {hasDeletable && <TableHead className="w-12"><span className="sr-only">{t('inventory.actions')}</span></TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -331,6 +337,16 @@ export default function ShowInventoryItem({ item, movements, avgCost, card }: Sh
                                             <TableCell className="text-gray-500 max-w-xs truncate">
                                                 {movement.notes || '-'}
                                             </TableCell>
+                                            {hasDeletable && (
+                                                <TableCell className="py-1.5 text-right">
+                                                    {movement.deletable && (
+                                                        <button type="button" onClick={() => setDeleting(movement)} title={t('inventory.delete_movement')} aria-label={t('inventory.delete_movement')}
+                                                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -339,6 +355,21 @@ export default function ShowInventoryItem({ item, movements, avgCost, card }: Sh
                     </CardContent>
                 </Card>
             </div>
+
+            {deleting && (
+                <DeleteConfirmDialog
+                    open={!!deleting}
+                    onOpenChange={(open) => !open && setDeleting(null)}
+                    title={t('inventory.delete_movement_title')}
+                    description={t('inventory.delete_movement_desc', {
+                        date: formatDate(deleting.document_date || deleting.created_at),
+                        change: `${delta(deleting) > 0 ? '+' : ''}${formatNumber(delta(deleting), 2)}`,
+                        stock: formatNumber(Number(item.stock_quantity) - delta(deleting), 2),
+                        unit: item.unit,
+                    })}
+                    deleteUrl={`/inventory/${item.id}/movements/${deleting.id}`}
+                />
+            )}
 
             {/* Stock Adjustment Dialog */}
             <Dialog open={adjustOpen} onOpenChange={setAdjustOpen}>

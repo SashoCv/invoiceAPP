@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -25,7 +26,7 @@ class InventoryItemController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('subscribed', only: [
-                'store', 'update', 'destroy', 'adjustStock', 'enableTracking',
+                'store', 'update', 'destroy', 'adjustStock', 'destroyMovement', 'enableTracking',
             ]),
         ];
     }
@@ -229,7 +230,8 @@ class InventoryItemController extends Controller implements HasMiddleware
         $movements = $inventory->stockMovements()
             ->orderByDesc('created_at')
             ->limit(50)
-            ->get();
+            ->get()
+            ->each(fn (StockMovement $m) => $m->setAttribute('deletable', $m->isManual()));
 
         $valuation = app(StockValuationService::class);
 
@@ -440,6 +442,43 @@ class InventoryItemController extends Controller implements HasMiddleware
         }
 
         return back()->with('success', __('toast.stock_adjusted'));
+    }
+
+    /**
+     * Delete a stock movement entered by hand by mistake. The article's stock goes back by
+     * the movement's change, and the later movements' before/after balances follow, so the
+     * history (and the stock as of a past date) stays consistent.
+     */
+    public function destroyMovement(Article $article, StockMovement $movement): RedirectResponse
+    {
+        $this->authorize('update', $article);
+        abort_unless($movement->article_id === $article->id && $movement->user_id === $article->user_id, 404);
+
+        if (!$movement->isManual()) {
+            return back()->with('error', __('inventory.movement_not_deletable'));
+        }
+
+        DB::transaction(function () use ($article, $movement) {
+            $article = Article::lockForUpdate()->find($article->id);
+            $change = (float) $movement->quantity_after - (float) $movement->quantity_before;
+
+            if (abs($change) > 0.0001) {
+                $article->stock_quantity = (float) $article->stock_quantity - $change;
+                $article->save();
+
+                $shift = sprintf('(%.4F)', $change);
+                StockMovement::where('article_id', $article->id)
+                    ->where('id', '>', $movement->id)
+                    ->update([
+                        'quantity_before' => DB::raw("quantity_before - {$shift}"),
+                        'quantity_after' => DB::raw("quantity_after - {$shift}"),
+                    ]);
+            }
+
+            $movement->delete();
+        });
+
+        return back()->with('success', __('toast.stock_movement_deleted'));
     }
 
     /**

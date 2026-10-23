@@ -149,6 +149,10 @@ return [
     // Show page
     'item_details' => 'Item Details',
     'stock_history' => 'Warehouse entry history (last 50)',
+    'delete_movement' => 'Delete entry',
+    'delete_movement_title' => 'Delete this entry?',
+    'delete_movement_desc' => 'Manual entry from :date (:change :unit). Stock will go back to :stock :unit and the analytical card will be recalculated without it. This cannot be undone.',
+    'movement_not_deletable' => 'Only manual entries can be deleted. This one comes from a document — change the document instead.',
     'analytical_card' => 'Analytical stock card',
     'analytical_card_hint' => 'Every document from the very beginning, by document date, with balance and value at purchase price',
     'metg_pdf' => 'METG (PDF)',
