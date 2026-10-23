@@ -296,7 +296,12 @@ class TradeLedgerController extends Controller implements HasMiddleware
         $docs = $valuation->documents($user->id);
         $perDoc = [];
         $levelingByDay = [];
+        $goodsSalesByDay = [];
         foreach ($valuation->eventsBetween($user->id, $yearStart, $toDate) as $e) {
+            // What the sold goods brought in — the rest of the day's turnover is not goods
+            if (in_array($e['doc_type'], ['invoice', 'shopify'], true)) {
+                $goodsSalesByDay[$e['date']] = ($goodsSalesByDay[$e['date']] ?? 0) + $e['sales_no_tax'] + $e['sales_tax'];
+            }
             $key = $e['doc_key'];
             $perDoc[$key] ??= ['type' => $e['doc_type'], 'date' => $e['date'], 'purchase' => 0.0, 'retail' => 0.0, 'sales' => 0.0];
             $perDoc[$key]['sales'] += $e['sales_no_tax'] + $e['sales_tax'];
@@ -377,13 +382,20 @@ class TradeLedgerController extends Controller implements HasMiddleware
             $date = Carbon::parse($day);
             if ($manualByDay->has($day)) {
                 $report = $manualByDay->get($day);
-                $rows->push($this->row($date, 'fiscal', $report->report_number ?: '—', $date, 0, 0, (float) $report->amount));
+                $turnover = (float) $report->amount;
+                $row = $this->row($date, 'fiscal', $report->report_number ?: '—', $date, 0, 0, $turnover);
             } else {
                 $turnover = (float) ($invoiceByDay[$day] ?? 0) + (float) ($shopifyByDay[$day] ?? 0);
-                if ($turnover > 0) {
-                    $rows->push($this->row($date, 'fiscal', '—', $date, 0, 0, $turnover));
+                if ($turnover <= 0) {
+                    continue;
                 }
+                $row = $this->row($date, 'fiscal', '—', $date, 0, 0, $turnover);
             }
+            // Part of the turnover that is not goods out of stock: Shopify shipping, services
+            // and other invoice lines without a stock article. It lowers кол. 7 but nothing
+            // left the лагер for it, so the accountant sees it separately.
+            $row['non_goods'] = round($turnover - ($goodsSalesByDay[$day] ?? 0), 2);
+            $rows->push($row);
         }
 
         // Sort: by booking date; inputs, then outputs, sales documents, нивелација, day total
@@ -446,6 +458,7 @@ class TradeLedgerController extends Controller implements HasMiddleware
         return [
             // Дневен промет broken down: real turnover / испратници / кусоци
             'turnover_sales' => round($rows->where('type', 'fiscal')->sum('daily_turnover'), 2),
+            'turnover_non_goods' => round($rows->where('type', 'fiscal')->sum('non_goods'), 2),
             'turnover_issues' => round($rows->where('type', 'issue')->sum('daily_turnover'), 2),
             'turnover_shortages' => round($rows->where('type', 'shortage')->sum('daily_turnover'), 2),
             'purchase_value' => round($rows->sum('purchase_value'), 2),

@@ -184,6 +184,10 @@
                     <td class="right col-turnover">{{ $fmt($periodTotals['turnover_sales']) }}</td>
                 </tr>
                 <tr class="breakdown">
+                    <td colspan="7" class="right">од прометот: достава и услуги (не е стока од залиха)</td>
+                    <td class="right col-turnover">{{ $fmt($periodTotals['turnover_non_goods'] ?? 0) }}</td>
+                </tr>
+                <tr class="breakdown">
                     <td colspan="7" class="right">од тоа: испратници — промоции (по набавна вредност + ДДВ)</td>
                     <td class="right col-turnover">{{ $fmt($periodTotals['turnover_issues']) }}</td>
                 </tr>

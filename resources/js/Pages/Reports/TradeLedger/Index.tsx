@@ -43,6 +43,7 @@ interface Totals {
     sales_value: number;
     daily_turnover: number;
     turnover_sales: number;
+    turnover_non_goods: number;
     turnover_issues: number;
     turnover_shortages: number;
 }
@@ -257,6 +258,7 @@ export default function TradeLedgerIndex({ rows, periodTotals, reports, filters 
                                 </TableRow>
                                 {[
                                     ['ledger.turnover_sales', periodTotals.turnover_sales],
+                                    ['ledger.turnover_non_goods', periodTotals.turnover_non_goods],
                                     ['ledger.turnover_issues', periodTotals.turnover_issues],
                                     ['ledger.turnover_shortages', periodTotals.turnover_shortages],
                                 ].map(([key, value]) => (

@@ -35,6 +35,7 @@ return [
     'type_shopify' => 'Shopify',
     'type_fiscal' => 'Daily fiscal report',
     'turnover_sales' => 'of which: turnover (invoices + e-commerce / Z report)',
+    'turnover_non_goods' => 'of the turnover: shipping and services (not goods from stock)',
     'turnover_issues' => 'of which: goods issues — promotions (at cost + VAT)',
     'turnover_shortages' => 'of which: shortages (at cost + VAT)',
     'type_carryover' => 'Carried over (opening)',
